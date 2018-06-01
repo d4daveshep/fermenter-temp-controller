@@ -9,6 +9,7 @@ pycodestyle = "*"
 pyserial = "*"
 elasticsearch = "*"
 pytz = "*"
+requests = "*"
 
 [dev-packages]
 
