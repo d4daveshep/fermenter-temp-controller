@@ -22,9 +22,13 @@ nztz = timezone("NZ")
 
 # set up the logger
 logging.basicConfig(
-#    filename="tempcontroller.log",
-    level=logging.DEBUG,
+    filename="tempcontroller.log",
+    level=logging.INFO,
     format="%(levelname)s: %(asctime)s: %(message)s")
+
+logging.info("")
+logging.info("===== Starting %s =====", __file__)
+logging.info("")
 
 ### TEST CODE
 ###
@@ -67,13 +71,13 @@ try:
     ser = serial.Serial(tty, 9600)
 except SerialException:
     logging.error("Couldn't open serial port at %s", tty)
-    raise SystemTxit("*** ERROR *** Couldn't open serial port")
+    raise SystemExit("*** ERROR *** Couldn't open serial port")
 
 # read the target temp from config file
 config = configparser.ConfigParser()
 config.read(config_file)
 new_target = config["temperature"]["TargetTemp"]
-logger.info("Target temperature being set to %s", str(new_target))
+logging.info("Target temperature being set to %s", str(new_target))
 
 # sleep for 30 secs to allow arduino to reboot after serial port open
 time.sleep(30)  
@@ -106,22 +110,23 @@ while True:
     if target != new_target:
         new_target_str = '<' + str(new_target) + '>'
         ser.write(new_target_str.encode())
-        logger.info("Updated target temp to %s", str(new_target_str))
+        logging.info("Updated target temp to %s", str(new_target))
 
     doc = data
-    logger.info("Indexing %s", json.dumps(doc))
+    logging.debug("Indexing %s", json.dumps(doc))
 
-    es = Elasticsearch(
-        hosts=[{'host': ES_HOST, 'port': 9200}],
-        #       use_ssl=True,
-        #       verify_certs=True,
-        connection_class=elasticsearch.connection.RequestsHttpConnection
-    )
+    try:
+        es = Elasticsearch(
+            hosts=[{'host': ES_HOST, 'port': 9200}],
+            #       use_ssl=True,
+            #       verify_certs=True,
+            connection_class=elasticsearch.connection.RequestsHttpConnection)
 
-    # index the doc to elastic
-    res = es.index(
-        index="brew-temp",
-        doc_type="temp-reading",
-        body=doc
-    )
-    logger.info("Result is %s", json.dumps(res))
+        # index the doc to elastic
+        res = es.index(index="brew-temp",doc_type="temp-reading",body=doc)
+        logging.debug("Result is %s", json.dumps(res))
+        logging.info("Indexed record: temp=%s, target=%s, action=%s", data["avg"],data["target"],data["action"])
+
+    except elasticsearch.exceptions.ConnectionError as err:
+        logging.critical("*** ConnectionError *** %s", err)
+        raise( err )

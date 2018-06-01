@@ -9,3 +9,733 @@ CRITICAL:2018-06-01 20:37:22,621:Config file 'nolog.cfg' not found
 CRITICAL:2018-06-01 20:39:35,183:Config file 'nolog.cfg' not found
 CRITICAL:2018-06-01 20:43:40,293:No Arduino devices found at /dev/ttyACM*
 CRITICAL: 2018-06-01 20:44:28,278: No Arduino devices found at /dev/ttyACM*
+INFO: 2018-06-02 10:52:09,781: Using config file 'config.txt'
+INFO: 2018-06-02 10:52:09,784: Using Arduino device at /dev/ttyACM0
+INFO: 2018-06-02 10:52:09,787: Target temperature being set to 21.0
+DEBUG: 2018-06-02 10:53:11,620: timestamp is 2018-06-02T10:53:11+1200
+INFO: 2018-06-02 10:53:11,621: Updated target temp to <21.0>
+INFO: 2018-06-02 10:53:11,622: Indexing {"now": 19.08, "avg": 20.28, "min": 20.27, "max": 22.42, "action": "Heat", "heat": true, "target": 21.0, "timestamp": "2018-06-02T10:53:11+1200", "brewid": "99-TEST-99"}
+DEBUG: 2018-06-02 10:53:11,627: Starting new HTTP connection (1): 192.168.1.555
+WARNING: 2018-06-02 10:53:11,646: POST http://192.168.1.555:9200/brew-temp/temp-reading [status:N/A request:0.023s]
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 141, in _new_conn
+    (self.host, self.port), self.timeout, **extra_kw)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.6/socket.py", line 745, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1026, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.6/http/client.py", line 964, in send
+    self.connect()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 166, in connect
+    conn = self._new_conn()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 150, in _new_conn
+    self, "Failed to establish a new connection: %s" % e)
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7f2edeedc320>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 639, in urlopen
+    _stacktrace=sys.exc_info()[2])
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/retry.py", line 388, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f2edeedc320>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/elasticsearch/connection/http_requests.py", line 76, in perform_request
+    response = self.session.send(prepared_request, **send_kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 508, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f2edeedc320>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+DEBUG: 2018-06-02 10:53:11,657: > {"now":19.08,"avg":20.28,"min":20.27,"max":22.42,"action":"Heat","heat":true,"target":21.0,"timestamp":"2018-06-02T10:53:11+1200","brewid":"99-TEST-99"}
+DEBUG: 2018-06-02 10:53:11,659: Starting new HTTP connection (2): 192.168.1.555
+WARNING: 2018-06-02 10:53:11,666: POST http://192.168.1.555:9200/brew-temp/temp-reading [status:N/A request:0.009s]
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 141, in _new_conn
+    (self.host, self.port), self.timeout, **extra_kw)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.6/socket.py", line 745, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1026, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.6/http/client.py", line 964, in send
+    self.connect()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 166, in connect
+    conn = self._new_conn()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 150, in _new_conn
+    self, "Failed to establish a new connection: %s" % e)
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7f2edeed27b8>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 639, in urlopen
+    _stacktrace=sys.exc_info()[2])
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/retry.py", line 388, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f2edeed27b8>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/elasticsearch/connection/http_requests.py", line 76, in perform_request
+    response = self.session.send(prepared_request, **send_kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 508, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f2edeed27b8>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+DEBUG: 2018-06-02 10:53:11,667: > {"now":19.08,"avg":20.28,"min":20.27,"max":22.42,"action":"Heat","heat":true,"target":21.0,"timestamp":"2018-06-02T10:53:11+1200","brewid":"99-TEST-99"}
+DEBUG: 2018-06-02 10:53:11,670: Starting new HTTP connection (3): 192.168.1.555
+WARNING: 2018-06-02 10:53:11,684: POST http://192.168.1.555:9200/brew-temp/temp-reading [status:N/A request:0.016s]
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 141, in _new_conn
+    (self.host, self.port), self.timeout, **extra_kw)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.6/socket.py", line 745, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1026, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.6/http/client.py", line 964, in send
+    self.connect()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 166, in connect
+    conn = self._new_conn()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 150, in _new_conn
+    self, "Failed to establish a new connection: %s" % e)
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7f2edeed2780>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 639, in urlopen
+    _stacktrace=sys.exc_info()[2])
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/retry.py", line 388, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f2edeed2780>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/elasticsearch/connection/http_requests.py", line 76, in perform_request
+    response = self.session.send(prepared_request, **send_kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 508, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f2edeed2780>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+DEBUG: 2018-06-02 10:53:11,685: > {"now":19.08,"avg":20.28,"min":20.27,"max":22.42,"action":"Heat","heat":true,"target":21.0,"timestamp":"2018-06-02T10:53:11+1200","brewid":"99-TEST-99"}
+DEBUG: 2018-06-02 10:53:11,687: Starting new HTTP connection (4): 192.168.1.555
+WARNING: 2018-06-02 10:53:11,695: POST http://192.168.1.555:9200/brew-temp/temp-reading [status:N/A request:0.010s]
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 141, in _new_conn
+    (self.host, self.port), self.timeout, **extra_kw)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.6/socket.py", line 745, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1026, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.6/http/client.py", line 964, in send
+    self.connect()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 166, in connect
+    conn = self._new_conn()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 150, in _new_conn
+    self, "Failed to establish a new connection: %s" % e)
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7f2edeed27b8>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 639, in urlopen
+    _stacktrace=sys.exc_info()[2])
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/retry.py", line 388, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f2edeed27b8>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/elasticsearch/connection/http_requests.py", line 76, in perform_request
+    response = self.session.send(prepared_request, **send_kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 508, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f2edeed27b8>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+DEBUG: 2018-06-02 10:53:11,696: > {"now":19.08,"avg":20.28,"min":20.27,"max":22.42,"action":"Heat","heat":true,"target":21.0,"timestamp":"2018-06-02T10:53:11+1200","brewid":"99-TEST-99"}
+CRITICAL: 2018-06-02 10:53:11,696: *** ConnectionError *** ConnectionError(HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f2edeed27b8>: Failed to establish a new connection: [Errno -2] Name or service not known',))) caused by: ConnectionError(HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f2edeed27b8>: Failed to establish a new connection: [Errno -2] Name or service not known',)))
+INFO: 2018-06-02 10:54:58,047: ***** Starting __main__ *****
+INFO: 2018-06-02 10:54:58,052: Using config file 'config.txt'
+INFO: 2018-06-02 10:54:58,053: Using Arduino device at /dev/ttyACM0
+INFO: 2018-06-02 10:54:58,056: Target temperature being set to 21.0
+INFO: 2018-06-02 10:55:32,583: ***** Starting tempcontroller.py *****
+INFO: 2018-06-02 10:55:32,586: Using config file 'config.txt'
+INFO: 2018-06-02 10:55:32,587: Using Arduino device at /dev/ttyACM0
+INFO: 2018-06-02 10:55:32,590: Target temperature being set to 21.0
+DEBUG: 2018-06-02 10:56:34,422: timestamp is 2018-06-02T10:56:34+1200
+INFO: 2018-06-02 10:56:34,423: Updated target temp to <21.0>
+INFO: 2018-06-02 10:56:34,424: Indexing {"now": 19.08, "avg": 20.28, "min": 20.27, "max": 22.42, "action": "Heat", "heat": true, "target": 21.0, "timestamp": "2018-06-02T10:56:34+1200", "brewid": "99-TEST-99"}
+DEBUG: 2018-06-02 10:56:34,431: Starting new HTTP connection (1): 192.168.1.555
+WARNING: 2018-06-02 10:56:34,440: POST http://192.168.1.555:9200/brew-temp/temp-reading [status:N/A request:0.015s]
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 141, in _new_conn
+    (self.host, self.port), self.timeout, **extra_kw)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.6/socket.py", line 745, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1026, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.6/http/client.py", line 964, in send
+    self.connect()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 166, in connect
+    conn = self._new_conn()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 150, in _new_conn
+    self, "Failed to establish a new connection: %s" % e)
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7f9bd46c2278>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 639, in urlopen
+    _stacktrace=sys.exc_info()[2])
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/retry.py", line 388, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f9bd46c2278>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/elasticsearch/connection/http_requests.py", line 76, in perform_request
+    response = self.session.send(prepared_request, **send_kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 508, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f9bd46c2278>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+DEBUG: 2018-06-02 10:56:34,443: > {"now":19.08,"avg":20.28,"min":20.27,"max":22.42,"action":"Heat","heat":true,"target":21.0,"timestamp":"2018-06-02T10:56:34+1200","brewid":"99-TEST-99"}
+DEBUG: 2018-06-02 10:56:34,445: Starting new HTTP connection (2): 192.168.1.555
+WARNING: 2018-06-02 10:56:34,452: POST http://192.168.1.555:9200/brew-temp/temp-reading [status:N/A request:0.009s]
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 141, in _new_conn
+    (self.host, self.port), self.timeout, **extra_kw)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.6/socket.py", line 745, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1026, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.6/http/client.py", line 964, in send
+    self.connect()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 166, in connect
+    conn = self._new_conn()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 150, in _new_conn
+    self, "Failed to establish a new connection: %s" % e)
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7f9bd46b8550>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 639, in urlopen
+    _stacktrace=sys.exc_info()[2])
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/retry.py", line 388, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f9bd46b8550>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/elasticsearch/connection/http_requests.py", line 76, in perform_request
+    response = self.session.send(prepared_request, **send_kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 508, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f9bd46b8550>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+DEBUG: 2018-06-02 10:56:34,453: > {"now":19.08,"avg":20.28,"min":20.27,"max":22.42,"action":"Heat","heat":true,"target":21.0,"timestamp":"2018-06-02T10:56:34+1200","brewid":"99-TEST-99"}
+DEBUG: 2018-06-02 10:56:34,455: Starting new HTTP connection (3): 192.168.1.555
+WARNING: 2018-06-02 10:56:34,462: POST http://192.168.1.555:9200/brew-temp/temp-reading [status:N/A request:0.009s]
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 141, in _new_conn
+    (self.host, self.port), self.timeout, **extra_kw)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.6/socket.py", line 745, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1026, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.6/http/client.py", line 964, in send
+    self.connect()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 166, in connect
+    conn = self._new_conn()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 150, in _new_conn
+    self, "Failed to establish a new connection: %s" % e)
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7f9bd46b85c0>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 639, in urlopen
+    _stacktrace=sys.exc_info()[2])
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/retry.py", line 388, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f9bd46b85c0>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/elasticsearch/connection/http_requests.py", line 76, in perform_request
+    response = self.session.send(prepared_request, **send_kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 508, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f9bd46b85c0>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+DEBUG: 2018-06-02 10:56:34,463: > {"now":19.08,"avg":20.28,"min":20.27,"max":22.42,"action":"Heat","heat":true,"target":21.0,"timestamp":"2018-06-02T10:56:34+1200","brewid":"99-TEST-99"}
+DEBUG: 2018-06-02 10:56:34,465: Starting new HTTP connection (4): 192.168.1.555
+WARNING: 2018-06-02 10:56:39,479: POST http://192.168.1.555:9200/brew-temp/temp-reading [status:N/A request:5.016s]
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 141, in _new_conn
+    (self.host, self.port), self.timeout, **extra_kw)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.6/socket.py", line 745, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1026, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.6/http/client.py", line 964, in send
+    self.connect()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 166, in connect
+    conn = self._new_conn()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 150, in _new_conn
+    self, "Failed to establish a new connection: %s" % e)
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7f9bd46b8630>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 639, in urlopen
+    _stacktrace=sys.exc_info()[2])
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/retry.py", line 388, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f9bd46b8630>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/elasticsearch/connection/http_requests.py", line 76, in perform_request
+    response = self.session.send(prepared_request, **send_kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 508, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f9bd46b8630>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+DEBUG: 2018-06-02 10:56:39,482: > {"now":19.08,"avg":20.28,"min":20.27,"max":22.42,"action":"Heat","heat":true,"target":21.0,"timestamp":"2018-06-02T10:56:34+1200","brewid":"99-TEST-99"}
+CRITICAL: 2018-06-02 10:56:39,482: *** ConnectionError *** ConnectionError(HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f9bd46b8630>: Failed to establish a new connection: [Errno -2] Name or service not known',))) caused by: ConnectionError(HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f9bd46b8630>: Failed to establish a new connection: [Errno -2] Name or service not known',)))
+INFO: 2018-06-02 10:57:12,907: 
+INFO: 2018-06-02 10:57:12,907: ===== Starting tempcontroller.py =====
+INFO: 2018-06-02 10:57:12,908: 
+INFO: 2018-06-02 10:57:12,911: Using config file 'config.txt'
+INFO: 2018-06-02 10:57:12,912: Using Arduino device at /dev/ttyACM0
+INFO: 2018-06-02 10:57:12,915: Target temperature being set to 21.0
+DEBUG: 2018-06-02 10:58:14,748: timestamp is 2018-06-02T10:58:14+1200
+INFO: 2018-06-02 10:58:14,749: Updated target temp to <21.0>
+INFO: 2018-06-02 10:58:14,749: Indexing {"now": 19.08, "avg": 20.28, "min": 20.27, "max": 22.42, "action": "Heat", "heat": true, "target": 21.0, "timestamp": "2018-06-02T10:58:14+1200", "brewid": "99-TEST-99"}
+DEBUG: 2018-06-02 10:58:14,755: Starting new HTTP connection (1): 192.168.1.555
+WARNING: 2018-06-02 10:58:14,772: POST http://192.168.1.555:9200/brew-temp/temp-reading [status:N/A request:0.022s]
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 141, in _new_conn
+    (self.host, self.port), self.timeout, **extra_kw)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.6/socket.py", line 745, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1026, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.6/http/client.py", line 964, in send
+    self.connect()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 166, in connect
+    conn = self._new_conn()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 150, in _new_conn
+    self, "Failed to establish a new connection: %s" % e)
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7fd621db9320>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 639, in urlopen
+    _stacktrace=sys.exc_info()[2])
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/retry.py", line 388, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fd621db9320>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/elasticsearch/connection/http_requests.py", line 76, in perform_request
+    response = self.session.send(prepared_request, **send_kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 508, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fd621db9320>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+DEBUG: 2018-06-02 10:58:14,784: > {"now":19.08,"avg":20.28,"min":20.27,"max":22.42,"action":"Heat","heat":true,"target":21.0,"timestamp":"2018-06-02T10:58:14+1200","brewid":"99-TEST-99"}
+DEBUG: 2018-06-02 10:58:14,789: Starting new HTTP connection (2): 192.168.1.555
+WARNING: 2018-06-02 10:58:14,797: POST http://192.168.1.555:9200/brew-temp/temp-reading [status:N/A request:0.013s]
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 141, in _new_conn
+    (self.host, self.port), self.timeout, **extra_kw)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.6/socket.py", line 745, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1026, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.6/http/client.py", line 964, in send
+    self.connect()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 166, in connect
+    conn = self._new_conn()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 150, in _new_conn
+    self, "Failed to establish a new connection: %s" % e)
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7fd621dae780>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 639, in urlopen
+    _stacktrace=sys.exc_info()[2])
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/retry.py", line 388, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fd621dae780>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/elasticsearch/connection/http_requests.py", line 76, in perform_request
+    response = self.session.send(prepared_request, **send_kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 508, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fd621dae780>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+DEBUG: 2018-06-02 10:58:14,798: > {"now":19.08,"avg":20.28,"min":20.27,"max":22.42,"action":"Heat","heat":true,"target":21.0,"timestamp":"2018-06-02T10:58:14+1200","brewid":"99-TEST-99"}
+DEBUG: 2018-06-02 10:58:14,801: Starting new HTTP connection (3): 192.168.1.555
+WARNING: 2018-06-02 10:58:14,813: POST http://192.168.1.555:9200/brew-temp/temp-reading [status:N/A request:0.014s]
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 141, in _new_conn
+    (self.host, self.port), self.timeout, **extra_kw)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.6/socket.py", line 745, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1026, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.6/http/client.py", line 964, in send
+    self.connect()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 166, in connect
+    conn = self._new_conn()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 150, in _new_conn
+    self, "Failed to establish a new connection: %s" % e)
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7fd621dae710>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 639, in urlopen
+    _stacktrace=sys.exc_info()[2])
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/retry.py", line 388, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fd621dae710>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/elasticsearch/connection/http_requests.py", line 76, in perform_request
+    response = self.session.send(prepared_request, **send_kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 508, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fd621dae710>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+DEBUG: 2018-06-02 10:58:14,814: > {"now":19.08,"avg":20.28,"min":20.27,"max":22.42,"action":"Heat","heat":true,"target":21.0,"timestamp":"2018-06-02T10:58:14+1200","brewid":"99-TEST-99"}
+DEBUG: 2018-06-02 10:58:14,816: Starting new HTTP connection (4): 192.168.1.555
+WARNING: 2018-06-02 10:58:14,824: POST http://192.168.1.555:9200/brew-temp/temp-reading [status:N/A request:0.010s]
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 141, in _new_conn
+    (self.host, self.port), self.timeout, **extra_kw)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/usr/lib/python3.6/socket.py", line 745, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 601, in urlopen
+    chunked=chunked)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 357, in _make_request
+    conn.request(method, url, **httplib_request_kw)
+  File "/usr/lib/python3.6/http/client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.6/http/client.py", line 1026, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.6/http/client.py", line 964, in send
+    self.connect()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 166, in connect
+    conn = self._new_conn()
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connection.py", line 150, in _new_conn
+    self, "Failed to establish a new connection: %s" % e)
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x7fd621dae5f8>: Failed to establish a new connection: [Errno -2] Name or service not known
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 440, in send
+    timeout=timeout
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/connectionpool.py", line 639, in urlopen
+    _stacktrace=sys.exc_info()[2])
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/urllib3/util/retry.py", line 388, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fd621dae5f8>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/elasticsearch/connection/http_requests.py", line 76, in perform_request
+    response = self.session.send(prepared_request, **send_kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/sessions.py", line 618, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/david/.local/share/virtualenvs/fermenter-temp-controller-wUOlUmcz/lib/python3.6/site-packages/requests/adapters.py", line 508, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fd621dae5f8>: Failed to establish a new connection: [Errno -2] Name or service not known',))
+DEBUG: 2018-06-02 10:58:14,826: > {"now":19.08,"avg":20.28,"min":20.27,"max":22.42,"action":"Heat","heat":true,"target":21.0,"timestamp":"2018-06-02T10:58:14+1200","brewid":"99-TEST-99"}
+CRITICAL: 2018-06-02 10:58:14,826: *** ConnectionError *** ConnectionError(HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fd621dae5f8>: Failed to establish a new connection: [Errno -2] Name or service not known',))) caused by: ConnectionError(HTTPConnectionPool(host='192.168.1.555', port=9200): Max retries exceeded with url: /brew-temp/temp-reading (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fd621dae5f8>: Failed to establish a new connection: [Errno -2] Name or service not known',)))
+INFO: 2018-06-02 11:00:56,700: 
+INFO: 2018-06-02 11:00:56,700: ===== Starting tempcontroller.py =====
+INFO: 2018-06-02 11:00:56,701: 
+INFO: 2018-06-02 11:00:56,703: Using config file 'config.txt'
+INFO: 2018-06-02 11:00:56,704: Using Arduino device at /dev/ttyACM0
+INFO: 2018-06-02 11:00:56,708: Target temperature being set to 21.0
+INFO: 2018-06-02 11:01:58,541: Updated target temp to <21.0>
+INFO: 2018-06-02 11:01:58,542: Indexing {"now": 19.08, "avg": 20.28, "min": 20.27, "max": 22.42, "action": "Heat", "heat": true, "target": 21.0, "timestamp": "2018-06-02T11:01:58+1200", "brewid": "99-TEST-99"}
+INFO: 2018-06-02 11:01:58,621: POST http://192.168.1.55:9200/brew-temp/temp-reading [status:201 request:0.078s]
+INFO: 2018-06-02 11:01:58,621: Result is {"_index": "brew-temp", "_type": "temp-reading", "_id": "422WvWMBLddau6qwELSn", "_version": 1, "result": "created", "_shards": {"total": 2, "successful": 1, "failed": 0}, "_seq_no": 10820, "_primary_term": 4}
+INFO: 2018-06-02 11:02:58,577: Updated target temp to <21.0>
+INFO: 2018-06-02 11:02:58,577: Indexing {"now": 20.06, "avg": 19.73, "min": 19.72, "max": 22.42, "action": "Heat", "heat": true, "target": 21.0, "timestamp": "2018-06-02T11:02:58+1200", "brewid": "99-TEST-99"}
+INFO: 2018-06-02 11:02:58,657: POST http://192.168.1.55:9200/brew-temp/temp-reading [status:201 request:0.079s]
+INFO: 2018-06-02 11:02:58,658: Result is {"_index": "brew-temp", "_type": "temp-reading", "_id": "5W2WvWMBLddau6qw-7Ql", "_version": 1, "result": "created", "_shards": {"total": 2, "successful": 1, "failed": 0}, "_seq_no": 10821, "_primary_term": 4}
+INFO: 2018-06-02 11:07:14,707: 
+INFO: 2018-06-02 11:07:14,710: ===== Starting tempcontroller.py =====
+INFO: 2018-06-02 11:07:14,711: 
+INFO: 2018-06-02 11:07:14,713: Using config file 'config.txt'
+INFO: 2018-06-02 11:07:14,714: Using Arduino device at /dev/ttyACM0
+INFO: 2018-06-02 11:07:14,717: Target temperature being set to 21.0
+INFO: 2018-06-02 11:08:16,552: Updated target temp to 21.0
+INFO: 2018-06-02 11:08:16,647: POST http://192.168.1.55:9200/brew-temp/temp-reading [status:201 request:0.094s]
+INFO: 2018-06-02 11:08:16,647: Indexed record: temp=20.28, target=21.0, action=Heat
+INFO: 2018-06-02 11:09:16,587: Updated target temp to 21.0
+INFO: 2018-06-02 11:09:16,670: POST http://192.168.1.55:9200/brew-temp/temp-reading [status:201 request:0.081s]
+INFO: 2018-06-02 11:09:16,670: Indexed record: temp=19.73, target=21.0, action=Heat
+INFO: 2018-06-02 11:10:16,623: Updated target temp to 21.0
+INFO: 2018-06-02 11:10:16,695: POST http://192.168.1.55:9200/brew-temp/temp-reading [status:201 request:0.071s]
+INFO: 2018-06-02 11:10:16,696: Indexed record: temp=20.39, target=21.0, action=Heat
