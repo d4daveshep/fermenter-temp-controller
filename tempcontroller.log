@@ -1,0 +1,11 @@
+CRITICAL:root:Config file: nolog.cfg not found
+CRITICAL:root:Config file 'nolog.cfg' not found
+CRITICAL:2018-06-01 20:31:32,130:Config file 'nolog.cfg' not found
+CRITICAL:2018-06-01 20:34:31,654:Config file 'nolog.cfg' not found
+CRITICAL:2018-06-01 20:35:06,526:Config file 'nolog.cfg' not found
+CRITICAL:2018-06-01 20:35:51,858:Config file 'nolog.cfg' not found
+CRITICAL:2018-06-01 20:36:22,545:Config file 'nolog.cfg' not found
+CRITICAL:2018-06-01 20:37:22,621:Config file 'nolog.cfg' not found
+CRITICAL:2018-06-01 20:39:35,183:Config file 'nolog.cfg' not found
+CRITICAL:2018-06-01 20:43:40,293:No Arduino devices found at /dev/ttyACM*
+CRITICAL: 2018-06-01 20:44:28,278: No Arduino devices found at /dev/ttyACM*

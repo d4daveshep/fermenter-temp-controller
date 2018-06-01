@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pycodestyle = "*"
+"autopep8" = "*"
+pyserial = "*"
+elasticsearch = "*"
+pytz = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.6"
