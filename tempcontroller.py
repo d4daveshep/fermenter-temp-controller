@@ -8,6 +8,7 @@ import time
 import configparser
 import elasticsearch
 from elasticsearch import Elasticsearch
+import os
 import sys
 import argparse
 from pathlib import Path
@@ -20,9 +21,12 @@ ES_HOST = "192.168.1.55"
 # get NZ timezone so we can localise the timestamps and deal with NZST/NZDT
 nztz = timezone("NZ")
 
+# get the directory for the log file
+dirname, filename = os.path.split(os.path.abspath(__file__))
+
 # set up the logger
 logging.basicConfig(
-    filename="tempcontroller.log",
+    filename=dirname+"/tempcontroller.log",
     level=logging.INFO,
     format="%(levelname)s: %(asctime)s: %(message)s")
 
@@ -105,9 +109,10 @@ while True:
     data["brewid"] = '99-TEST-99'
 
     target = data["target"]
+    logging.debug("Ardino target is %s and script target is %s", target, new_target)
     
     # check if we need to update the target temp
-    if target != new_target:
+    if( round(float(target),1) != round(float(new_target),1) ):
         new_target_str = '<' + str(new_target) + '>'
         ser.write(new_target_str.encode())
         logging.info("Updated target temp to %s", str(new_target))
@@ -125,7 +130,7 @@ while True:
         # index the doc to elastic
         res = es.index(index="brew-temp",doc_type="temp-reading",body=doc)
         logging.debug("Result is %s", json.dumps(res))
-        logging.info("Indexed record: temp=%s, target=%s, action=%s", data["avg"],data["target"],data["action"])
+        logging.info("Indexed record: time=%s, temp=%s, target=%s, action=%s", data["timestamp"], data["avg"], data["target"], data["action"])
 
     except elasticsearch.exceptions.ConnectionError as err:
         logging.critical("*** ConnectionError *** %s", err)
