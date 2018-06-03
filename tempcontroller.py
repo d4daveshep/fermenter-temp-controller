@@ -1,19 +1,20 @@
 # simple program to read from Arduino serial port
 
-import serial
-import json
-import glob
-from datetime import datetime
-import time
-import configparser
-import elasticsearch
-from elasticsearch import Elasticsearch
-import os
-import sys
 import argparse
-from pathlib import Path
+import configparser
+import glob
+import json
 import logging
+import os
+import time
+from datetime import datetime
+from pathlib import Path
+
+import elasticsearch
+import serial
+from elasticsearch import Elasticsearch
 from pytz import timezone
+from serial import SerialException
 
 # use a local Elasticsearch instance
 ES_HOST = "192.168.1.55"
@@ -92,7 +93,7 @@ new_target_str = '<' + str(new_target) + '>'
 try:
     ser.write(new_target_str.encode())
 except SerialException:
-    logger.warn("Couldn't write target temp to serial port")
+    logging.warning("Couldn't write target temp to serial port")
 
 while True:
     line = ser.readline()  # read serial line as bytes
@@ -110,7 +111,7 @@ while True:
 
     target = data["target"]
     logging.debug("Ardino target is %s and script target is %s", target, new_target)
-    
+
     # check if we need to update the target temp
     if( round(float(target),1) != round(float(new_target),1) ):
         new_target_str = '<' + str(new_target) + '>'
@@ -128,7 +129,7 @@ while True:
             connection_class=elasticsearch.connection.RequestsHttpConnection)
 
         # index the doc to elastic
-        res = es.index(index="brew-temp",doc_type="temp-reading",body=doc)
+        res = es.index(index="test-temp",doc_type="temp-reading",body=doc)
         logging.debug("Result is %s", json.dumps(res))
         logging.info("Indexed record: time=%s, temp=%s, target=%s, action=%s", data["timestamp"], data["avg"], data["target"], data["action"])
 
