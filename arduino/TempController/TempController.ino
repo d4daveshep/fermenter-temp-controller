@@ -16,8 +16,8 @@
 #include <DallasTemperature.h>
 
 // define we are in simulation mode or sensor mode (simulation mode generates a random temp rather than reading the sensor)
-//const boolean SIMULATE = false;
-const boolean SIMULATE = true;
+const boolean SIMULATE = false;
+//const boolean SIMULATE = true;
 
 // initialise the OneWire sensors
 const int ONE_WIRE_BUS = 3;  // Data wire is plugged into pin 3 on the Arduino
