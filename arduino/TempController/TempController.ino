@@ -16,11 +16,12 @@ OneWire oneWire(ONE_WIRE_BUS);  // Setup a oneWire instance to communicate with 
 DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
 
 // define and initialise the temp data variables
-const int NUM_READINGS = 60; // we're going to average the temp over 60 readings
+//const int NUM_READINGS = 60; // we're going to average the temp over 60 readings
+const int NUM_READINGS = 10; // we're going to average the temp over 10 readings
 double tempReadings[NUM_READINGS]; // array to hold temp readings
 int tempIndex = 0; // index of the current reading
 double tempTotal = 0; // total of all the temp readings
-double tempAverage = 0.0; // average temp reading
+double averageTemp = 0.0; // average temp reading
 double currentTemp = 0.0; // current temp reading
 long lastPrintTimestamp = 0.0; // timestamp of last serial print
 long lastDelayTimestamp = 0.0; // timestamp of last delay reading
@@ -98,8 +99,8 @@ void setup(void) {
   for ( int thisReading = 0; thisReading < NUM_READINGS; thisReading++ ) {
     tempReadings[thisReading] = firstReading;
   }
-  tempAverage = firstReading;
-  tempTotal = tempAverage * NUM_READINGS;
+  averageTemp = firstReading;
+  tempTotal = averageTemp * NUM_READINGS;
 
   lastPrintTimestamp = millis();
   lastDelayTimestamp = millis();
@@ -128,11 +129,11 @@ void loop(void) {
   switch ( currentAction ) {
     case REST:
       // are we within tolerance
-      if ( tempAverage < (targetTemp - heatStartTempDiff) ) {
+      if ( averageTemp < (targetTemp - heatStartTempDiff) ) {
         // we are too cold so start heating
         currentAction = HEAT;
       }
-      else if ( tempAverage > (targetTemp + coolStartTempDiff) ) {
+      else if ( averageTemp > (targetTemp + coolStartTempDiff) ) {
         // we are too hot so start cooling
         currentAction = COOL;
       }
@@ -144,7 +145,7 @@ void loop(void) {
 
     case HEAT:
       // have we reached or exceeded our target yet, but we don't want to overshoot
-      if ( tempAverage >= ( targetTemp - heatStopTempDiff )) {
+      if ( averageTemp >= ( targetTemp - heatStopTempDiff )) {
         // yes so rest
         currentAction = REST;
       }
@@ -152,7 +153,7 @@ void loop(void) {
 
     case COOL:
       // have we reached or exceeded our target yet, but we don't wnat to overshoot
-      if ( tempAverage <= ( targetTemp + coolStopTempDiff ) ) {
+      if ( averageTemp <= ( targetTemp + coolStopTempDiff ) ) {
         // yes so rest
         currentAction = REST;
       }
@@ -183,11 +184,12 @@ void loop(void) {
   // update the display
   updateLCD();
   
-  // print JSON to serial port every minute
+  // print JSON to serial port
   long newPrintTimestamp = millis();
-  if ( ( millis() - lastPrintTimestamp ) > 59600 ) {
+//  if ( ( millis() - lastPrintTimestamp ) > 59600 ) { // every minute
+  if ( ( millis() - lastPrintTimestamp ) > 9900 ) { // every 10 secs
     lastPrintTimestamp = millis();
-    printJSON(currentTemp, tempAverage);
+    printJSON();
   }
 
   // smart delay of 1000 msec
@@ -250,7 +252,7 @@ int read_LCD_buttons() {              // read the buttons
 /* 
  * Print JSON format to Serial port
 */
-void printJSON(double currentTemp, double averageTemp) {
+void printJSON() {
 
   Serial.print("{\"now\":");
   Serial.print(currentTemp);
@@ -368,14 +370,14 @@ void doTempReadings() {
     tempIndex = 0;
   }
 
-  tempAverage = tempTotal / NUM_READINGS; // calculate the average
+  averageTemp = tempTotal / NUM_READINGS; // calculate the average
 
-  // update the max and min values TODO after 60 readings
-  if (tempAverage > maxTemp) {
-    maxTemp = tempAverage;
+  // update the max and min values
+  if (averageTemp > maxTemp) {
+    maxTemp = averageTemp;
   }
-  if (tempAverage < minTemp) {
-    minTemp = tempAverage;
+  if (averageTemp < minTemp) {
+    minTemp = averageTemp;
   }
 
 }
@@ -394,7 +396,7 @@ void updateLCD() {
   lcd.setCursor(0, 0);
   // current temp
   lcd.print("N");
-  lcd.print( dtostrf(tempAverage, 4, 1, buf) );
+  lcd.print( dtostrf(averageTemp, 4, 1, buf) );
   lcd.print(" ");
 
   // target temp
