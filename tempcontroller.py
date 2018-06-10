@@ -98,41 +98,44 @@ except SerialException:
 while True:
     line = ser.readline()  # read serial line as bytes
 
-    # convert serial line to string and load to JSON sequence
-    data = json.loads(line.decode("utf-8"))
-
-    # get formatted localised timestamp
-    stamp = nztz.localize(datetime.now()).strftime("%Y-%m-%dT%H:%M:%S%z") 
-    logging.debug("timestamp is %s", stamp)
-
-    data["timestamp"] = stamp
-#    data['brewid'] = '12-AAA-02'
-    data["brewid"] = '99-TEST-99'
-
-    target = data["target"]
-    logging.debug("Ardino target is %s and script target is %s", target, new_target)
-
-    # check if we need to update the target temp
-    if( round(float(target),1) != round(float(new_target),1) ):
-        new_target_str = '<' + str(new_target) + '>'
-        ser.write(new_target_str.encode())
-        logging.info("Updated target temp to %s", str(new_target))
-
-    doc = data
-    logging.debug("Indexing %s", json.dumps(doc))
-
     try:
-        es = Elasticsearch(
-            hosts=[{'host': ES_HOST, 'port': 9200}],
-            #       use_ssl=True,
-            #       verify_certs=True,
-            connection_class=elasticsearch.connection.RequestsHttpConnection)
+        # convert serial line to string and load to JSON sequence
+        data = json.loads(line.decode("utf-8"))
 
-        # index the doc to elastic
-        res = es.index(index="test-temp",doc_type="temp-reading",body=doc)
-        logging.debug("Result is %s", json.dumps(res))
-        logging.info("Indexed record: time=%s, temp=%s, target=%s, action=%s", data["timestamp"], data["avg"], data["target"], data["action"])
+        # get formatted localised timestamp
+        stamp = nztz.localize(datetime.now()).strftime("%Y-%m-%dT%H:%M:%S%z")
+        logging.debug("timestamp is %s", stamp)
 
-    except elasticsearch.exceptions.ConnectionError as err:
-        logging.critical("*** ConnectionError *** %s", err)
-        raise( err )
+        data["timestamp"] = stamp
+    #    data['brewid'] = '12-AAA-02'
+        data["brewid"] = '99-TEST-99'
+
+        target = data["target"]
+        logging.debug("Ardino target is %s and script target is %s", target, new_target)
+
+        # check if we need to update the target temp
+        if( round(float(target),1) != round(float(new_target),1) ):
+            new_target_str = '<' + str(new_target) + '>'
+            ser.write(new_target_str.encode())
+            logging.info("Updated target temp to %s", str(new_target))
+
+        doc = data
+        logging.debug("Indexing %s", json.dumps(doc))
+
+        try:
+            es = Elasticsearch(
+                hosts=[{'host': ES_HOST, 'port': 9200}],
+                #       use_ssl=True,
+                #       verify_certs=True,
+                connection_class=elasticsearch.connection.RequestsHttpConnection)
+
+            # index the doc to elastic
+            res = es.index(index="test-temp",doc_type="temp-reading",body=doc)
+            logging.debug("Result is %s", json.dumps(res))
+            logging.info("Indexed record: time=%s, temp=%s, target=%s, action=%s", data["timestamp"], data["avg"], data["target"], data["action"])
+
+        except elasticsearch.exceptions.ConnectionError as err:
+            logging.critical("*** ConnectionError *** %s", err)
+            raise( err )
+    except json.decoder.JSONDecodeError as err:
+            logging.debug(err)

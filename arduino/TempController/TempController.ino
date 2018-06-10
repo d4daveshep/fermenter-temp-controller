@@ -1,14 +1,5 @@
 /*
- *  Fermentation Controller
- *
- *  v2 Changed over to DS18B20 temp sensor and added 60 sec average temp reading.
- *  v3 Corrected min and max by setting average temp to first temp reading.
- *     Improved changed decision logic so that target temp will always be reached before changing action.
- *  v4 Target temp is adjustable using display up/down buttons
- *  v5 Changed Serial output to JSON format
- *     Only print to serial every minute
- *  v6 Added separate JSON flag for heating, cooling, resting actions
- *  v7 Combined randon/simulation version into main sensor version
+ *  Fermenter Temp Controller
  */
 
 #include <LiquidCrystal.h>
@@ -22,14 +13,15 @@ const boolean SIMULATE = false;
 // initialise the OneWire sensors
 const int ONE_WIRE_BUS = 3;  // Data wire is plugged into pin 3 on the Arduino
 OneWire oneWire(ONE_WIRE_BUS);  // Setup a oneWire instance to communicate with any OneWire devices
-DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature. 
+DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
 
 // define and initialise the temp data variables
-const int NUM_READINGS = 60; // we're going to average the temp over 60 readings
+//const int NUM_READINGS = 60; // we're going to average the temp over 60 readings
+const int NUM_READINGS = 10; // we're going to average the temp over 10 readings
 double tempReadings[NUM_READINGS]; // array to hold temp readings
 int tempIndex = 0; // index of the current reading
 double tempTotal = 0; // total of all the temp readings
-double tempAverage = 0.0; // average temp reading
+double averageTemp = 0.0; // average temp reading
 double currentTemp = 0.0; // current temp reading
 long lastPrintTimestamp = 0.0; // timestamp of last serial print
 long lastDelayTimestamp = 0.0; // timestamp of last delay reading
@@ -56,19 +48,20 @@ boolean newSerialDataReceived = false; // let us know when new serial data recei
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);  // select the pins used on the LCD panel
 const int LIGHT_PIN = 10; // pin 10 controls the backlight
 
-// define some values used by the panel and buttons
+// define some values used by the LCD panel and buttons
 int lcd_key     = 0;
 int adc_key_in  = 0;
 boolean lightOn = true;  // keep track of whether the LCD light is on or off
-
 const int btnRIGHT =  0;
 const int btnUP =     1;
 const int btnDOWN =   2;
 const int btnLEFT =   3;
 const int btnSELECT = 4;
 const int btnNONE =   5;
+char buf[6]; // char buffer used to convert numbers to strings to write to lcd
 
-// define the pins used by the relays
+
+// define the pins used by the heating and coolingrelays
 const int HEAT_RELAY = 11; //  Heating relay pin
 const int COOL_RELAY = 12; // Cooling relay pin
 
@@ -78,18 +71,18 @@ const int HEAT = 1;
 const int COOL = 2;
 int currentAction = REST; // the current thing we're doing (e.g. REST, HEAT or COOL)
 
-char buf[6]; // char buffer used to convert numbers to strings to write to lcd
-
-
+/*
+ * Setup runs once
+ */
 void setup(void) {
   Serial.begin(9600);
 
   // set up the relay pins
-  pinMode(HEAT_RELAY,OUTPUT);
-  pinMode(COOL_RELAY,OUTPUT);
+  pinMode(HEAT_RELAY, OUTPUT);
+  pinMode(COOL_RELAY, OUTPUT);
 
   // set up the LCD as 16 x 2
-  lcd.begin(16,2);
+  lcd.begin(16, 2);
 
   double firstReading = 0;
   if (!SIMULATE) {
@@ -102,33 +95,122 @@ void setup(void) {
     ambientTemp = randomTemp(); // get a random temp
   }
 
-//  Serial.print("first reading=");
-//  printJSON(firstReading);
-
-  // initialise the temp readings to 0
+  // initialise the temp readings to the first reading just taken
   for ( int thisReading = 0; thisReading < NUM_READINGS; thisReading++ ) {
     tempReadings[thisReading] = firstReading;
-    //tempReadings[thisReading] = 0;
   }
-  tempAverage = firstReading;
-  tempTotal = tempAverage * NUM_READINGS;
+  averageTemp = firstReading;
+  tempTotal = averageTemp * NUM_READINGS;
 
-  lastPrintTimestamp=millis();
+  lastPrintTimestamp = millis();
   lastDelayTimestamp = millis();
 
   delay(1000);
 }
 
+/*
+ * Main loop 
+ */
 void loop(void) {
 
   // read the lcd button state and adjust the temperature accordingly
-  if(!SIMULATE) {
-    lcd_key = read_LCD_buttons();   // read the buttons
+  if (!SIMULATE) {
+    checkLCDButtons();
+  }
 
-    // depending on which button was pushed, we perform an action
-    switch( lcd_key ) {
+  // read any data from the serial port
+  readSerialWithStartEndMarkers();
+  updateTargetTemp();
 
-    case btnRIGHT:    
+  // do the temp readings and average calculation
+  doTempReadings();
+
+  // what are we doing and do we need to change
+  switch ( currentAction ) {
+    case REST:
+      // are we within tolerance
+      if ( averageTemp < (targetTemp - heatStartTempDiff) ) {
+        // we are too cold so start heating
+        currentAction = HEAT;
+      }
+      else if ( averageTemp > (targetTemp + coolStartTempDiff) ) {
+        // we are too hot so start cooling
+        currentAction = COOL;
+      }
+      else {
+        // we are within tolerance so keep resting
+        currentAction = REST;
+      }
+      break;
+
+    case HEAT:
+      // have we reached or exceeded our target yet, but we don't want to overshoot
+      if ( averageTemp >= ( targetTemp - heatStopTempDiff )) {
+        // yes so rest
+        currentAction = REST;
+      }
+      break;
+
+    case COOL:
+      // have we reached or exceeded our target yet, but we don't wnat to overshoot
+      if ( averageTemp <= ( targetTemp + coolStopTempDiff ) ) {
+        // yes so rest
+        currentAction = REST;
+      }
+      break;
+  }
+
+  // do the action
+  switch ( currentAction) {
+
+    case REST:
+      digitalWrite(HEAT_RELAY, LOW); // turn the Heat off
+      digitalWrite(COOL_RELAY, LOW); // turn the Cool off
+      break;
+
+    case HEAT:
+      digitalWrite(HEAT_RELAY, HIGH); // turn the Heat on
+      digitalWrite(COOL_RELAY, LOW); // turn the Cool off
+      break;
+
+    case COOL:
+      digitalWrite(HEAT_RELAY, LOW); // turn the Heat off
+      digitalWrite(COOL_RELAY, HIGH); // turn the Cool on
+      break;
+
+      //  default:
+  }
+
+  // update the display
+  updateLCD();
+  
+  // print JSON to serial port
+  long newPrintTimestamp = millis();
+//  if ( ( millis() - lastPrintTimestamp ) > 59600 ) { // every minute
+  if ( ( millis() - lastPrintTimestamp ) > 9900 ) { // every 10 secs
+    lastPrintTimestamp = millis();
+    printJSON();
+  }
+
+  // smart delay of 1000 msec
+  do {
+    // nothing
+  } while ((millis() - lastDelayTimestamp) < 1000);
+  lastDelayTimestamp = millis();
+
+}
+
+/*
+ * Read the lcd button state and adjust the temperature accordingly
+ */
+void checkLCDButtons(void) {
+
+  lcd_key = read_LCD_buttons();   // read the buttons
+
+  // depending on which button was pushed, we perform an action
+  switch ( lcd_key ) {
+
+    case btnRIGHT:
       break;
     case btnLEFT:
       break;
@@ -142,206 +224,36 @@ void loop(void) {
       break;
     case btnNONE:
       break;
-    }
   }
-
-  // read any data from the serial port
-  readSerialWithStartEndMarkers();
-  updateTargetTemp();
-
-  // do the temp readings and average calculation
-  tempTotal -= tempReadings[tempIndex]; // subtract the last temp reading
-  if (!SIMULATE) {
-    sensors.requestTemperatures();  // read the sensors
-    currentTemp = sensors.getTempCByIndex(0); // read the temp 
-    ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
-  } else {
-    currentTemp = randomTemp(); // get a random temp
-    //ambientTemp = randomTemp(); // get a random ambient temp
-  }
-  tempReadings[tempIndex] = currentTemp; // store it in the index location
-
-
-/*
-  Serial.print("target=");
-  Serial.print(targetTemp);
-  Serial.print("+/-");
-  Serial.print(TEMP_DIFF);
-  Serial.print(" temp=");
-  Serial.print(tempReadings[tempIndex]);
-*/
-  tempTotal += tempReadings[tempIndex]; // add the new temp reading to the total
-  tempIndex++; // increment the temp index
-  // reset the temp index if at the end of the array
-  if ( tempIndex >= NUM_READINGS ) {
-    tempIndex = 0;
-  }
-
-  tempAverage = tempTotal / NUM_READINGS; // calculate the average
-/*
-  Serial.print(" avg=" );
-  Serial.print(tempAverage);
-*/
-  // update the max and min values TODO after 60 readings
-  if (tempAverage > maxTemp) {
-    maxTemp = tempAverage;
-  }
-  if (tempAverage < minTemp) {
-    minTemp = tempAverage;
-  }
-
-  // what are we doing and do we need to change
-  switch ( currentAction ) {
-  case REST:
-    // are we within tolerance
-    if ( tempAverage < (targetTemp-heatStartTempDiff) ) {
-      // we are too cold so start heating
-      currentAction = HEAT;
-    } 
-    else if ( tempAverage > (targetTemp+coolStartTempDiff) ) {
-      // we are too hot so start cooling
-      currentAction = COOL;
-    } 
-    else {
-      // we are within tolerance so keep resting
-      currentAction = REST;
-    }
-    break;
-
-  case HEAT:
-    // have we reached or exceeded our target yet, but we don't want to overshoot
-    if ( tempAverage >= ( targetTemp - heatStopTempDiff )) {
-      // yes so rest
-      currentAction = REST;
-    }
-    break;
-
-  case COOL:
-    // have we reached or exceeded our target yet, but we don't wnat to overshoot
-    if ( tempAverage <= ( targetTemp + coolStopTempDiff ) ) {
-      // yes so rest
-      currentAction = REST;
-    }
-    break;
-  }
-
-  // do the action
-  switch ( currentAction) {
-
-  case REST:
-    digitalWrite(HEAT_RELAY,LOW); // turn the Heat off
-    digitalWrite(COOL_RELAY,LOW); // turn the Cool off
-    break;
-
-  case HEAT:  
-    digitalWrite(HEAT_RELAY,HIGH); // turn the Heat on
-    digitalWrite(COOL_RELAY,LOW); // turn the Cool off
-    break;
-
-  case COOL:
-    digitalWrite(HEAT_RELAY,LOW); // turn the Heat off
-    digitalWrite(COOL_RELAY,HIGH); // turn the Cool on
-    break;
-
-    //  default:
-  }
-
-  //  fahrenheit = celsius * 1.8 + 32.0;
-/*
-  Serial.print(" min=");
-  Serial.print(minTemp);
-  Serial.print(" max=");
-  Serial.print(maxTemp);
-  Serial.print(" ");
-*/
-  // print line 1  
-  lcd.setCursor(0,0);
-  lcd.print("aim");
-  lcd.print( dtostrf(targetTemp,4,1,buf) );
-  lcd.print(" ");
-
-  lcd.print("now");
-  lcd.print( dtostrf(tempAverage,4,1,buf) );
-  lcd.print(" ");
-
-  //print line 2
-  lcd.setCursor(0,1);
-
-  switch ( currentAction) {
-
-  case REST:
-    lcd.print("Rest");
-//    Serial.print("Rest");
-    break;
-  case HEAT:
-    lcd.print("Heat");
-//    Serial.print("Heat");
-    break;
-  case COOL:
-    lcd.print("Cool");
-//    Serial.print("Cool");
-    break;
-  default:
-    lcd.print("ERROR");
-//    Serial.print("ERROR");
-
-  }
-
-  //  lcd.print("Heat");
-  lcd.print(" ");
-  //  lcd.print("Lo ");
-  lcd.print( dtostrf(minTemp,4,1,buf) );
-  lcd.print("-");
-  lcd.print( dtostrf(maxTemp,4,1,buf) );
-
-  // print every minute
-  long newPrintTimestamp = millis();
-  if( ( millis() - lastPrintTimestamp ) > 59600 ) {
-    lastPrintTimestamp = millis();
-    printJSON(currentTemp, tempAverage);
-  }
-
-  // smart delay of 1000 msec
-  do {
-    // nothing
-  } while ((millis() - lastDelayTimestamp) < 1000);
- lastDelayTimestamp = millis(); 
-    
-
 }
 
-int read_LCD_buttons(){               // read the buttons
-  adc_key_in = analogRead(0);       // read the value from the sensor 
+/*
+ * Read the LCD buttons
+ */
+int read_LCD_buttons() {              // read the buttons
+  adc_key_in = analogRead(0);       // read the value from the sensor
 
   // my buttons when read are centered at these valies: 0, 144, 329, 504, 741
   // we add approx 50 to those values and check to see if we are close
   // We make this the 1st option for speed reasons since it will be the most likely result
 
-  if (adc_key_in > 1000) return btnNONE; 
+  if (adc_key_in > 1000) return btnNONE;
 
-  // For V1.1 us this threshold
-  /*
-    if (adc_key_in < 50)   return btnRIGHT;  
-   if (adc_key_in < 250)  return btnUP; 
-   if (adc_key_in < 450)  return btnDOWN; 
-   if (adc_key_in < 650)  return btnLEFT; 
-   if (adc_key_in < 850)  return btnSELECT;  
-   */
-
-  // For V1.0 comment the other threshold and use the one below: 
-  if (adc_key_in < 50)   return btnRIGHT;  
-  if (adc_key_in < 195)  return btnUP; 
-  if (adc_key_in < 380)  return btnDOWN; 
-  if (adc_key_in < 555)  return btnLEFT; 
-  if (adc_key_in < 790)  return btnSELECT;   
+  // For V1.0 comment the other threshold and use the one below:
+  if (adc_key_in < 50)   return btnRIGHT;
+  if (adc_key_in < 195)  return btnUP;
+  if (adc_key_in < 380)  return btnDOWN;
+  if (adc_key_in < 555)  return btnLEFT;
+  if (adc_key_in < 790)  return btnSELECT;
 
   return btnNONE;                // when all others fail, return this.
 }
 
-/* print JSON format to Serial port
- * { "now":21.38, "avg":21.45, "min":19.45, "max":22.89, "action":"COOL", "target":20.00, "timestamp":123456789 }
- */
-void printJSON(double currentTemp, double averageTemp) {
+/* 
+ * Print JSON format to Serial port
+*/
+void printJSON() {
+
   Serial.print("{\"now\":");
   Serial.print(currentTemp);
   Serial.print(",\"avg\":");
@@ -352,38 +264,43 @@ void printJSON(double currentTemp, double averageTemp) {
   Serial.print(maxTemp);
 
   switch ( currentAction) {
-  case REST:
-    Serial.print(",\"action\":\"Rest\"");
-    Serial.print(",\"rest\":true");
-    break;
-  case HEAT:
-    Serial.print(",\"action\":\"Heat\"");
-    Serial.print(",\"heat\":true");
-    break;
-  case COOL:
-    Serial.print(",\"action\":\"Cool\"");
-    Serial.print(",\"cool\":true");
-    break;
-  default:
-    Serial.print(",\"action\":\"ERROR\"");
+    case REST:
+      Serial.print(",\"action\":\"Rest\"");
+      Serial.print(",\"rest\":true");
+      break;
+    case HEAT:
+      Serial.print(",\"action\":\"Heat\"");
+      Serial.print(",\"heat\":true");
+      break;
+    case COOL:
+      Serial.print(",\"action\":\"Cool\"");
+      Serial.print(",\"cool\":true");
+      break;
+    default:
+      Serial.print(",\"action\":\"ERROR\"");
   }
-  
+
   Serial.print(",\"target\":");
   Serial.print(targetTemp);
   Serial.print(",\"ambient\":");
   Serial.print(ambientTemp);
   Serial.print(",\"timestamp\":");
   Serial.print(millis());
-  
+
   Serial.print("}");
   Serial.println();
 }
 
-// produce a random temperature reading between 15 and 25 degrees
+/*
+ * Produce a random temperature reading between 15 and 25 degrees
+ */
 double randomTemp() {
-  return random( 15,25 ) + random( 0, 100 ) / 100.0;
+  return random( 15, 25 ) + random( 0, 100 ) / 100.0;
 }
 
+/*
+ * Read the serial port using start and end markers: < >
+ */
 void readSerialWithStartEndMarkers() {
   static boolean recvInProgress = false;
   static byte ndx = 0;
@@ -417,12 +334,106 @@ void readSerialWithStartEndMarkers() {
   }
 }
 
+/*
+ * Update the target tempe * |aim20.0 now19.9 |
+rature
+ */
 void updateTargetTemp() {
   if (newSerialDataReceived == true) {
     float newTarget = atof(receivedChars);
-    if( newTarget != 0.0 ) {
+    if ( newTarget != 0.0 ) {
       targetTemp = newTarget;
     }
     newSerialDataReceived = false;
   }
 }
+
+/*
+ * Read the temperature sensors and calculate the averages, update the min and max
+ */
+void doTempReadings() {
+  tempTotal -= tempReadings[tempIndex]; // subtract the last temp reading
+  if (!SIMULATE) {
+    sensors.requestTemperatures();  // read the sensors
+    currentTemp = sensors.getTempCByIndex(0); // read the temp
+    ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
+  } else {
+    currentTemp = randomTemp(); // get a random temp
+    //ambientTemp = randomTemp(); // get a random ambient temp
+  }
+  tempReadings[tempIndex] = currentTemp; // store it in the index location
+
+  tempTotal += tempReadings[tempIndex]; // add the new temp reading to the total
+  tempIndex++; // increment the temp index
+  // reset the temp index if at the end of the array
+  if ( tempIndex >= NUM_READINGS ) {
+    tempIndex = 0;
+  }
+
+  averageTemp = tempTotal / NUM_READINGS; // calculate the average
+
+  // update the max and min values
+  if (averageTemp > maxTemp) {
+    maxTemp = averageTemp;
+  }
+  if (averageTemp < minTemp) {
+    minTemp = averageTemp;
+  }
+
+}
+
+/*
+ * Update the LCD display (16 characters x 2 lines)
+ * |0123456789012345 
+ * |----------------|
+ * |N19.9 T20 A15.5 |
+ * |Rest 18.8-22.2  |
+ * |----------------|
+ */
+void updateLCD() {
+
+  // print LINE 1
+  lcd.setCursor(0, 0);
+  // current temp
+  lcd.print("N");
+  lcd.print( dtostrf(averageTemp, 4, 1, buf) );
+  lcd.print(" ");
+
+  // target temp
+  lcd.print("T");
+  lcd.print( dtostrf(targetTemp, 2, 0, buf) );
+  lcd.print(" ");
+
+  // ambient temp
+  lcd.print("A");
+  lcd.print( dtostrf(ambientTemp, 4, 1, buf) );
+  lcd.print(" ");
+
+  // print LINE 2
+  lcd.setCursor(0, 1);
+
+  // current action
+  switch ( currentAction) {
+
+    case REST:
+      lcd.print("Rest");
+      break;
+    case HEAT:
+      lcd.print("Heat");
+      break;
+    case COOL:
+      lcd.print("Cool");
+      break;
+    default:
+      lcd.print("ERROR");
+
+  }
+
+  // min & max
+  lcd.print(" ");
+  lcd.print( dtostrf(minTemp, 4, 1, buf) );
+  lcd.print("-");
+  lcd.print( dtostrf(maxTemp, 4, 1, buf) );
+  
+}
+
