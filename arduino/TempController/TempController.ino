@@ -33,9 +33,11 @@ float coolStartTempDiff = 0.3; // temp above target we will start cooling
 float coolStopTempDiff = 0.0; // temp above target we will stop cooling (-ve means we overrun target temp)
 float heatStartTempDiff = 0.3; // temp below target we will start heating
 float heatStopTempDiff = 0.0; // temp below target we will stop heating (-ve means we overrun target temp)
-//const float TEMP_DIFF = 0.3; // the tolerance we allow before taking action
+const float TEMP_DIFF = 0.3; // the tolerance we allow before taking action
+float heatStartTemp = targetTemp - heatStartTempDiff;
+float heatLag = 0.0;
 
-float minTemp = 1000.0; // min temperature set to a really high value initally
+float minTemp, cycleMinTemp = 1000.0; // min temperature set to a really high value initally
 float maxTemp = -1000.0; // max temperature set to a really low value initally
 
 // define variables for reading temperature from serial
@@ -70,6 +72,7 @@ const int REST = 0;
 const int HEAT = 1;
 const int COOL = 2;
 int currentAction = REST; // the current thing we're doing (e.g. REST, HEAT or COOL)
+String changeAction = ""; // used to record when our action changes
 
 /*
  * Setup runs once
@@ -102,6 +105,8 @@ void setup(void) {
   averageTemp = firstReading;
   tempTotal = averageTemp * NUM_READINGS;
 
+  cycleMinTemp = targetTemp - TEMP_DIFF;
+
   lastPrintTimestamp = millis();
   lastDelayTimestamp = millis();
 
@@ -129,36 +134,75 @@ void loop(void) {
   switch ( currentAction ) {
     case REST:
       // are we within tolerance
-      if ( averageTemp < (targetTemp - heatStartTempDiff) ) {
+      if ( (averageTemp < (targetTemp - heatStartTempDiff)) || (averageTemp < targetTemp - TEMP_DIFF) ) {
         // we are too cold so start heating
         currentAction = HEAT;
+        changeAction = "START HEATING";
       }
       else if ( averageTemp > (targetTemp + coolStartTempDiff) ) {
         // we are too hot so start cooling
         currentAction = COOL;
+        changeAction = "START COOLING";
       }
       else {
         // we are within tolerance so keep resting
         currentAction = REST;
+        //changeAction = "";
       }
       break;
 
     case HEAT:
       // have we reached or exceeded our target yet, but we don't want to overshoot
       if ( averageTemp >= ( targetTemp - heatStopTempDiff )) {
-        // yes so rest
+        // yes so stop heating and rest
         currentAction = REST;
+        changeAction = "STOP HEATING";
+      }
+      else {
+        //changeAction = "";
+      }
+      // update the cycleMinTemp
+      if( averageTemp < cycleMinTemp ) {
+        cycleMinTemp = averageTemp;
+        //heatlag = 
       }
       break;
 
     case COOL:
       // have we reached or exceeded our target yet, but we don't wnat to overshoot
       if ( averageTemp <= ( targetTemp + coolStopTempDiff ) ) {
-        // yes so rest
+        // yes so stop cooling and rest
         currentAction = REST;
+        changeAction = "STOP COOLING";
+      }
+      else {
+        //changeAction = "";
       }
       break;
   }
+  
+/*
+  // MACHINE LEARING BIT!!
+  // update the differences in temp from target and tolerance based on current conditions
+  if( changeAction == "START HEATING" ) {
+    // we've just started heating again so we're near the bottom of the cycle
+    
+    // aim for heating to start so that the heat lag time takes us just to the tolerance temp
+    // so update the temp at which we start heating 
+    heatStartTemp = averageTemp; // reset the temp we start heating
+    heatLag = heatStartTemp - cycleMinTemp;
+
+    heatStartTempDiff = targetTemp - heatStartTemp - heatLag;
+    cycleMinTemp = averageTemp; // record the cycle min temp so we can use it to adjust the point we start heating in the future
+    
+  }
+  else if( changeAction == "STOP HEATING" ) {
+    // we've just stopped heating so update the heat lag and temperature to start heating at again
+    heatLag = heatStartTemp - cycleMinTemp;
+    //heatStartTemp = 
+    
+  }
+*/
 
   // do the action
   switch ( currentAction) {
@@ -190,6 +234,7 @@ void loop(void) {
   if ( ( millis() - lastPrintTimestamp ) > 9900 ) { // every 10 secs
     lastPrintTimestamp = millis();
     printJSON();
+//    debug();
   }
 
   // smart delay of 1000 msec
@@ -280,6 +325,13 @@ void printJSON() {
       Serial.print(",\"action\":\"ERROR\"");
   }
 
+  if( changeAction != "" ) {
+    Serial.print(",\"change\":\"");
+    Serial.print(changeAction);
+    Serial.print("\"");
+    changeAction = ""; // reset the changeAction once we're printed it
+  }
+
   Serial.print(",\"target\":");
   Serial.print(targetTemp);
   Serial.print(",\"ambient\":");
@@ -288,6 +340,51 @@ void printJSON() {
   Serial.print(millis());
 
   Serial.print("}");
+  Serial.println();
+}
+
+void debug() {
+  Serial.print("DEBUG: ");
+  Serial.print("target=");
+  Serial.print(targetTemp);
+
+  Serial.print(", tol=");
+  Serial.print(TEMP_DIFF);
+  
+  Serial.print(", avg=");
+  Serial.print(averageTemp);
+
+  Serial.print(", action=");
+  switch ( currentAction) {
+    case REST:
+      Serial.print("REST");
+      break;
+    case HEAT:
+      Serial.print("HEAT");
+      break;
+    case COOL:
+      Serial.print("COOL");
+      break;
+    default:
+      Serial.print("ERROR");
+  }
+
+  Serial.print(", cycleMin=");
+  Serial.print(cycleMinTemp);
+
+    Serial.print(", heatStartTemp=");
+    Serial.print(heatStartTemp);
+
+    Serial.print(", heatLag=");
+    Serial.print(heatLag);
+
+  Serial.print(", heatStartTempDiff=");
+  Serial.print(heatStartTempDiff);
+
+  Serial.print(", changeAction=");
+  Serial.print(changeAction);
+  changeAction = ""; // reset the changeAction once we're printed it
+  
   Serial.println();
 }
 
