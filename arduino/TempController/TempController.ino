@@ -154,6 +154,12 @@ void loop(void) {
         // we are within tolerance so keep resting
         currentAction = REST;
         //changeAction = "";
+
+        // update the cycleMaxTemp
+        if( averageTemp > cycleMaxTemp ) {
+          cycleMaxTemp = averageTemp;
+        }
+
       }
       break;
 
@@ -172,11 +178,12 @@ void loop(void) {
       }
       else {
         //changeAction = "";
-      }
-      // update the cycleMinTemp
-      if( averageTemp < cycleMinTemp ) {
-        cycleMinTemp = averageTemp;
-        //heatlag = 
+
+        // update the cycleMinTemp
+        if( averageTemp < cycleMinTemp ) {
+          cycleMinTemp = averageTemp;
+          //heatlag =
+        }
       }
       break;
 
@@ -319,8 +326,10 @@ void printJSON() {
 //  Serial.print(minTemp);
   Serial.print(",\"cyclemin\":");
   Serial.print(cycleMinTemp);
-  Serial.print(",\"max\":");
-  Serial.print(maxTemp);
+//  Serial.print(",\"max\":");
+//  Serial.print(maxTemp);
+  Serial.print(",\"cyclemax\":");
+  Serial.print(cycleMaxTemp);
 
   switch ( currentAction) {
     case REST:
