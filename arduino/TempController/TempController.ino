@@ -34,7 +34,7 @@ float coolStopTemp; // temp above target we will stop cooling
 float heatStartTemp; // temp below target we will start heating
 float heatStopTemp; // temp below target we will stop heating
 const float TEMP_DIFF = 0.3; // the tolerance we allow before taking action
-float heatLag = 0.0;
+float heatLag, heatOverrun = 0.0;
 
 float minTemp, cycleMinTemp = 1000.0; // min temperature set to a really high value initally
 float maxTemp, cycleMaxTemp = -1000.0; // max temperature set to a really low value initally
@@ -105,6 +105,7 @@ void setup(void) {
   tempTotal = averageTemp * NUM_READINGS;
 
   cycleMinTemp = targetTemp - TEMP_DIFF;
+  cycleMaxTemp = targetTemp + TEMP_DIFF;
 
   coolStartTemp = targetTemp + TEMP_DIFF;
   coolStopTemp = targetTemp;
@@ -144,6 +145,12 @@ void loop(void) {
         currentAction = HEAT;
         changeAction = "START HEATING";
         cycleMinTemp = averageTemp;
+
+        // we've started heating again so calculate the next point we should stop heating at to keep within tolerance
+        heatOverrun = cycleMaxTemp - heatStopTemp;
+        heatStopTemp = targetTemp + TEMP_DIFF - heatOverrun;
+
+
       }
       else if ( averageTemp > coolStartTemp ) {
         // we are too hot so start cooling
@@ -155,7 +162,7 @@ void loop(void) {
         currentAction = REST;
         //changeAction = "";
 
-        // update the cycleMaxTemp
+        // update the cycleMaxTemp, assuming we're in a low ambient environment
         if( averageTemp > cycleMaxTemp ) {
           cycleMaxTemp = averageTemp;
         }
@@ -357,6 +364,8 @@ void printJSON() {
 
   Serial.print(",\"heatstart\":");
   Serial.print(heatStartTemp);
+  Serial.print(",\"heatstop\":");
+  Serial.print(heatStopTemp);
 
   Serial.print(",\"target\":");
   Serial.print(targetTemp);
