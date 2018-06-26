@@ -149,14 +149,14 @@ void loop(void) {
         // we've started heating again so calculate the next point we should stop heating at to keep within tolerance
         heatOverrun = cycleMaxTemp - heatStopTemp;
         heatStopTemp = targetTemp + TEMP_DIFF - heatOverrun;
-
-
       }
-      else if ( averageTemp > coolStartTemp ) {
-        // we are too hot so start cooling
+
+      else if ( (averageTemp > coolStartTemp) && (ambientTemp > targetTemp) ) {
+        // we are too hot so start cooling but only if ambient is above target (natural heating)
         currentAction = COOL;
         changeAction = "START COOLING";
       }
+
       else {
         // we are within tolerance so keep resting
         currentAction = REST;
