@@ -1,6 +1,6 @@
 /*
- *  Fermenter Temp Controller
- */
+    Fermenter Temp Controller
+*/
 
 #include <LiquidCrystal.h>
 #include <OneWire.h>
@@ -74,8 +74,8 @@ int currentAction = REST; // the current thing we're doing (e.g. REST, HEAT or C
 String changeAction = ""; // used to record when our action changes
 
 /*
- * Setup runs once
- */
+   Setup runs once
+*/
 void setup(void) {
   Serial.begin(9600);
 
@@ -111,7 +111,7 @@ void setup(void) {
   coolStopTemp = targetTemp;
   heatStartTemp = targetTemp - TEMP_DIFF;
   heatStopTemp = targetTemp;
-  
+
 
   lastPrintTimestamp = millis();
   lastDelayTimestamp = millis();
@@ -120,8 +120,8 @@ void setup(void) {
 }
 
 /*
- * Main loop 
- */
+   Main loop
+*/
 void loop(void) {
 
   // read the lcd button state and adjust the temperature accordingly
@@ -163,7 +163,7 @@ void loop(void) {
         //changeAction = "";
 
         // update the cycleMaxTemp, assuming we're in a low ambient environment
-        if( averageTemp > cycleMaxTemp ) {
+        if ( averageTemp > cycleMaxTemp ) {
           cycleMaxTemp = averageTemp;
         }
 
@@ -181,13 +181,13 @@ void loop(void) {
         // we've stopped heating so calculate the point at which we should start heating again
         heatLag = heatStartTemp - cycleMinTemp;
         heatStartTemp = targetTemp - TEMP_DIFF + heatLag;
-        
+
       }
       else {
         //changeAction = "";
 
         // update the cycleMinTemp
-        if( averageTemp < cycleMinTemp ) {
+        if ( averageTemp < cycleMinTemp ) {
           cycleMinTemp = averageTemp;
           //heatlag =
         }
@@ -206,29 +206,29 @@ void loop(void) {
       }
       break;
   }
-  
-/*
-  // MACHINE LEARING BIT!!
-  // update the differences in temp from target and tolerance based on current conditions
-  if( changeAction == "START HEATING" ) {
-    // we've just started heating again so we're near the bottom of the cycle
-    
-    // aim for heating to start so that the heat lag time takes us just to the tolerance temp
-    // so update the temp at which we start heating 
-    heatStartTemp = averageTemp; // reset the temp we start heating
-    heatLag = heatStartTemp - cycleMinTemp;
 
-    heatStartTempDiff = targetTemp - heatStartTemp - heatLag;
-    cycleMinTemp = averageTemp; // record the cycle min temp so we can use it to adjust the point we start heating in the future
-    
-  }
-  else if( changeAction == "STOP HEATING" ) {
-    // we've just stopped heating so update the heat lag and temperature to start heating at again
-    heatLag = heatStartTemp - cycleMinTemp;
-    //heatStartTemp = 
-    
-  }
-*/
+  /*
+    // MACHINE LEARING BIT!!
+    // update the differences in temp from target and tolerance based on current conditions
+    if( changeAction == "START HEATING" ) {
+      // we've just started heating again so we're near the bottom of the cycle
+
+      // aim for heating to start so that the heat lag time takes us just to the tolerance temp
+      // so update the temp at which we start heating
+      heatStartTemp = averageTemp; // reset the temp we start heating
+      heatLag = heatStartTemp - cycleMinTemp;
+
+      heatStartTempDiff = targetTemp - heatStartTemp - heatLag;
+      cycleMinTemp = averageTemp; // record the cycle min temp so we can use it to adjust the point we start heating in the future
+
+    }
+    else if( changeAction == "STOP HEATING" ) {
+      // we've just stopped heating so update the heat lag and temperature to start heating at again
+      heatLag = heatStartTemp - cycleMinTemp;
+      //heatStartTemp =
+
+    }
+  */
 
   // do the action
   switch ( currentAction) {
@@ -253,14 +253,14 @@ void loop(void) {
 
   // update the display
   updateLCD();
-  
+
   // print JSON to serial port
   long newPrintTimestamp = millis();
-//  if ( ( millis() - lastPrintTimestamp ) > 59600 ) { // every minute
+  //  if ( ( millis() - lastPrintTimestamp ) > 59600 ) { // every minute
   if ( ( millis() - lastPrintTimestamp ) > 9900 ) { // every 10 secs
     lastPrintTimestamp = millis();
     printJSON();
-//    debug();
+    //    debug();
   }
 
   // smart delay of 1000 msec
@@ -272,8 +272,8 @@ void loop(void) {
 }
 
 /*
- * Read the lcd button state and adjust the temperature accordingly
- */
+   Read the lcd button state and adjust the temperature accordingly
+*/
 void checkLCDButtons(void) {
 
   lcd_key = read_LCD_buttons();   // read the buttons
@@ -299,8 +299,8 @@ void checkLCDButtons(void) {
 }
 
 /*
- * Read the LCD buttons
- */
+   Read the LCD buttons
+*/
 int read_LCD_buttons() {              // read the buttons
   adc_key_in = analogRead(0);       // read the value from the sensor
 
@@ -320,8 +320,8 @@ int read_LCD_buttons() {              // read the buttons
   return btnNONE;                // when all others fail, return this.
 }
 
-/* 
- * Print JSON format to Serial port
+/*
+   Print JSON format to Serial port
 */
 void printJSON() {
 
@@ -329,12 +329,12 @@ void printJSON() {
   Serial.print(currentTemp);
   Serial.print(",\"avg\":");
   Serial.print(averageTemp);
-//  Serial.print(",\"min\":");
-//  Serial.print(minTemp);
+  //  Serial.print(",\"min\":");
+  //  Serial.print(minTemp);
   Serial.print(",\"cyclemin\":");
   Serial.print(cycleMinTemp);
-//  Serial.print(",\"max\":");
-//  Serial.print(maxTemp);
+  //  Serial.print(",\"max\":");
+  //  Serial.print(maxTemp);
   Serial.print(",\"cyclemax\":");
   Serial.print(cycleMaxTemp);
 
@@ -355,7 +355,7 @@ void printJSON() {
       Serial.print(",\"action\":\"ERROR\"");
   }
 
-  if( changeAction != "" ) {
+  if ( changeAction != "" ) {
     Serial.print(",\"change\":\"");
     Serial.print(changeAction);
     Serial.print("\"");
@@ -385,7 +385,7 @@ void debug() {
 
   Serial.print(", tol=");
   Serial.print(TEMP_DIFF);
-  
+
   Serial.print(", avg=");
   Serial.print(averageTemp);
 
@@ -407,29 +407,29 @@ void debug() {
   Serial.print(", cycleMin=");
   Serial.print(cycleMinTemp);
 
-    Serial.print(", heatStartTemp=");
-    Serial.print(heatStartTemp);
+  Serial.print(", heatStartTemp=");
+  Serial.print(heatStartTemp);
 
-    Serial.print(", heatLag=");
-    Serial.print(heatLag);
+  Serial.print(", heatLag=");
+  Serial.print(heatLag);
 
   Serial.print(", changeAction=");
   Serial.print(changeAction);
   changeAction = ""; // reset the changeAction once we're printed it
-  
+
   Serial.println();
 }
 
 /*
- * Produce a random temperature reading between 15 and 25 degrees
- */
+   Produce a random temperature reading between 15 and 25 degrees
+*/
 double randomTemp() {
   return random( 15, 25 ) + random( 0, 100 ) / 100.0;
 }
 
 /*
- * Read the serial port using start and end markers: < >
- */
+   Read the serial port using start and end markers: < >
+*/
 void readSerialWithStartEndMarkers() {
   static boolean recvInProgress = false;
   static byte ndx = 0;
@@ -464,9 +464,9 @@ void readSerialWithStartEndMarkers() {
 }
 
 /*
- * Update the target tempe * |aim20.0 now19.9 |
-rature
- */
+   Update the target tempe * |aim20.0 now19.9 |
+  rature
+*/
 void updateTargetTemp() {
   if (newSerialDataReceived == true) {
     float newTarget = atof(receivedChars);
@@ -478,8 +478,8 @@ void updateTargetTemp() {
 }
 
 /*
- * Read the temperature sensors and calculate the averages, update the min and max
- */
+   Read the temperature sensors and calculate the averages, update the min and max
+*/
 void doTempReadings() {
   tempTotal -= tempReadings[tempIndex]; // subtract the last temp reading
   if (!SIMULATE) {
@@ -512,13 +512,13 @@ void doTempReadings() {
 }
 
 /*
- * Update the LCD display (16 characters x 2 lines)
- * |0123456789012345 
- * |----------------|
- * |N19.9 T20 A15.5 |
- * |Rest 18.8-22.2  |
- * |----------------|
- */
+   Update the LCD display (16 characters x 2 lines)
+   |0123456789012345
+   |----------------|
+   |N19.9 T20 A15.5 |
+   |Rest 18.8-22.2  |
+   |----------------|
+*/
 void updateLCD() {
 
   // print LINE 1
@@ -563,6 +563,6 @@ void updateLCD() {
   lcd.print( dtostrf(minTemp, 4, 1, buf) );
   lcd.print("-");
   lcd.print( dtostrf(maxTemp, 4, 1, buf) );
-  
+
 }
 
