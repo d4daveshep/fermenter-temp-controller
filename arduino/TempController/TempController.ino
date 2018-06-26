@@ -107,10 +107,23 @@ void setup(void) {
   cycleMinTemp = targetTemp - TEMP_DIFF;
   cycleMaxTemp = targetTemp + TEMP_DIFF;
 
-  coolStartTemp = targetTemp + TEMP_DIFF;
-  coolStopTemp = targetTemp;
-  heatStartTemp = targetTemp - TEMP_DIFF;
-  heatStopTemp = targetTemp;
+
+  if (ambientTemp < targetTemp ) {
+    // we have natural cooling so maximise the heating
+    heatStartTemp = targetTemp - TEMP_DIFF;
+    heatStopTemp = targetTemp + TEMP_DIFF;
+    // and minimise the cooling
+    coolStartTemp = targetTemp + TEMP_DIFF * 2;
+    coolStopTemp = targetTemp;
+  }
+  else {
+    // we have natural heating so maximise the cooling
+    coolStartTemp = targetTemp + TEMP_DIFF;
+    coolStopTemp = targetTemp - TEMP_DIFF;
+    // and minimise the heating
+    heatStartTemp = targetTemp - TEMP_DIFF * 2;
+    heatStopTemp = targetTemp;
+  }
 
 
   lastPrintTimestamp = millis();
@@ -163,7 +176,7 @@ void loop(void) {
         //changeAction = "";
 
         // update the cycleMaxTemp, assuming we're in a low ambient environment
-        if ( averageTemp > cycleMaxTemp ) {
+        if ( (ambientTemp < targetTemp) && (averageTemp > cycleMaxTemp) ) {
           cycleMaxTemp = averageTemp;
         }
 
