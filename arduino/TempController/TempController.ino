@@ -10,6 +10,10 @@
 const boolean SIMULATE = false;
 //const boolean SIMULATE = true;
 
+//double simAmbientTemp, simCurrentTemp = 0.0;  // store the simulation temps here
+//const int SIM_CURRENT = 1;
+//const int SIM_AMBIENT = 2;
+
 // initialise the OneWire sensors
 const int ONE_WIRE_BUS = 3;  // Data wire is plugged into pin 3 on the Arduino
 OneWire oneWire(ONE_WIRE_BUS);  // Setup a oneWire instance to communicate with any OneWire devices
@@ -35,6 +39,7 @@ float heatStartTemp; // temp below target we will start heating
 float heatStopTemp; // temp below target we will stop heating
 const float TEMP_DIFF = 0.3; // the tolerance we allow before taking action
 float heatLag, heatOverrun = 0.0;
+float coolLag, coolOverrun = 0.0;
 
 float minTemp, cycleMinTemp = 1000.0; // min temperature set to a really high value initally
 float maxTemp, cycleMaxTemp = -1000.0; // max temperature set to a really low value initally
@@ -44,6 +49,7 @@ const byte serialBufSize = 12; // size of serial char buffer
 char receivedChars[serialBufSize]; // array to hold characters received
 boolean newSerialDataReceived = false; // let us know when new serial data received
 
+boolean override = false;
 
 // initialize the LCD library with the numbers of the interface pins
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);  // select the pins used on the LCD panel
@@ -93,8 +99,10 @@ void setup(void) {
     firstReading = sensors.getTempCByIndex(0); // read the temp into index location
     ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
   } else {
-    firstReading = randomTemp(); // get a random temp
-    ambientTemp = randomTemp(); // get a random temp
+    //setupSimulation();
+    firstReading = simCurrentTemp(); // get the current sim temp
+    ambientTemp = simAmbientTemp(); // get the ambient sim temp
+    currentTemp = firstReading;
   }
 
   // initialise the temp readings to the first reading just taken
@@ -102,29 +110,13 @@ void setup(void) {
     tempReadings[thisReading] = firstReading;
   }
   averageTemp = firstReading;
+  
   tempTotal = averageTemp * NUM_READINGS;
 
   cycleMinTemp = targetTemp - TEMP_DIFF;
   cycleMaxTemp = targetTemp + TEMP_DIFF;
 
-
-  if (ambientTemp < targetTemp ) {
-    // we have natural cooling so maximise the heating
-    heatStartTemp = targetTemp - TEMP_DIFF;
-    heatStopTemp = targetTemp + TEMP_DIFF;
-    // and minimise the cooling
-    coolStartTemp = targetTemp + TEMP_DIFF * 2;
-    coolStopTemp = targetTemp;
-  }
-  else {
-    // we have natural heating so maximise the cooling
-    coolStartTemp = targetTemp + TEMP_DIFF;
-    coolStopTemp = targetTemp - TEMP_DIFF;
-    // and minimise the heating
-    heatStartTemp = targetTemp - TEMP_DIFF * 2;
-    heatStopTemp = targetTemp;
-  }
-
+  resetStartStopTemps();
 
   lastPrintTimestamp = millis();
   lastDelayTimestamp = millis();
@@ -149,77 +141,117 @@ void loop(void) {
   // do the temp readings and average calculation
   doTempReadings();
 
+  // --- Start OVERRIDE logic ---
   // what are we doing and do we need to change
-  switch ( currentAction ) {
-    case REST:
-      // are we within tolerance
-      if ( (averageTemp < heatStartTemp) || (averageTemp < targetTemp - TEMP_DIFF) ) {
-        // we are too cold so start heating
-        currentAction = HEAT;
-        changeAction = "START HEATING";
-        cycleMinTemp = averageTemp;
+  // first check if we are well out of target temp tolerance, in which case we should override the normal logic ignoring ambient temp
+  override = false;
+  
+  // too cold! start heating
+  if ( averageTemp < (targetTemp - (1.5*TEMP_DIFF)) ) { 
+    if ( currentAction != HEAT) {
+      currentAction = HEAT;
+      changeAction = "START HEATING";
+    }
+    override = true;
+  } 
 
-        // we've started heating again so calculate the next point we should stop heating at to keep within tolerance
-        heatOverrun = cycleMaxTemp - heatStopTemp;
-        heatStopTemp = targetTemp + TEMP_DIFF - heatOverrun;
-      }
-
-      else if ( (averageTemp > coolStartTemp) && (ambientTemp > targetTemp) ) {
-        // we are too hot so start cooling but only if ambient is above target (natural heating)
-        currentAction = COOL;
-        changeAction = "START COOLING";
-      }
-
-      else {
-        // we are within tolerance so keep resting
-        currentAction = REST;
-        //changeAction = "";
-
-        // update the cycleMaxTemp, assuming we're in a low ambient environment
-        if ( (ambientTemp < targetTemp) && (averageTemp > cycleMaxTemp) ) {
-          cycleMaxTemp = averageTemp;
-        }
-
-      }
-      break;
-
-    case HEAT:
-      // have we reached or exceeded our target yet, but we don't want to overshoot
-      if ( averageTemp >= heatStopTemp || averageTemp > targetTemp + TEMP_DIFF ) {
-        // yes so stop heating and rest
-        currentAction = REST;
-        changeAction = "STOP HEATING";
-        cycleMaxTemp = averageTemp;
-
-        // we've stopped heating so calculate the point at which we should start heating again
-        heatLag = heatStartTemp - cycleMinTemp;
-        heatStartTemp = targetTemp - TEMP_DIFF + heatLag;
-
-      }
-      else {
-        //changeAction = "";
-
-        // update the cycleMinTemp
-        if ( averageTemp < cycleMinTemp ) {
-          cycleMinTemp = averageTemp;
-          //heatlag =
-        }
-      }
-      break;
-
-    case COOL:
-      // have we reached or exceeded our target yet, but we don't wnat to overshoot
-      if ( averageTemp <= coolStopTemp ) {
-        // yes so stop cooling and rest
-        currentAction = REST;
-        changeAction = "STOP COOLING";
-      }
-      else {
-        //changeAction = "";
-      }
-      break;
+  // too hot! start cooling
+  else if ( averageTemp > (targetTemp + 1.5*TEMP_DIFF)) {
+    if (currentAction != COOL ) {
+      currentAction = COOL;
+      changeAction = "START COOLING";
+    }
+    override = true;
   }
 
+  // OK we don't need override but so check its turned off and reset the start/stop temps if we just turned if off
+  else {
+    if ( override ) {
+      resetStartStopTemps();
+    }
+    override = false;
+  }
+  // --- End OVERRIDE logic ---
+
+  if (!override) {
+    switch ( currentAction ) {
+      case REST:
+        // are we within tolerance?
+        if ( averageTemp < heatStartTemp) {
+          // we are too cold so start heating 
+          currentAction = HEAT;
+          changeAction = "START HEATING";
+          cycleMinTemp = averageTemp;
+  
+          // we've started heating again so calculate the next point we should stop heating at to keep within tolerance
+          //heatOverrun = cycleMaxTemp - heatStopTemp;
+          //heatStopTemp = targetTemp + TEMP_DIFF - heatOverrun;
+        }
+  
+        else if ( averageTemp > coolStartTemp) {
+          // we are too hot so start cooling
+          currentAction = COOL;
+          changeAction = "START COOLING";
+          cycleMaxTemp = averageTemp;
+
+          // we've started cooling again so calculate the next point we should stop cooling to keep within tolerance
+          //coolOverrun = cycle
+          //coolStopTemp = cycle
+        }
+  
+        else {
+          // we are within tolerance so keep resting
+          currentAction = REST;
+          //changeAction = "";
+  
+          // update the cycleMaxTemp or cycleMinTemp
+          if ( averageTemp > cycleMaxTemp ) {
+            cycleMaxTemp = averageTemp;
+          } else if ( averageTemp < cycleMinTemp ) {
+            cycleMinTemp = averageTemp;
+          }
+  
+        }
+        break;
+  
+      case HEAT:
+        // have we reached or exceeded our target yet, but we don't want to overshoot
+        if ( averageTemp >= heatStopTemp || averageTemp > targetTemp + TEMP_DIFF ) {
+          // yes so stop heating and rest
+          currentAction = REST;
+          changeAction = "STOP HEATING";
+          cycleMaxTemp = averageTemp;
+  
+          // we've stopped heating so calculate the point at which we should start heating again
+          //heatLag = heatStartTemp - cycleMinTemp;
+          //heatStartTemp = targetTemp - TEMP_DIFF + heatLag;
+  
+        }
+        else {
+          //changeAction = "";
+  
+          // update the cycleMinTemp
+          if ( averageTemp < cycleMinTemp ) {
+            cycleMinTemp = averageTemp;
+            //heatlag =
+          }
+        }
+        break;
+  
+      case COOL:
+        // have we reached or exceeded our target yet, but we don't wnat to overshoot
+        if ( averageTemp <= coolStopTemp ) {
+          // yes so stop cooling and rest
+          currentAction = REST;
+          changeAction = "STOP COOLING";
+        }
+        else {
+          //changeAction = "";
+        }
+        break;
+    } // end switch
+  } // end override
+  
   /*
     // MACHINE LEARING BIT!!
     // update the differences in temp from target and tolerance based on current conditions
@@ -344,12 +376,17 @@ void printJSON() {
   Serial.print(averageTemp);
   //  Serial.print(",\"min\":");
   //  Serial.print(minTemp);
-  Serial.print(",\"cyclemin\":");
-  Serial.print(cycleMinTemp);
+  //Serial.print(",\"cyclemin\":");
+  //Serial.print(cycleMinTemp);
   //  Serial.print(",\"max\":");
   //  Serial.print(maxTemp);
-  Serial.print(",\"cyclemax\":");
-  Serial.print(cycleMaxTemp);
+  //Serial.print(",\"cyclemax\":");
+  //Serial.print(cycleMaxTemp);
+
+  if (override) {
+    Serial.print(",\"override\":");
+    Serial.print("true");
+  }
 
   switch ( currentAction) {
     case REST:
@@ -379,6 +416,11 @@ void printJSON() {
   Serial.print(heatStartTemp);
   Serial.print(",\"heatstop\":");
   Serial.print(heatStopTemp);
+
+  Serial.print(",\"coolstart\":");
+  Serial.print(coolStartTemp);
+  Serial.print(",\"coolstop\":");
+  Serial.print(coolStopTemp);
 
   Serial.print(",\"target\":");
   Serial.print(targetTemp);
@@ -485,9 +527,39 @@ void updateTargetTemp() {
     float newTarget = atof(receivedChars);
     if ( newTarget != 0.0 ) {
       targetTemp = newTarget;
+      resetStartStopTemps();
     }
     newSerialDataReceived = false;
   }
+}
+
+
+void resetStartStopTemps() {
+  
+  if (ambientTemp < (targetTemp-TEMP_DIFF) ) {
+    // we have natural cooling so maximise the heating
+    heatStartTemp = targetTemp - TEMP_DIFF;
+    heatStopTemp = targetTemp + TEMP_DIFF;
+    // and minimise the cooling
+    coolStartTemp = 100; // i.e. let override take over
+    coolStopTemp = targetTemp + TEMP_DIFF;
+  }
+  else if (ambientTemp > (targetTemp+TEMP_DIFF)){
+    // we have natural heating so maximise the cooling
+    coolStartTemp = targetTemp + TEMP_DIFF;
+    coolStopTemp = targetTemp - TEMP_DIFF;
+    // and minimise the heating
+    heatStartTemp = 0; // i.e. let override take over
+    heatStopTemp = targetTemp - TEMP_DIFF;;
+  }
+  else {
+    // ambient temp is within our range so set all start/stop temps to +/- TEMP_DIFF
+    coolStartTemp = targetTemp + TEMP_DIFF;
+    coolStopTemp = targetTemp - TEMP_DIFF;
+    heatStartTemp = targetTemp - TEMP_DIFF;
+    heatStopTemp = targetTemp + TEMP_DIFF;
+  }
+
 }
 
 /*
@@ -500,8 +572,8 @@ void doTempReadings() {
     currentTemp = sensors.getTempCByIndex(0); // read the temp
     ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
   } else {
-    currentTemp = randomTemp(); // get a random temp
-    //ambientTemp = randomTemp(); // get a random ambient temp
+    ambientTemp = simAmbientTemp();
+    currentTemp = simCurrentTemp();
   }
   tempReadings[tempIndex] = currentTemp; // store it in the index location
 
@@ -578,4 +650,61 @@ void updateLCD() {
   lcd.print( dtostrf(maxTemp, 4, 1, buf) );
 
 }
+
+
+void setupSimulation() {
+  
+}
+
+double simCurrentTemp() {
+  
+  float startTempOffset = 0;  // use -1, 0, 1
+
+  if ( currentTemp == 0.0 ) {
+    currentTemp = targetTemp + startTempOffset;
+  }
+  double tempDiff = currentTemp - ambientTemp;
+
+  switch ( currentAction ) {
+
+    case REST:
+      // if we are resting then adjust sim temp based on ambient
+      //Serial.print("currentTemp = ");
+      //Serial.println(currentTemp);
+      
+      return currentTemp - (tempDiff / 5000.0);
+      break;
+
+    case HEAT:
+      // if we're heating then raise the temp by a fixed amount
+      return currentTemp + 0.002;
+      break;
+      
+    case COOL:
+      // if we're heating then raise the temp by a fixed amount
+      return currentTemp - 0.002;
+      break;
+      
+    default:
+      return currentTemp;
+      break;
+      
+  }
+  
+}
+
+double simAmbientTemp() {
+  float startAmbientTemp = 20.0;  // use 15.0, 20.0 or 25.0
+  float ambientTempDiff = -0.01;  // use -0.1, 0.0, 0.1
+  
+  if ( ambientTemp == 0.0 ) {
+    ambientTemp = startAmbientTemp;
+    return ambientTemp;
+  } else { 
+    ambientTemp = ambientTemp + ambientTempDiff;
+    return ambientTemp;
+  }
+ 
+}
+
 
