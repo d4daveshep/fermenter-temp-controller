@@ -1,4 +1,3 @@
 [temperature]
-TargetTemp = 21.0
-
+TargetTemp = 18.0
 
