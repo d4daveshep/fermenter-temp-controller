@@ -1,3 +1,2 @@
 [temperature]
 TargetTemp = 18.0
-
