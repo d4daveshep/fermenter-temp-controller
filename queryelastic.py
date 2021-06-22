@@ -1,17 +1,14 @@
 # learn how to query elasticsearch
 
 import elasticsearch
-from elasticsearch import Elasticsearch
 import requests
-
+from elasticsearch import Elasticsearch
 
 # use a local Elasticsearch instance
 ES_HOST = "192.168.1.55"
 
 
 def search():
-
-
     try:
         es = Elasticsearch(
             hosts=[{'host': ES_HOST, 'port': 9200}],
@@ -25,7 +22,7 @@ def search():
                                      'hits.hits._source.ambient'],
                         doc_type="temp-reading",
                         body={
-                            'from' : 0, 'size' : 1000,
+                            'from': 0, 'size': 1000,
                             'query': {
                                 "range": {
                                     "timestamp": {
@@ -58,8 +55,9 @@ def search():
             print(k, mydata[k])
 
     except elasticsearch.exceptions.ConnectionError as err:
-        #logging.critical("*** ConnectionError *** %s", err)
-        raise( err )
+        # logging.critical("*** ConnectionError *** %s", err)
+        raise (err)
+
 
 if __name__ == '__main__':
     search()

@@ -2,17 +2,16 @@
 
 import argparse
 import configparser
+import elasticsearch
 import glob
 import json
 import logging
 import os
+import serial
 import time
 from datetime import datetime
-from pathlib import Path
-
-import elasticsearch
-import serial
 from elasticsearch import Elasticsearch
+from pathlib import Path
 from pytz import timezone
 from serial import SerialException
 
@@ -27,7 +26,7 @@ dirname, filename = os.path.split(os.path.abspath(__file__))
 
 # set up the logger
 logging.basicConfig(
-    filename=dirname+"/tempcontroller.log",
+    filename=dirname + "/tempcontroller.log",
     level=logging.INFO,
     format="%(levelname)s: %(asctime)s: %(message)s")
 
@@ -85,7 +84,7 @@ new_target = config["temperature"]["TargetTemp"]
 logging.info("Target temperature being set to %s", str(new_target))
 
 # sleep for 30 secs to allow arduino to reboot after serial port open
-time.sleep(30)  
+time.sleep(30)
 
 new_target_str = '<' + str(new_target) + '>'
 
@@ -107,14 +106,14 @@ while True:
         logging.debug("timestamp is %s", stamp)
 
         data["timestamp"] = stamp
-    #    data['brewid'] = '12-AAA-02'
+        #    data['brewid'] = '12-AAA-02'
         data["brewid"] = '99-TEST-99'
 
         target = data["target"]
         logging.debug("Ardino target is %s and script target is %s", target, new_target)
 
         # check if we need to update the target temp
-        if( round(float(target),1) != round(float(new_target),1) ):
+        if (round(float(target), 1) != round(float(new_target), 1)):
             new_target_str = '<' + str(new_target) + '>'
             ser.write(new_target_str.encode())
             logging.info("Updated target temp to %s", str(new_target))
@@ -130,12 +129,13 @@ while True:
                 connection_class=elasticsearch.connection.RequestsHttpConnection)
 
             # index the doc to elastic
-            res = es.index(index="test-temp",doc_type="temp-reading",body=doc)
+            res = es.index(index="test-temp", doc_type="temp-reading", body=doc)
             logging.debug("Result is %s", json.dumps(res))
-            logging.info("Indexed record: time=%s, temp=%s, target=%s, action=%s", data["timestamp"], data["avg"], data["target"], data["action"])
+            logging.info("Indexed record: time=%s, temp=%s, target=%s, action=%s", data["timestamp"], data["avg"],
+                         data["target"], data["action"])
 
         except elasticsearch.exceptions.ConnectionError as err:
             logging.critical("*** ConnectionError *** %s", err)
-            raise( err )
+            raise (err)
     except json.decoder.JSONDecodeError as err:
-            logging.debug(err)
+        logging.debug(err)
