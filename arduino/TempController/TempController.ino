@@ -253,7 +253,7 @@ void loop(void) {
   } // end override
   
   /*
-    // MACHINE LEARING BIT!!
+    // MACHINE LEARNING BIT!!
     // update the differences in temp from target and tolerance based on current conditions
     if( changeAction == "START HEATING" ) {
       // we've just started heating again so we're near the bottom of the cycle

@@ -27,7 +27,7 @@ dirname, filename = os.path.split(os.path.abspath(__file__))
 # set up the logger
 logging.basicConfig(
     filename=dirname + "/tempcontroller.log",
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(levelname)s: %(asctime)s: %(message)s")
 
 logging.info("")
