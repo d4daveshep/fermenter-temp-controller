@@ -2,7 +2,7 @@
 
 import argparse
 import configparser
-import elasticsearch
+# import elasticsearch
 import glob
 import json
 import logging
@@ -10,13 +10,13 @@ import os
 import serial
 import time
 from datetime import datetime
-from elasticsearch import Elasticsearch
+# from elasticsearch import Elasticsearch
 from pathlib import Path
 from pytz import timezone
 from serial import SerialException
 
 # use a local Elasticsearch instance
-ES_HOST = "192.168.1.55"
+# ES_HOST = "192.168.1.55"
 
 # get NZ timezone so we can localise the timestamps and deal with NZST/NZDT
 nztz = timezone("NZ")
@@ -113,7 +113,7 @@ while True:
         logging.debug("Ardino target is %s and script target is %s", target, new_target)
 
         # check if we need to update the target temp
-        if (round(float(target), 1) != round(float(new_target), 1)):
+        if round(float(target), 1) != round(float(new_target), 1):
             new_target_str = '<' + str(new_target) + '>'
             ser.write(new_target_str.encode())
             logging.info("Updated target temp to %s", str(new_target))
@@ -121,21 +121,22 @@ while True:
         doc = data
         logging.debug("Indexing %s", json.dumps(doc))
 
-        try:
-            es = Elasticsearch(
-                hosts=[{'host': ES_HOST, 'port': 9200}],
-                #       use_ssl=True,
-                #       verify_certs=True,
-                connection_class=elasticsearch.connection.RequestsHttpConnection)
+        # try:
+        #     es = Elasticsearch(
+        #         hosts=[{'host': ES_HOST, 'port': 9200}],
+        #         #       use_ssl=True,
+        #         #       verify_certs=True,
+        #         connection_class=elasticsearch.connection.RequestsHttpConnection)
+        #
+        #     # index the doc to elastic
+        #     res = es.index(index="test-temp", doc_type="temp-reading", body=doc)
+        #     logging.debug("Result is %s", json.dumps(res))
+        #     logging.info("Indexed record: time=%s, temp=%s, target=%s, action=%s", data["timestamp"], data["avg"],
+        #                  data["target"], data["action"])
+        #
+        # except elasticsearch.exceptions.ConnectionError as err:
+        #     logging.critical("*** ConnectionError *** %s", err)
+        #     raise (err)
 
-            # index the doc to elastic
-            res = es.index(index="test-temp", doc_type="temp-reading", body=doc)
-            logging.debug("Result is %s", json.dumps(res))
-            logging.info("Indexed record: time=%s, temp=%s, target=%s, action=%s", data["timestamp"], data["avg"],
-                         data["target"], data["action"])
-
-        except elasticsearch.exceptions.ConnectionError as err:
-            logging.critical("*** ConnectionError *** %s", err)
-            raise (err)
     except json.decoder.JSONDecodeError as err:
         logging.debug(err)

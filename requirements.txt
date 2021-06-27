@@ -1,8 +1,4 @@
 pyserial
 elasticsearch
 pytz
-<<<<<<< HEAD
-
-=======
 requests
->>>>>>> 8d9fd979665e47435bd65244c789b66963cea900

@@ -1,5 +1,5 @@
 #!/bin/bash
-DIR=/home/pi/development/fermenter-temp-controller
+DIR=/home/pi/dev/fermenter-temp-controller
 SCRIPT=tempcontroller.py
 CONFIG_FILE=config.txt
 
