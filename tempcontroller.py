@@ -7,11 +7,12 @@ import glob
 import json
 import logging
 import os
-import serial
-import time
 from datetime import datetime
 # from elasticsearch import Elasticsearch
 from pathlib import Path
+
+import serial
+import time
 from pytz import timezone
 from serial import SerialException
 
@@ -94,24 +95,36 @@ try:
 except SerialException:
     logging.warning("Couldn't write target temp to serial port")
 
+# build dictionary for influxdb
+influxdb_data = {}
+influxdb_data["measurement"] = "temperature"
+influxdb_data["tags"] = {"brew_id": "99-TEST-v99"}
+
 # infinite loop to read data from serial port
 while True:
     line = ser.readline()  # read serial line as bytes
 
     try:
         # convert serial line to string and load to JSON sequence
-        data = json.loads(line.decode("utf-8"))
+        fermemter_data = json.loads(line.decode("utf-8"))
+        logging.debug("Fermemter data is: %s", print(fermemter_data))
 
         # get formatted localised timestamp
         stamp = nztz.localize(datetime.now()).isoformat()
         logging.debug("timestamp is %s", stamp)
 
-        data["timestamp"] = stamp
-        #    data['brewid'] = '12-AAA-02'
-        data["brewid"] = '99-TEST-99'
 
-        target = data["target"]
-        logging.debug("Ardino target is %s and script target is %s", target, new_target)
+        influxdb_data["time"] = stamp
+        influxdb_data["fields"] = {"ambient_temp": fermemter_data["ambient"],
+                                   "fermemter_temp": fermemter_data["avg"],
+                                   "target_temp": fermemter_data["target"]}
+
+        fermemter_data["timestamp"] = stamp
+        #    data['brewid'] = '12-AAA-02'
+        # fermemter_data["brewid"] = '99-TEST-99'
+
+        target = fermemter_data["target"]
+        # logging.debug("Ardino target is %s and script target is %s", target, new_target)
 
         # check if we need to update the target temp
         if round(float(target), 1) != round(float(new_target), 1):
@@ -119,8 +132,8 @@ while True:
             ser.write(new_target_str.encode())
             logging.info("Updated target temp to %s", str(new_target))
 
-        doc = data
-        logging.debug("Indexing %s", json.dumps(doc))
+        # doc = fermemter_data
+        logging.debug("InfluxDB json: %s", json.dumps(influxdb_data))
 
         # try:
         #     es = Elasticsearch(
