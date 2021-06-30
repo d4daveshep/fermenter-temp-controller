@@ -8,7 +8,10 @@ def main(host="localhost", port=8086):
     print("database client created")
 
     dbname = "test_temp"
-    if dbname in client.get_list_database():
+    db_list = client.get_list_database()
+    print("database list is: "+ str(db_list))
+
+    if dbname in db_list:
         client.switch_database(dbname)
         print("using database " + dbname)
     else:
