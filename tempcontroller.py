@@ -114,11 +114,11 @@ while True:
         stamp = nztz.localize(datetime.now()).isoformat()
         logging.debug("timestamp is %s", stamp)
 
-
         influxdb_data["time"] = stamp
         influxdb_data["fields"] = {"ambient_temp": fermemter_data["ambient"],
                                    "fermemter_temp": fermemter_data["avg"],
-                                   "target_temp": fermemter_data["target"]}
+                                   "target_temp": fermemter_data["target"],
+                                   "controller_action": str(fermemter_data["action"]).upper()}
 
         fermemter_data["timestamp"] = stamp
         #    data['brewid'] = '12-AAA-02'
