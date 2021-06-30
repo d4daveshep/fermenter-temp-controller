@@ -85,7 +85,9 @@ new_target = config["temperature"]["TargetTemp"]
 logging.info("Target temperature being set to %s", str(new_target))
 
 # sleep for 30 secs to allow arduino to reboot after serial port open
+logging.debug("Pausing for 30 sec")
 time.sleep(30)
+
 
 new_target_str = '<' + str(new_target) + '>'
 
@@ -107,8 +109,8 @@ while True:
 
     try:
         # convert serial line to string and load to JSON sequence
-        fermemter_data = json.loads(line.decode("utf-8"))
-        logging.debug("Fermemter data is: %s", fermemter_data)
+        fermenter_data = json.loads(line.decode("utf-8"))
+        logging.debug("Fermemter data is: %s", fermenter_data)
 
         # get formatted localised timestamp
         stamp = nztz.localize(datetime.now()).isoformat()
@@ -116,18 +118,18 @@ while True:
 
         # populate the influxdb_data dict with relevant data from fermenter
         influxdb_data["time"] = stamp
-        influxdb_data["fields"] = {"ambient_temp": fermemter_data["ambient"],
-                                   "fermemter_temp": fermemter_data["avg"],
-                                   "target_temp": fermemter_data["target"],
-                                   "controller_action": str(fermemter_data["action"]).upper()}
-        if "change" in fermemter_data.key():
-            influxdb_data["fields"]["change_action"] = str(fermemter_data["change"].upper())
+        influxdb_data["fields"] = {"ambient_temp": fermenter_data["ambient"],
+                                   "fermemter_temp": fermenter_data["avg"],
+                                   "target_temp": fermenter_data["target"],
+                                   "controller_action": str(fermenter_data["action"]).upper()}
+        if "change" in fermenter_data.key():
+            influxdb_data["fields"]["change_action"] = str(fermenter_data["change"]).upper()
 
         # fermemter_data["timestamp"] = stamp
         #    data['brewid'] = '12-AAA-02'
         # fermemter_data["brewid"] = '99-TEST-99'
 
-        target = fermemter_data["target"]
+        target = fermenter_data["target"]
         # logging.debug("Ardino target is %s and script target is %s", target, new_target)
 
         # check if we need to update the target temp
