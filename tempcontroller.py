@@ -94,6 +94,7 @@ try:
 except SerialException:
     logging.warning("Couldn't write target temp to serial port")
 
+# infinite loop to read data from serial port
 while True:
     line = ser.readline()  # read serial line as bytes
 
@@ -102,7 +103,7 @@ while True:
         data = json.loads(line.decode("utf-8"))
 
         # get formatted localised timestamp
-        stamp = nztz.localize(datetime.now()).strftime("%Y-%m-%dT%H:%M:%S%z")
+        stamp = nztz.localize(datetime.now()).isoformat()
         logging.debug("timestamp is %s", stamp)
 
         data["timestamp"] = stamp
