@@ -114,13 +114,16 @@ while True:
         stamp = nztz.localize(datetime.now()).isoformat()
         logging.debug("timestamp is %s", stamp)
 
+        # populate the influxdb_data dict with relevant data from fermenter
         influxdb_data["time"] = stamp
         influxdb_data["fields"] = {"ambient_temp": fermemter_data["ambient"],
                                    "fermemter_temp": fermemter_data["avg"],
                                    "target_temp": fermemter_data["target"],
                                    "controller_action": str(fermemter_data["action"]).upper()}
+        if "change" in fermemter_data.key():
+            influxdb_data["fields"]["change_action"] = str(fermemter_data["change"].upper())
 
-        fermemter_data["timestamp"] = stamp
+        # fermemter_data["timestamp"] = stamp
         #    data['brewid'] = '12-AAA-02'
         # fermemter_data["brewid"] = '99-TEST-99'
 
