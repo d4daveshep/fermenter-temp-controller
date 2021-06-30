@@ -107,7 +107,7 @@ while True:
     try:
         # convert serial line to string and load to JSON sequence
         fermemter_data = json.loads(line.decode("utf-8"))
-        logging.debug("Fermemter data is: %s", print(fermemter_data))
+        logging.debug("Fermemter data is: %s", fermemter_data)
 
         # get formatted localised timestamp
         stamp = nztz.localize(datetime.now()).isoformat()
