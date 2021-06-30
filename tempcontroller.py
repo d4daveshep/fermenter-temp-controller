@@ -122,7 +122,7 @@ while True:
                                    "fermemter_temp": fermenter_data["avg"],
                                    "target_temp": fermenter_data["target"],
                                    "controller_action": str(fermenter_data["action"]).upper()}
-        if "change" in fermenter_data.key():
+        if "change" in fermenter_data.keys():
             influxdb_data["fields"]["change_action"] = str(fermenter_data["change"]).upper()
 
         # fermemter_data["timestamp"] = stamp
