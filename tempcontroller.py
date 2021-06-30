@@ -102,6 +102,7 @@ influxdb_data["tags"] = {"brew_id": "99-TEST-v99"}
 
 # infinite loop to read data from serial port
 while True:
+    logging.debug("--------------------")
     line = ser.readline()  # read serial line as bytes
 
     try:
