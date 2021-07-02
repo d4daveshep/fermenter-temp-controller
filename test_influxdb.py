@@ -18,6 +18,20 @@ def main(host="localhost", port=8086):
         client.create_database(dbname)
         print("created database " + dbname)
 
+    json_body = [
+        {
+            "measurement": "temperature",
+            "tags": {
+                "brew_id": "99-TEST-v99"
+            },
+            "time": "2021-07-02T17:44:40.471836+12:00",
+            "fields": {
+                "ambient_temp": 12.31, "fermemter_temp": 20.12, "target_temp": 20.0, "controller_action": "REST"
+            }
+        }
+    ]
+    client.write(json_body)
+
     client.close()
     print("database client closed")
 
