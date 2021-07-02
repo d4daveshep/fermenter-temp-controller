@@ -30,7 +30,7 @@ def main(host="localhost", port=8086):
             }
         }
     ]
-    client.write(json_body)
+    client.write_points(json_body)
 
     client.close()
     print("database client closed")
