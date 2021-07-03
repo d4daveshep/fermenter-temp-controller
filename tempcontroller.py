@@ -113,9 +113,9 @@ def main(config_file):
         except InfluxDBClientError as err:
             logging.debug(err)
 
-        # close the database if the while loop ends
-        influxdb_client.close()
-        logging.debug("Database closed")
+    # close the database if the while loop ends
+    influxdb_client.close()
+    logging.debug("Database closed")
 
 
 
