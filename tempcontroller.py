@@ -132,11 +132,11 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Fermentation Temp Controller")
 
     # define the argument to set the config file
-    parser.add_argument("config_file", nargs="+", help="specify the full location of the config file")
+    parser.add_argument("config_file", nargs="1", help="specify the full location of the config file")
 
     # parse the arguments and check the file exists
     args = parser.parse_args()
-    # logging.debug("parsed args")
+    logging.debug("parsed args: ", args)
 
     if args.config_file:
         config_file = args.config_file["config_file"]
