@@ -2,19 +2,36 @@
 
 import argparse
 import configparser
-# import elasticsearch
 import glob
 import json
 import logging
 import os
 from datetime import datetime
-# from elasticsearch import Elasticsearch
 from pathlib import Path
 
 import serial
 import time
+from influxdb import InfluxDBClient
 from pytz import timezone
 from serial import SerialException
+
+
+def open_influxdb(dbname):
+    client = InfluxDBClient("localhost", 8086)
+    logging.debug("Database client opened")
+
+    db_list = client.get_list_database()
+
+    check_name = {"name": dbname}
+    if check_name in db_list:
+        client.switch_database(dbname)
+        logging.info("Using database " + dbname)
+    else:
+        client.create_database(dbname)
+        logging.info("Created database " + dbname)
+        client.create_retention_policy("my_policy", "4w", "1", dbname, default=True)
+
+    return client
 
 
 def main(config_file):
@@ -24,14 +41,15 @@ def main(config_file):
     # open the serial port
     serial_port = get_serial_port()
 
-    # open the influxdb database
-
     # read the  config file
     config = configparser.ConfigParser()
     config.read(config_file)
 
     # get the brew ID
-    brew_id = config["fermenter"]["brewID"]
+    if config["fermemter"]["brewID"]:
+        brew_id = config["fermenter"]["brewID"]
+    else:
+        brew_id = "no_brew_id"
     logging.info("Brew ID is: " + brew_id)
 
     # get the new target temp
@@ -44,6 +62,9 @@ def main(config_file):
         serial_port.write(new_target_str.encode())
     except SerialException:
         logging.warning("Couldn't write target temp to serial port")
+
+    # open the influxdb database
+    influxdb_client = open_influxdb(brew_id)
 
     # build dictionary for influxdb
     influxdb_data = {"measurement": "temperature", "tags": {"brew_id": brew_id}}
@@ -131,7 +152,7 @@ def get_serial_port():
         raise SystemExit("*** ERROR *** Couldn't open serial port")
 
     # sleep for 30 secs to allow arduino to reboot after serial port open
-    logging.debug("Pausing for 30 sec")
+    logging.debug("Sleeping for 30 sec to allow arduino to reboot after serial port was opened")
     time.sleep(30)
 
     return port
