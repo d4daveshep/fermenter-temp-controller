@@ -18,24 +18,11 @@ from serial import SerialException
 
 
 def main(config_file):
-    print("in main")
     # get NZ timezone so we can localise the timestamps and deal with NZST/NZDT
     nztz = timezone("NZ")
 
-
     # find the serial port
-    ttylist = glob.glob("/dev/ttyACM*")
-    if len(ttylist) == 0:
-        msg = "No Arduino devices found at /dev/ttyACM*"
-        logging.critical(msg)
-        raise SystemExit("*** ERROR *** " + msg)
-
-    if len(ttylist) > 1:
-        msg = "WARNING: Multiple Arduino devices found at /dev/ttyACM*, using first device"
-        logging.warning(msg)
-
-    tty = ttylist[0]
-    logging.info("Using Arduino device at %s", tty)
+    tty = get_serial_port()
 
     # open the serial port
     try:
@@ -127,6 +114,24 @@ def main(config_file):
             logging.debug(err)
 
 
+def get_serial_port():
+    # find the serial port
+    ttylist = glob.glob("/dev/ttyACM*")
+    if len(ttylist) == 0:
+        msg = "No Arduino devices found at /dev/ttyACM*"
+        logging.critical(msg)
+        raise SystemExit("*** ERROR *** " + msg)
+
+    if len(ttylist) > 1:
+        msg = "WARNING: Multiple Arduino devices found at /dev/ttyACM*, using first device"
+        logging.warning(msg)
+
+    tty = ttylist[0]
+    logging.info("Using Arduino device at %s", tty)
+
+    return tty
+
+
 def parse_args():
     # set up the command line parser
     parser = argparse.ArgumentParser(description="Fermentation Temp Controller")
@@ -136,7 +141,6 @@ def parse_args():
 
     # parse the arguments and check the file exists
     args = parser.parse_args()
-    logging.debug("parsed args: ", args)
 
     if args.config_file:
         config_file = args.config_file
@@ -150,11 +154,8 @@ def parse_args():
 
 
 if __name__ == '__main__':
-
-    # get the directory for the log file
-    dirname, filename = os.path.split(os.path.abspath(__file__))
-
     # set up the logger
+    dirname, filename = os.path.split(os.path.abspath(__file__))  # get the directory for the log file
     logging.basicConfig(
         filename=dirname + "/tempcontroller.log",
         level=logging.DEBUG,
