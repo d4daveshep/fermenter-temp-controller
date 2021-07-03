@@ -136,14 +136,14 @@ def parse_args():
 
     # parse the arguments and check the file exists
     args = parser.parse_args()
-    logging.debug("parsed args")
+    # logging.debug("parsed args")
 
     if args.config_file:
-        # config_file = args.config_file
-        logging.info("Using config file '%s'", args.config_file)
+        config_file = args.config_file["config_file"]
+        logging.info("Using config file '%s'", config_file)
 
-        if not Path(args.config_file).exists():
-            logging.critical("Config file '%s' not found", args.config_file)
+        if not Path(config_file).exists():
+            logging.critical("Config file '%s' not found", config_file)
             raise SystemExit("*** ERROR*** config file not found")
 
         return args
