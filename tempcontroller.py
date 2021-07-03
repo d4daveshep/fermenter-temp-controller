@@ -7,11 +7,13 @@ import json
 import logging
 import os
 from datetime import datetime
+from json import JSONDecodeError
 from pathlib import Path
 
 import serial
 import time
 from influxdb import InfluxDBClient
+from influxdb.exceptions import InfluxDBClientError
 from pytz import timezone
 from serial import SerialException
 
@@ -106,11 +108,14 @@ def main(config_file):
             # write data to database as json
             influxdb_client.write_points(json.dumps(influxdb_data), database=brew_id)
 
-        except json.decoder.JSONDecodeError as err:
+        except JSONDecodeError as err:
             logging.debug(err)
-        finally:
-            influxdb_client.close()
-            logging.debug("Database closed")
+        except InfluxDBClientError as err:
+            logging.debug(err)
+
+        # close the database if the while loop ends
+        influxdb_client.close()
+        logging.debug("Database closed")
 
 
 def get_serial_port():
