@@ -21,7 +21,7 @@ def main(host="localhost", port=8086):
         client.create_database(dbname)
         print("created database " + dbname)
         client.create_retention_policy("4 weeks retention", "4w", 1, default=True)
-        print.("set 4 week retention policy")
+        print("set 4 week retention policy")
 
     json_body = [
         {
