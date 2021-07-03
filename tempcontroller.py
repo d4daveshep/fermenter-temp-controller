@@ -22,18 +22,6 @@ def main(config_file):
     # get NZ timezone so we can localise the timestamps and deal with NZST/NZDT
     nztz = timezone("NZ")
 
-    # get the directory for the log file
-    dirname, filename = os.path.split(os.path.abspath(__file__))
-
-    # set up the logger
-    logging.basicConfig(
-        filename=dirname + "/tempcontroller.log",
-        level=logging.DEBUG,
-        format="%(levelname)s: %(asctime)s: %(message)s")
-
-    logging.info("")
-    logging.info("===== Starting %s =====", __file__)
-    logging.info("")
 
     # find the serial port
     ttylist = glob.glob("/dev/ttyACM*")
@@ -148,6 +136,7 @@ def parse_args():
 
     # parse the arguments and check the file exists
     args = parser.parse_args()
+    logging.debug("parsed args")
 
     if args.config_file:
         # config_file = args.config_file
@@ -161,5 +150,19 @@ def parse_args():
 
 
 if __name__ == '__main__':
+
+    # get the directory for the log file
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+
+    # set up the logger
+    logging.basicConfig(
+        filename=dirname + "/tempcontroller.log",
+        level=logging.DEBUG,
+        format="%(levelname)s: %(asctime)s: %(message)s")
+
+    logging.info("")
+    logging.info("===== Starting %s =====", __file__)
+    logging.info("")
+
     args = parse_args()
     main(config_file=args.config_file)
