@@ -118,6 +118,7 @@ def main(config_file):
         logging.debug("Database closed")
 
 
+
 def get_serial_port():
     # find the serial port
     ttylist = glob.glob("/dev/ttyACM*")
