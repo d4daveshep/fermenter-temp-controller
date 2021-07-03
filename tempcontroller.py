@@ -92,41 +92,25 @@ def main(config_file):
             if "change" in fermenter_data.keys():
                 influxdb_data["fields"]["change_action"] = str(fermenter_data["change"]).upper()
 
-            # fermemter_data["timestamp"] = stamp
-            #    data['brewid'] = '12-AAA-02'
-            # fermemter_data["brewid"] = '99-TEST-99'
-
             target = fermenter_data["target"]
-            # logging.debug("Ardino target is %s and script target is %s", target, new_target)
 
             # check if we need to update the target temp
             if round(float(target), 1) != round(float(new_target), 1):
                 new_target_str = '<' + str(new_target) + '>'
                 serial_port.write(new_target_str.encode())
+                influxdb_data["fields"]["target_temp"] = new_target
                 logging.info("Updated target temp to %s", str(new_target))
 
-            # doc = fermemter_data
-            logging.debug("InfluxDB json: %s", json.dumps(influxdb_data))
+            logging.debug("Writing InfluxDB json: %s", json.dumps(influxdb_data))
 
-            # try:
-            #     es = Elasticsearch(
-            #         hosts=[{'host': ES_HOST, 'port': 9200}],
-            #         #       use_ssl=True,
-            #         #       verify_certs=True,
-            #         connection_class=elasticsearch.connection.RequestsHttpConnection)
-            #
-            #     # index the doc to elastic
-            #     res = es.index(index="test-temp", doc_type="temp-reading", body=doc)
-            #     logging.debug("Result is %s", json.dumps(res))
-            #     logging.info("Indexed record: time=%s, temp=%s, target=%s, action=%s", data["timestamp"], data["avg"],
-            #                  data["target"], data["action"])
-            #
-            # except elasticsearch.exceptions.ConnectionError as err:
-            #     logging.critical("*** ConnectionError *** %s", err)
-            #     raise (err)
+            # write data to database as json
+            influxdb_client.write_points(json.dumps(influxdb_data), database=brew_id)
 
         except json.decoder.JSONDecodeError as err:
             logging.debug(err)
+        finally:
+            influxdb_client.close()
+            logging.debug("Database closed")
 
 
 def get_serial_port():
