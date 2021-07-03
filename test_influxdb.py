@@ -35,7 +35,7 @@ def main(host="localhost", port=8086):
             }
         }
     ]
-    client.write_points(json_body)
+    client.write_points(json_body, database=dbname)
 
     client.close()
     print("database client closed")
