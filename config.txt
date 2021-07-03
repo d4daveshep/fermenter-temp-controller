@@ -1,2 +1,3 @@
-[temperature]
-TargetTemp = 18.0
+[fermenter]
+BrewID = "99-TEST-v99"
+TargetTemp = 20.0

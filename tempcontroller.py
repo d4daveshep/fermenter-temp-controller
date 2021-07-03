@@ -21,31 +21,27 @@ def main(config_file):
     # get NZ timezone so we can localise the timestamps and deal with NZST/NZDT
     nztz = timezone("NZ")
 
-    # find the serial port
-    tty = get_serial_port()
-
     # open the serial port
-    try:
-        ser = serial.Serial(tty, 9600)
-    except SerialException:
-        logging.error("Couldn't open serial port at %s", tty)
-        raise SystemExit("*** ERROR *** Couldn't open serial port")
+    serial_port = get_serial_port()
 
-    # read the target temp from config file
+    # open the influxdb database
+
+    # read the  config file
     config = configparser.ConfigParser()
     config.read(config_file)
-    new_target = config["temperature"]["TargetTemp"]
+
+    # get the brew ID
+    brew_ID = config["fermenter"]["brewID"]
+    logging.info("Brew ID is: " + brew_ID)
+
+    # get the new target temp
+    new_target = config["fermenter"]["TargetTemp"]
     logging.info("Target temperature being set to %s", str(new_target))
-
-    # sleep for 30 secs to allow arduino to reboot after serial port open
-    logging.debug("Pausing for 30 sec")
-    time.sleep(30)
-
     new_target_str = '<' + str(new_target) + '>'
 
     # write target temp to serial port
     try:
-        ser.write(new_target_str.encode())
+        serial_port.write(new_target_str.encode())
     except SerialException:
         logging.warning("Couldn't write target temp to serial port")
 
@@ -57,7 +53,7 @@ def main(config_file):
     # infinite loop to read data from serial port
     while True:
         logging.debug("--------------------")
-        line = ser.readline()  # read serial line as bytes
+        line = serial_port.readline()  # read serial line as bytes
 
         try:
             # convert serial line to string and load to JSON sequence
@@ -87,7 +83,7 @@ def main(config_file):
             # check if we need to update the target temp
             if round(float(target), 1) != round(float(new_target), 1):
                 new_target_str = '<' + str(new_target) + '>'
-                ser.write(new_target_str.encode())
+                serial_port.write(new_target_str.encode())
                 logging.info("Updated target temp to %s", str(new_target))
 
             # doc = fermemter_data
@@ -129,7 +125,18 @@ def get_serial_port():
     tty = ttylist[0]
     logging.info("Using Arduino device at %s", tty)
 
-    return tty
+    # open the serial port
+    try:
+        port = serial.Serial(tty, 9600)
+    except SerialException:
+        logging.error("Couldn't open serial port at %s", tty)
+        raise SystemExit("*** ERROR *** Couldn't open serial port")
+
+    # sleep for 30 secs to allow arduino to reboot after serial port open
+    logging.debug("Pausing for 30 sec")
+    time.sleep(30)
+
+    return port
 
 
 def parse_args():
