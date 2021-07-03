@@ -106,7 +106,7 @@ def main(config_file):
             json_body = json.dumps(influxdb_data)
             logging.debug("Writing InfluxDB json: %s", json_body)
 
-            list = [json_body]
+            list = [influxdb_data]
 
             # write data to database as json
             influxdb_client.write_points(list, database=brew_id)
