@@ -106,7 +106,7 @@ def main(config_file):
             logging.debug("Writing InfluxDB json: %s", json.dumps(influxdb_data))
 
             # write data to database as json
-            influxdb_client.write_points(json.dumps(influxdb_data), database=brew_id)
+            influxdb_client.write_points("[" + json.dumps(influxdb_data) + "]", database=brew_id)
 
         except JSONDecodeError as err:
             logging.debug(err)
@@ -116,7 +116,6 @@ def main(config_file):
     # close the database if the while loop ends
     influxdb_client.close()
     logging.debug("Database closed")
-
 
 
 def get_serial_port():
