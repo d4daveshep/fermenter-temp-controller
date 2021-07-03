@@ -94,13 +94,13 @@ def main(config_file):
             if "change" in fermenter_data.keys():
                 influxdb_data["fields"]["change_action"] = str(fermenter_data["change"]).upper()
 
-            # add boolean flags for graphing to work
-            if "heat" in fermenter_data.keys():
-                influxdb_data["fields"]["heating"] = True
-            if "rest" in fermenter_data.keys():
-                influxdb_data["fields"]["cooling"] = True
-            if "rest" in fermenter_data.keys():
-                influxdb_data["fields"]["resting"] = True
+            # # add boolean flags for graphing to work
+            # if "heat" in fermenter_data.keys():
+            #     influxdb_data["fields"]["heating"] = True
+            # if "rest" in fermenter_data.keys():
+            #     influxdb_data["fields"]["cooling"] = True
+            # if "rest" in fermenter_data.keys():
+            #     influxdb_data["fields"]["resting"] = True
 
             target = fermenter_data["target"]
 
