@@ -103,10 +103,13 @@ def main(config_file):
                 influxdb_data["fields"]["target_temp"] = new_target
                 logging.info("Updated target temp to %s", str(new_target))
 
-            logging.debug("Writing InfluxDB json: %s", json.dumps(influxdb_data))
+            json_body = json.dumps(influxdb_data)
+            logging.debug("Writing InfluxDB json: %s", json_body)
+
+            list = [json_body]
 
             # write data to database as json
-            influxdb_client.write_points("[" + json.dumps(influxdb_data) + "]", database=brew_id)
+            influxdb_client.write_points(list, database=brew_id)
 
         except JSONDecodeError as err:
             logging.debug(err)
