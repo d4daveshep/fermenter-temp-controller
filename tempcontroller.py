@@ -46,7 +46,7 @@ def main(config_file):
     config.read(config_file)
 
     # get the brew ID
-    if config["fermemter"]["brewID"]:
+    if config["fermenter"]["brewID"]:
         brew_id = config["fermenter"]["brewID"]
     else:
         brew_id = "no_brew_id"
