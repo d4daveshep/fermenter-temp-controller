@@ -18,6 +18,7 @@ from serial import SerialException
 
 
 def main(config_file):
+    print("in main")
     # get NZ timezone so we can localise the timestamps and deal with NZST/NZDT
     nztz = timezone("NZ")
 
