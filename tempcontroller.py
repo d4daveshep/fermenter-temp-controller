@@ -94,6 +94,14 @@ def main(config_file):
             if "change" in fermenter_data.keys():
                 influxdb_data["fields"]["change_action"] = str(fermenter_data["change"]).upper()
 
+            # add boolean flags for graphing to work
+            if "heat" in fermenter_data.keys():
+                influxdb_data["fields"]["heating"] = True
+            if "rest" in fermenter_data.keys():
+                influxdb_data["fields"]["cooling"] = True
+            if "rest" in fermenter_data.keys():
+                influxdb_data["fields"]["resting"] = True
+
             target = fermenter_data["target"]
 
             # check if we need to update the target temp
@@ -103,13 +111,10 @@ def main(config_file):
                 influxdb_data["fields"]["target_temp"] = new_target
                 logging.info("Updated target temp to %s", str(new_target))
 
-            json_body = json.dumps(influxdb_data)
-            logging.debug("Writing InfluxDB json: %s", json_body)
-
-            list = [influxdb_data]
+            logging.debug("Writing InfluxDB json: %s", json.dumps(influxdb_data))
 
             # write data to database as json
-            influxdb_client.write_points(list, database=brew_id)
+            influxdb_client.write_points([influxdb_data], database=brew_id)
 
         except JSONDecodeError as err:
             logging.debug(err)
