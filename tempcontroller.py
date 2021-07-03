@@ -82,7 +82,8 @@ def main(config_file):
             logging.debug("Fermemter data is: %s", fermenter_data)
 
             # get formatted localised timestamp
-            stamp = nztz.localize(datetime.now()).isoformat()
+            # stamp = nztz.localize(datetime.now()).isoformat()
+            stamp = datetime.now().isoformat()
             logging.debug("timestamp is %s", stamp)
 
             # populate the influxdb_data dict with relevant data from fermenter
