@@ -31,8 +31,8 @@ def main(config_file):
     config.read(config_file)
 
     # get the brew ID
-    brew_ID = config["fermenter"]["brewID"]
-    logging.info("Brew ID is: " + brew_ID)
+    brew_id = config["fermenter"]["brewID"]
+    logging.info("Brew ID is: " + brew_id)
 
     # get the new target temp
     new_target = config["fermenter"]["TargetTemp"]
@@ -46,9 +46,7 @@ def main(config_file):
         logging.warning("Couldn't write target temp to serial port")
 
     # build dictionary for influxdb
-    influxdb_data = {}
-    influxdb_data["measurement"] = "temperature"
-    influxdb_data["tags"] = {"brew_id": "99-TEST-v99"}
+    influxdb_data = {"measurement": "temperature", "tags": {"brew_id": brew_id}}
 
     # infinite loop to read data from serial port
     while True:
