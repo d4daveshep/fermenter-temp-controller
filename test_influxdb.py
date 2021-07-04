@@ -1,6 +1,7 @@
 import argparse
+import pandas
 
-from influxdb import InfluxDBClient
+from influxdb import InfluxDBClient, DataFrameClient
 
 
 def main(host="localhost", port=8086):
@@ -53,6 +54,23 @@ def parse_args():
     return parser.parse_args()
 
 
+def do_dataframes(host="localhost", port=8086):
+    client = DataFrameClient(host, port)
+    print("dataframe client created")
+
+    dbname = "99-TEST-v99-1234"
+    db_list = client.get_list_database()
+
+    check_name = {"name": dbname}
+    if check_name in db_list:
+        client.switch_database(dbname)
+        print("using database " + dbname)
+
+    else:
+        print("can't find database: " + dbname)
+        exit(-1)
+
 if __name__ == '__main__':
     args = parse_args()
-    main(host=args.host, port=args.port)
+    # main(host=args.host, port=args.port)
+    do_dataframes(host=args.host, port=args.port)
