@@ -81,11 +81,13 @@ def do_dataframes(host="localhost", port=8086):
     rs = client.query(query)
     print("resultset is...")
     print(rs)
+    print(rs.get_points())
+
 
 
     #
     # df['time'] = df['time'].to_timestamp()
-    df['time'] = df['time'].tz_localize(timezone.utc)
+    # df['time'] = df['time'].tz_localize(timezone.utc)
     # df['time'] = df['time'].dt.tz_convert('America/New_York')
     # print("dataframe is...")
     # print(df)
