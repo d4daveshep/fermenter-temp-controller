@@ -59,8 +59,8 @@ def parse_args():
 
 
 def do_dataframes(host="localhost", port=8086):
-    client = InfluxDBClient(host, port)
-    # client = DataFrameClient(host, port)
+    # client = InfluxDBClient(host, port)
+    client = DataFrameClient(host, port)
     print("influxdb client created")
 
     dbname = "99-TEST-v99"
@@ -78,11 +78,11 @@ def do_dataframes(host="localhost", port=8086):
     query = "select * from temperature where change_action='START HEATING'"
     print("running query: " + query)
 
-    df = pd.DataFrame(client.query(query, chunked=True, chunk_size=10000).get_points())  # Returns all points
-    # df = pd.DataFrame(client.query(query))  # Returns all points
-    print("dataframe is...")
-    print(df)
-    print(df['time'])
+    rs = client.query(query)
+    print("resultset is...")
+    print(rs)
+
+
     #
     # df['time'] = df['time'].to_timestamp()
     df['time'] = df['time'].tz_localize(timezone.utc)
