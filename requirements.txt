@@ -5,3 +5,5 @@ requests~=2.25.1
 
 influxdb~=5.3.1
 pandas~=1.2.5
+
+numpy~=1.21.0

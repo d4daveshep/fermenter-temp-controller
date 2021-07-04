@@ -1,5 +1,7 @@
 import argparse
 import pandas
+import numpy
+
 
 from influxdb import InfluxDBClient, DataFrameClient
 
