@@ -60,7 +60,7 @@ def do_dataframes(host="localhost", port=8086):
     client = DataFrameClient(host, port)
     print("dataframe client created")
 
-    dbname = "99-TEST-v99-1234"
+    dbname = "99-TEST-v99"
     db_list = client.get_list_database()
 
     check_name = {"name": dbname}
@@ -71,6 +71,12 @@ def do_dataframes(host="localhost", port=8086):
     else:
         print("can't find database: " + dbname)
         exit(-1)
+
+    query = "select * from temperature where change_action='START HEATING'"
+    print("running query: " + query)
+    rs = client.query(query)
+    print("results are...")
+    print(rs)
 
 if __name__ == '__main__':
     args = parse_args()
