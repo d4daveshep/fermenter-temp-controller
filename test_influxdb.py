@@ -74,9 +74,13 @@ def do_dataframes(host="localhost", port=8086):
 
     query = "select * from temperature where change_action='START HEATING'"
     print("running query: " + query)
+
     rs = client.query(query)
-    points = list(rs.get_points(measurement='temperature'))
-    print("results are...")
+    print("resultset is...")
+    print(rs)
+
+    points = rs.get_points(measurement='temperature')
+    print("points are...")
     print(points)
 
 if __name__ == '__main__':
