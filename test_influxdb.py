@@ -1,5 +1,5 @@
 import argparse
-import pandas
+import pandas as pd
 import numpy
 
 
@@ -57,8 +57,8 @@ def parse_args():
 
 
 def do_dataframes(host="localhost", port=8086):
-    client = DataFrameClient(host, port)
-    print("dataframe client created")
+    client = InfluxDBClient(host, port)
+    print("influxdb client created")
 
     dbname = "99-TEST-v99"
     db_list = client.get_list_database()
@@ -75,13 +75,10 @@ def do_dataframes(host="localhost", port=8086):
     query = "select * from temperature where change_action='START HEATING'"
     print("running query: " + query)
 
-    rs = client.query(query)
-    print("resultset is...")
-    print(rs)
+    df = pd.DataFrame(client.query(query, chunked=True, chunk_size=10000).get_points())  # Returns all points
+    print("dataframe is...")
+    print(df)
 
-    points = rs.get_points(measurement='temperature')
-    print("points are...")
-    print(points)
 
 if __name__ == '__main__':
     args = parse_args()
