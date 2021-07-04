@@ -4,7 +4,6 @@ from datetime import timezone
 import pandas as pd
 import numpy
 
-
 from influxdb import InfluxDBClient, DataFrameClient
 
 
@@ -81,10 +80,9 @@ def do_dataframes(host="localhost", port=8086):
     rs = client.query(query)
     print("resultset is...")
     print(rs)
-    print(rs.keys())
-    print(rs.items())
-
-
+    print("keys are... ", rs.keys())
+    print("temperature values...")
+    print(rs['temperature'])
 
     #
     # df['time'] = df['time'].to_timestamp()
@@ -93,9 +91,7 @@ def do_dataframes(host="localhost", port=8086):
     # print("dataframe is...")
     # print(df)
 
-
-
-if __name__ == '__main__':
-    args = parse_args()
+    if __name__ == '__main__':
+        args = parse_args()
     # main(host=args.host, port=args.port)
     do_dataframes(host=args.host, port=args.port)
