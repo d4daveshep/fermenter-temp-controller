@@ -78,7 +78,8 @@ def do_dataframes(host="localhost", port=8086):
     query = "select * from temperature where change_action='START HEATING'"
     print("running query: " + query)
 
-    df = pd.DataFrame(client.query(query, chunked=True, chunk_size=10000).get_points())  # Returns all points
+    # df = pd.DataFrame(client.query(query, chunked=True, chunk_size=10000).get_points())  # Returns all points
+    df = pd.DataFrame(client.query(query))  # Returns all points
     print("dataframe is...")
     print(df)
     #
