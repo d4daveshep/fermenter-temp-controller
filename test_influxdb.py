@@ -59,7 +59,8 @@ def parse_args():
 
 
 def do_dataframes(host="localhost", port=8086):
-    client = InfluxDBClient(host, port)
+    # client = InfluxDBClient(host, port)
+    client = DataFrameClient(host, port)
     print("influxdb client created")
 
     dbname = "99-TEST-v99"
@@ -80,12 +81,12 @@ def do_dataframes(host="localhost", port=8086):
     df = pd.DataFrame(client.query(query, chunked=True, chunk_size=10000).get_points())  # Returns all points
     print("dataframe is...")
     print(df)
-
-    df['time'] = df['time'].to_timestamp()
-    df['time'] = df['time'].tz_localize(timezone.utc)
-    df['time'] = df['time'].dt.tz_convert('America/New_York')
-    print("dataframe is...")
-    print(df)
+    #
+    # df['time'] = df['time'].to_timestamp()
+    # df['time'] = df['time'].tz_localize(timezone.utc)
+    # df['time'] = df['time'].dt.tz_convert('America/New_York')
+    # print("dataframe is...")
+    # print(df)
 
 
 
