@@ -79,6 +79,11 @@ def do_dataframes(host="localhost", port=8086):
     print("dataframe is...")
     print(df)
 
+    df['time'] = df['time'].dt.tz_convert('America/New_York')
+    print("dataframe is...")
+    print(df)
+
+
 
 if __name__ == '__main__':
     args = parse_args()
