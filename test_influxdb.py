@@ -81,7 +81,8 @@ def do_dataframes(host="localhost", port=8086):
     rs = client.query(query)
     print("resultset is...")
     print(rs)
-    print(rs.get_points())
+    print(rs.keys())
+    print(rs.items())
 
 
 
