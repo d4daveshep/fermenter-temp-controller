@@ -31,7 +31,7 @@ def main(host="localhost", port=8086):
             },
             "time": "2021-07-02T17:44:40.471836+12:00",
             "fields": {
-                "ambient_temp": 12.31, "fermemter_temp": 20.12, "target_temp": 20.0, "controller_action": "REST"
+                "ambient_temp": 12.31, "fermenter_temp": 20.12, "target_temp": 20.0, "controller_action": "REST"
             }
         }
     ]
