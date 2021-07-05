@@ -101,9 +101,15 @@ def do_dataframes(host="localhost", port=8086):
     #     if not np.isnan(i):
     #         print(i)
 
+    # copy the fermeMter values to the fermeNter column
     for index, row in df.iterrows():
         if not np.isnan(row['fermemter_temp']):
-            print(row['fermemter_temp'], row['fermenter_temp'])
+            row['fermenter_temp'] = row['fermemter_temp']
+
+    temps = df['fermenter_temp'] # this is a Series
+    for i in temps:
+        if not np.isnan(i):
+            print(i)  # print numbers
 
 
 if __name__ == '__main__':
