@@ -96,11 +96,14 @@ def do_dataframes(host="localhost", port=8086):
     print("average ambient = ", df['ambient_temp'].mean())
 
     print(df['fermemter_temp'].count(), "records")
-    temps = df['fermemter_temp']
-    for i in temps:
-        if not np.isnan(i):
-            print(i)
+    # temps = df['fermemter_temp'] # this is a Series
+    # for i in temps:
+    #     if not np.isnan(i):
+    #         print(i)
 
+    for index, row in df.iterrows():
+        # if np.isnan(row['fermemter_temp']):
+        print(row['fermemter_temp'], row['fermenter_temp'])
 
 
 if __name__ == '__main__':
