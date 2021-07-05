@@ -104,7 +104,7 @@ def do_dataframes(host="localhost", port=8086):
     # copy the fermeMter values to the fermeNter column
     for index, row in df.iterrows():
         if not np.isnan(row['fermemter_temp']):
-            df.loc[index]['fermenter_temp'] = row['fermemter_temp']
+            df.at[index,'fermenter_temp'] = row['fermemter_temp']
 
     print("from", df['fermenter_temp'].count(), "records")
     print("min fermenter temp = ", df['fermenter_temp'].min())
