@@ -102,8 +102,8 @@ def do_dataframes(host="localhost", port=8086):
     #         print(i)
 
     for index, row in df.iterrows():
-        # if np.isnan(row['fermemter_temp']):
-        print(row['fermemter_temp'], row['fermenter_temp'])
+        if not np.isnan(row['fermemter_temp']):
+            print(row['fermemter_temp'], row['fermenter_temp'])
 
 
 if __name__ == '__main__':
