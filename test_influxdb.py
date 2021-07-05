@@ -86,14 +86,14 @@ def do_dataframes(host="localhost", port=8086):
 
     df = pd.DataFrame(rs['temperature'])
     print("dataframe is...")
-    print(df)
+    # print(df)
     print(df.index)
 
     # df.tz_localize(timezone.utc)
-    # df.dt.tz_convert('America/New_York')
+    df.index = df.index.dt.tz_convert('America/New_York')
 
     # print("dataframe is...")
-    # print(df)
+    print(df.index)
 
 
     #
