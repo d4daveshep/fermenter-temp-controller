@@ -1,9 +1,7 @@
 import argparse
-from datetime import timezone
 
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 from influxdb import InfluxDBClient, DataFrameClient
 
 
@@ -96,15 +94,17 @@ def do_dataframes(host="localhost", port=8086):
     print("average ambient = ", df['ambient_temp'].mean())
 
     # print(df['fermemter_temp'].count(), "records")
-    # temps = df['fermemter_temp'] # this is a Series
+    temps = df['ambient_temp']  # this is a Series
+    print("ambient temp std dev =", temps.std())
     # for i in temps:
     #     if not np.isnan(i):
     #         print(i)
 
     # copy the fermeMter values to the fermeNter column
+    print("fixing the fermenter temp data")
     for index, row in df.iterrows():
         if not np.isnan(row['fermemter_temp']):
-            df.at[index,'fermenter_temp'] = row['fermemter_temp']
+            df.at[index, 'fermenter_temp'] = row['fermemter_temp']
 
     print("from", df['fermenter_temp'].count(), "records")
     print("min fermenter temp = ", df['fermenter_temp'].min(), "at", df['fermenter_temp'].idxmin())
