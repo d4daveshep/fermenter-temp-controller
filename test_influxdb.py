@@ -85,24 +85,14 @@ def do_dataframes(host="localhost", port=8086):
     print(rs['temperature'])
 
     df = pd.DataFrame(rs['temperature'])
-    print("dataframe is...")
-    # print(df)
-    print(df.index)
-
-    # df.tz_localize(timezone.utc)
-    # nztz = timezone("NZ")
+    # convert time index to NZ timezone
     df.index = df.index.tz_convert('Pacific/Auckland')
 
-    # print("dataframe is...")
-    print(df.index)
+    print("dataframe is...")
+    print(df)
 
 
-    #
-    # df['time'] = df['time'].to_timestamp()
-    # df['time'] = df['time'].tz_localize(timezone.utc)
-    # df['time'] = df['time'].dt.tz_convert('America/New_York')
-    # print("dataframe is...")
-    # print(df)
+
 
     if __name__ == '__main__':
         print("in main")
