@@ -91,11 +91,9 @@ def do_dataframes(host="localhost", port=8086):
     print("dataframe is...")
     print(df)
 
-    min_temp = df['ambient_temp'].min()
-    avg_temp = df['ambient_temp'].mean()
-
-    print("min ambient = ", min_temp)
-    print("average ambient = ", avg_temp)
+    print("from ", df.count(), " records...")
+    print("min ambient = ", df['ambient_temp'].min())
+    print("average ambient = ", df['ambient_temp'].mean())
 
 
 
