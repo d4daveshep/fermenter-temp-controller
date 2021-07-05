@@ -90,8 +90,8 @@ def do_dataframes(host="localhost", port=8086):
     print(df.index)
 
     # df.tz_localize(timezone.utc)
-    nztz = timezone("NZ")
-    df.index = df.index.tz_convert(nztz)
+    # nztz = timezone("NZ")
+    df.index = df.index.tz_convert('Pacific/Auckland')
 
     # print("dataframe is...")
     print(df.index)
