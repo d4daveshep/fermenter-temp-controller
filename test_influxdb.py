@@ -81,8 +81,8 @@ def do_dataframes(host="localhost", port=8086):
     # print("resultset is...")
     # print(rs)
     # print("keys are... ", rs.keys())
-    print("temperature values...")
-    print(rs['temperature'])
+    # print("temperature values...")
+    # print(rs['temperature'])
 
     df = pd.DataFrame(rs['temperature'])
     # convert time index to NZ timezone
@@ -90,6 +90,12 @@ def do_dataframes(host="localhost", port=8086):
 
     print("dataframe is...")
     print(df)
+
+    min_temp = df['ambient_temp'].min()
+    avg_temp = df['ambient_temp'].mean()
+
+    print("min ambient = ", min_temp)
+    print("average ambient = ", avg_temp)
 
 
 
