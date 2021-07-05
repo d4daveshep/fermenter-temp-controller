@@ -94,8 +94,8 @@ def do_dataframes(host="localhost", port=8086):
 
 
 
-    if __name__ == '__main__':
-        print("in main")
-        args = parse_args()
-        # main(host=args.host, port=args.port)
-        do_dataframes(host=args.host, port=args.port)
+if __name__ == '__main__':
+    print("in main")
+    args = parse_args()
+    # main(host=args.host, port=args.port)
+    do_dataframes(host=args.host, port=args.port)
