@@ -96,6 +96,10 @@ def do_dataframes(host="localhost", port=8086):
     print("average ambient = ", df['ambient_temp'].mean())
 
     print(df['fermemter_temp'].count(), "records")
+    temps = df['fermemter_temp']
+    for i in temps:
+        print(i, temps[i])
+
 
 
 
