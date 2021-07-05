@@ -97,7 +97,8 @@ def do_dataframes(host="localhost", port=8086):
 
     print(df['fermemter_temp'].count(), "records")
     temps = df['fermemter_temp']
-    print(temps)
+    for i in temps.iterrows():
+        print(i)
 
 
 
