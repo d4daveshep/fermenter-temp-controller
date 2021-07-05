@@ -74,7 +74,7 @@ def do_dataframes(host="localhost", port=8086):
         print("can't find database: " + dbname)
         exit(-1)
 
-    query = "select * from temperature where change_action='START HEATING'"
+    query = "select * from temperature"  # where change_action='START HEATING'"
     print("running query: " + query)
 
     rs = client.query(query)
@@ -88,8 +88,8 @@ def do_dataframes(host="localhost", port=8086):
     # convert time index to NZ timezone
     df.index = df.index.tz_convert('Pacific/Auckland')
 
-    print("dataframe is...")
-    print(df)
+    # print("dataframe is...")
+    # print(df)
 
     print("from ", df['ambient_temp'].count(), " records...")
     print("min ambient = ", df['ambient_temp'].min())
