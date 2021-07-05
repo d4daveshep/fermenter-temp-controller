@@ -56,9 +56,8 @@ def parse_args():
 
 
 def do_dataframes(host="localhost", port=8086):
-    # client = InfluxDBClient(host, port)
     client = DataFrameClient(host, port)
-    print("influxdb client created")
+    print("influxdb dataframe client created")
 
     dbname = "99-TEST-v99"
     db_list = client.get_list_database()
@@ -82,6 +81,7 @@ def do_dataframes(host="localhost", port=8086):
     # print("temperature values...")
     # print(rs['temperature'])
 
+    # load the result set into a dataframe
     df = pd.DataFrame(rs['temperature'])
     # convert time index to NZ timezone
     df.index = df.index.tz_convert('Pacific/Auckland')
@@ -95,7 +95,7 @@ def do_dataframes(host="localhost", port=8086):
 
     # print(df['fermemter_temp'].count(), "records")
     temps = df['ambient_temp']  # this is a Series
-    print("ambient temp std dev =", temps.std())
+    print("ambient temp std dev =", df['ambient'].std())
     # for i in temps:
     #     if not np.isnan(i):
     #         print(i)
