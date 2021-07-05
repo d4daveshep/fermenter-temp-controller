@@ -109,7 +109,7 @@ def do_dataframes(host="localhost", port=8086):
     print("from", df['fermenter_temp'].count(), "records")
     print("min fermenter temp = ", df['fermenter_temp'].min(), "at", df['fermenter_temp'].idxmin())
     print("removing this value")
-    df.drop(index=df['fermenter_temp'].idxmin())
+    df = df.drop(index=df['fermenter_temp'].idxmin())
     print("min fermenter temp = ", df['fermenter_temp'].min(), "at", df['fermenter_temp'].idxmin())
     print("average fermenter temp = ", df['fermenter_temp'].mean())
     print("max fermenter temp = ", df['fermenter_temp'].max(), "at", df['fermenter_temp'].idxmax())
