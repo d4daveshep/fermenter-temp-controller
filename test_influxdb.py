@@ -88,7 +88,7 @@ def do_dataframes(host="localhost", port=8086):
     print("dataframe is...")
     print(df)
 
-    df.tz_localize(timezone.utc)
+    # df.tz_localize(timezone.utc)
     df.tz_convert('America/New_York')
 
     print("dataframe is...")
