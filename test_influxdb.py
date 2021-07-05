@@ -78,9 +78,9 @@ def do_dataframes(host="localhost", port=8086):
     print("running query: " + query)
 
     rs = client.query(query)
-    print("resultset is...")
-    print(rs)
-    print("keys are... ", rs.keys())
+    # print("resultset is...")
+    # print(rs)
+    # print("keys are... ", rs.keys())
     print("temperature values...")
     print(rs['temperature'])
 
