@@ -106,10 +106,9 @@ def do_dataframes(host="localhost", port=8086):
         if not np.isnan(row['fermemter_temp']):
             row['fermenter_temp'] = row['fermemter_temp']
 
-    temps = df['fermenter_temp'] # this is a Series
-    for i in temps:
-        if not np.isnan(i):
-            print(i)  # print numbers
+    print("from", df['fermenter_temp'].count(), "records")
+    print("min fermenter temp = ", df['fermenter_temp'].min())
+    print("average fermenter temp = ", df['fermenter_temp'].mean())
 
 
 if __name__ == '__main__':
