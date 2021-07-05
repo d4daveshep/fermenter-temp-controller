@@ -94,8 +94,8 @@ def do_dataframes(host="localhost", port=8086):
     print("average ambient = ", df['ambient_temp'].mean())
 
     # print(df['fermemter_temp'].count(), "records")
-    temps = df['ambient_temp']  # this is a Series
-    print("ambient temp std dev =", (df['ambient']).std())
+    # temps = df['ambient_temp']  # this is a Series
+    print("ambient temp std dev =", temps.std())
     # for i in temps:
     #     if not np.isnan(i):
     #         print(i)
@@ -113,6 +113,8 @@ def do_dataframes(host="localhost", port=8086):
     print("min fermenter temp = ", df['fermenter_temp'].min(), "at", df['fermenter_temp'].idxmin())
     print("average fermenter temp = ", df['fermenter_temp'].mean())
     print("max fermenter temp = ", df['fermenter_temp'].max(), "at", df['fermenter_temp'].idxmax())
+    temps = df['fermenter_temp']  # this is a Series
+    print("fermenter temp std dev =", temps.std())
 
 
 if __name__ == '__main__':
