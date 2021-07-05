@@ -84,6 +84,11 @@ def do_dataframes(host="localhost", port=8086):
     print("temperature values...")
     print(rs['temperature'])
 
+    df = pd.DataFrame(rs['temperature'])
+    print("dataframe is...")
+    print(df)
+
+
     #
     # df['time'] = df['time'].to_timestamp()
     # df['time'] = df['time'].tz_localize(timezone.utc)
