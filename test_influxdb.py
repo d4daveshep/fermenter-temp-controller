@@ -98,7 +98,7 @@ def do_dataframes(host="localhost", port=8086):
     print(df['fermemter_temp'].count(), "records")
     temps = df['fermemter_temp']
     for i in temps:
-        if np.isnan(i):
+        if not np.isnan(i):
             print(i)
 
 
