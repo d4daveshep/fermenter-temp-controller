@@ -95,7 +95,7 @@ def do_dataframes(host="localhost", port=8086):
 
     # print(df['fermemter_temp'].count(), "records")
     # temps = df['ambient_temp']  # this is a Series
-    print("ambient temp std dev =", temps.std())
+    # print("ambient temp std dev =", temps.std())
     # for i in temps:
     #     if not np.isnan(i):
     #         print(i)
