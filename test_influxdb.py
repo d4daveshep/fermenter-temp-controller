@@ -92,6 +92,7 @@ def do_dataframes(host="localhost", port=8086):
     # print(df)
 
     if __name__ == '__main__':
+        print("in main")
         args = parse_args()
         # main(host=args.host, port=args.port)
         do_dataframes(host=args.host, port=args.port)
