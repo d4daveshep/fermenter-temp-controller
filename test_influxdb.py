@@ -2,7 +2,7 @@ import argparse
 from datetime import timezone
 
 import pandas as pd
-import numpy
+import numpy as np
 
 from influxdb import InfluxDBClient, DataFrameClient
 
@@ -98,7 +98,8 @@ def do_dataframes(host="localhost", port=8086):
     print(df['fermemter_temp'].count(), "records")
     temps = df['fermemter_temp']
     for i in temps:
-        print(i)
+        if np.isnan(i):
+            print(i)
 
 
 
