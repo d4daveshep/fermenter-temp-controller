@@ -51,7 +51,7 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.debug(f"Got {df['fermenter_temp'].count():d} fermenter temp records...")
 
     logging.info(f"min fermenter = {df['fermenter_temp'].min():.2f} at {df['fermenter_temp'].idxmin():%Y-%m-%d %H:%M}")
-    logging.info(f"max fermenter = {df['fermenter_temp'].max():.2f} at {df['fermenter_temp'].idxmin():%Y-%m-%d %H:%M}")
+    logging.info(f"max fermenter = {df['fermenter_temp'].max():.2f} at {df['fermenter_temp'].idxmax():%Y-%m-%d %H:%M}")
     logging.info(f"average fermenter = {df['fermenter_temp'].mean():.2f}")
     logging.info(f"std dev fermenter = {df['fermenter_temp'].std():.2f}")
 
