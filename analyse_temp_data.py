@@ -37,12 +37,12 @@ def analyse_db(db_name, host="localhost", port=8086):
 
     logging.info("Ambient temperature data")
     logging.info("------------------------")
-    logging.debug("Got %d ambient temp records...", df['ambient_temp'].count() )
+    logging.debug(f"Got {df['ambient_temp'].count():d} ambient temp records...")
 
-    logging.info(f"min ambient = %f {df['ambient_temp'].min():.2f}")
-    logging.info("min ambient = ", df['ambient_temp'].max())
-    logging.info("average ambient = ", df['ambient_temp'].mean())
-    logging.info("std dev ambient = ", df['ambient_temp'].std())
+    logging.info(f"min ambient = {df['ambient_temp'].min():.2f}")
+    logging.info(f"min ambient = {df['ambient_temp'].max():.2f}")
+    logging.info(f"average ambient = {df['ambient_temp'].mean():.2f}")
+    logging.info(f"std dev ambient = {df['ambient_temp'].std():.2f}")
 
     #
     # print("from", df['fermenter_temp'].count(), "records")
