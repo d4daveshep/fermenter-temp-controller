@@ -35,19 +35,19 @@ def analyse_db(db_name, host="localhost", port=8086):
     # convert time index to NZ timezone
     df.index = df.index.tz_convert('Pacific/Auckland')
 
-    logging.info("========================")
+    logging.info("===========================")
     logging.info("Ambient temperature data")
-    logging.info("------------------------")
+    logging.info("---------------------------")
     logging.debug(f"Got {df['ambient_temp'].count():d} ambient temp records...")
 
-    logging.info(f"min ambient = {df['ambient_temp'].min():.2f}")
+    logging.info(f"min ambient = {df['ambient_temp'].min():.2f} at {df['ambient_temp'].idxmin()!s}")
     logging.info(f"max ambient = {df['ambient_temp'].max():.2f}")
     logging.info(f"average ambient = {df['ambient_temp'].mean():.2f}")
     logging.info(f"std dev ambient = {df['ambient_temp'].std():.2f}")
 
-    logging.info("========================")
+    logging.info("===========================")
     logging.info("Fermenter temperature data")
-    logging.info("------------------------")
+    logging.info("---------------------------")
     logging.debug(f"Got {df['fermenter_temp'].count():d} fermenter temp records...")
 
     logging.info(f"min fermenter = {df['fermenter_temp'].min():.2f}")
@@ -55,7 +55,7 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.info(f"average fermenter = {df['fermenter_temp'].mean():.2f}")
     logging.info(f"std dev fermenter = {df['fermenter_temp'].std():.2f}")
 
-    logging.info("========================")
+    logging.info("===========================")
 
     #
     # print("from", df['fermenter_temp'].count(), "records")
