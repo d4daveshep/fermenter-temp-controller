@@ -37,7 +37,7 @@ def analyse_db(db_name, host="localhost", port=8086):
 
     logging.info("Ambient temperature data")
     logging.info("------------------------")
-    logging.debug("Got ", df['ambient_temp'].count(), " ambient temp records...")
+    logging.debug("Got %d ambient temp records...", df['ambient_temp'].count() )
 
     logging.info("min ambient = ", df['ambient_temp'].min())
     logging.info("min ambient = ", df['ambient_temp'].max())
