@@ -69,7 +69,8 @@ def parse_args():
 
 if __name__ == '__main__':
     # Set up logging to console
-    logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(asctime)s: %(message)s")
+    logging.basicConfig(level=logging.INFO,
+                        format="%(levelname)s: %(asctime)s: %(message)s")
     logging.debug("here I am")
 
     args = parse_args()  # database name is a mandatory parameter
