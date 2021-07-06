@@ -41,7 +41,7 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.debug(f"Got {df['ambient_temp'].count():d} ambient temp records...")
 
     logging.info(f"min ambient = {df['ambient_temp'].min():.2f} at {df['ambient_temp'].idxmin()!s}")
-    logging.info(f"max ambient = {df['ambient_temp'].max():.2f} at {df['ambient_temp'].idxmax()}:%D-%M-%Y")
+    logging.info(f"max ambient = {df['ambient_temp'].max():.2f} at {df['ambient_temp'].idxmax():%D-%M-%Y}")
     logging.info(f"average ambient = {df['ambient_temp'].mean():.2f}")
     logging.info(f"std dev ambient = {df['ambient_temp'].std():.2f}")
 
