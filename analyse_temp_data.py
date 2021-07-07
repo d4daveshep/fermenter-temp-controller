@@ -63,7 +63,7 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.debug(temps)
     zscores = stats.zscore(temps)
     abs_zscores = np.abs(zscores)
-    outliers = (abs_zscores > 3)
+    outliers = (abs_zscores < 3).all(axis=1)
     logging.debug(outliers)
     # new_df = df[filtered]
     # logging.debug(f"now have {new_df.index.count():d} records")
