@@ -3,8 +3,8 @@ import logging
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 from influxdb import DataFrameClient
+from scipy import stats
 
 
 def analyse_db(db_name, host="localhost", port=8086):
@@ -62,7 +62,7 @@ def analyse_db(db_name, host="localhost", port=8086):
     # temps = df
     # logging.debug("fermenter temps...")
     # logging.debug(temps)
-    # zscores = stats.zscore(temps)
+    zscores = stats.zscore(temps)
     abs_zscores = np.abs(zscores)
 
     outliers = (abs_zscores < 3).all(level=0)
@@ -78,8 +78,10 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.info("---------------------------")
     logging.debug(f"Got {new_df['fermenter_temp'].count():d} fermenter temp records...")
 
-    logging.info(f"min fermenter = {new_df['fermenter_temp'].min():.2f} at {new_df['fermenter_temp'].idxmin():%Y-%m-%d %H:%M}")
-    logging.info(f"max fermenter = {new_df['fermenter_temp'].max():.2f} at {new_df['fermenter_temp'].idxmax():%Y-%m-%d %H:%M}")
+    logging.info(
+        f"min fermenter = {new_df['fermenter_temp'].min():.2f} at {new_df['fermenter_temp'].idxmin():%Y-%m-%d %H:%M}")
+    logging.info(
+        f"max fermenter = {new_df['fermenter_temp'].max():.2f} at {new_df['fermenter_temp'].idxmax():%Y-%m-%d %H:%M}")
     logging.info(f"average fermenter = {new_df['fermenter_temp'].mean():.2f}")
     logging.info(f"std dev fermenter = {new_df['fermenter_temp'].std():.2f}")
 
