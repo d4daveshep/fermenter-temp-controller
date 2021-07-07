@@ -1,6 +1,7 @@
 import argparse
 import logging
 
+import numpy as np
 import pandas as pd
 from scipy import stats
 from influxdb import DataFrameClient
@@ -46,14 +47,6 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.info(f"average ambient = {df['ambient_temp'].mean():.2f}")
     logging.info(f"std dev ambient = {df['ambient_temp'].std():.2f}")
 
-    # calculate zscore to indentify outliers
-    temps = df['ambient_temp']  # this is a Series
-    logging.debug("ambient temps...")
-    logging.debug(temps)
-    zscores = stats.zscore(temps)
-    logging.debug("ambient zscores...")
-    logging.debug(zscores)
-
     logging.info("===========================")
     logging.info("Fermenter temperature data")
     logging.info("---------------------------")
@@ -63,6 +56,21 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.info(f"max fermenter = {df['fermenter_temp'].max():.2f} at {df['fermenter_temp'].idxmax():%Y-%m-%d %H:%M}")
     logging.info(f"average fermenter = {df['fermenter_temp'].mean():.2f}")
     logging.info(f"std dev fermenter = {df['fermenter_temp'].std():.2f}")
+
+    # calculate zscore to identify outliers
+    temps = df['fermenter_temp']  # this is a Series
+    logging.debug("fermenter temps...")
+    logging.debug(temps)
+    zscores = stats.zscore(temps)
+    abs_zscores = np.abs(zscores)
+    filtered = (abs_zscores < 3).all()
+    logging.debug(f"now have {filtered.count():d} records")
+
+    # new_temps = df[filtered]
+
+    # logging.debug("fermenter zscores...")
+    # logging.debug(zscores)
+
 
     logging.info("===========================")
 
