@@ -60,24 +60,28 @@ def analyse_db(db_name, host="localhost", port=8086):
     # calculate zscore to identify outliers
     temps = df['fermenter_temp']  # this is a Series
     # temps = df
-    logging.debug("fermenter temps...")
-    logging.debug(temps)
-    zscores = stats.zscore(temps)
+    # logging.debug("fermenter temps...")
+    # logging.debug(temps)
+    # zscores = stats.zscore(temps)
     abs_zscores = np.abs(zscores)
 
     outliers = (abs_zscores < 3).all(level=0)
-    logging.debug(outliers)
+    # logging.debug(outliers)
 
     new_df = df[outliers]
     # logging.debug("new_df....")
     # logging.debug(new_df)
-    logging.debug(f"now have {new_df['fermenter_temp'].count():d} records")
+    logging.debug(f"After removing outliers we now have {new_df['fermenter_temp'].count():d} records")
 
-    # new_temps = df[filtered]
+    logging.info("===========================")
+    logging.info("Updated fermenter temperature data")
+    logging.info("---------------------------")
+    logging.debug(f"Got {new_df['fermenter_temp'].count():d} fermenter temp records...")
 
-    # logging.debug("fermenter zscores...")
-    # logging.debug(zscores)
-
+    logging.info(f"min fermenter = {new_df['fermenter_temp'].min():.2f} at {new_df['fermenter_temp'].idxmin():%Y-%m-%d %H:%M}")
+    logging.info(f"max fermenter = {new_df['fermenter_temp'].max():.2f} at {new_df['fermenter_temp'].idxmax():%Y-%m-%d %H:%M}")
+    logging.info(f"average fermenter = {new_df['fermenter_temp'].mean():.2f}")
+    logging.info(f"std dev fermenter = {new_df['fermenter_temp'].std():.2f}")
 
     logging.info("===========================")
 
