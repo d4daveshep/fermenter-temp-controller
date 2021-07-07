@@ -62,12 +62,10 @@ def analyse_db(db_name, host="localhost", port=8086):
     zscores = stats.zscore(temps)
     abs_zscores = np.abs(zscores)
 
-    outliers = (abs_zscores < 3).groupby(level=0).all() # This gives us a Series with True/False values
+    outliers = (abs_zscores < 3).groupby(level=0).all()  # this gives us a Series with True/False values
     # logging.debug(outliers)
 
-    new_df = df[outliers]
-    # logging.debug("new_df....")
-    # logging.debug(new_df)
+    new_df = df[outliers] # don't really understand how this works but it removes the False values (i.e. outliers)
     logging.debug(f"After removing outliers we now have {new_df['fermenter_temp'].count():d} records")
 
     logging.info("===========================")
