@@ -2,7 +2,7 @@ import argparse
 import logging
 
 import pandas as pd
-import stats as stats
+from scipy import stats
 from influxdb import DataFrameClient
 
 
