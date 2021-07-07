@@ -45,6 +45,10 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.info(f"average ambient = {df['ambient_temp'].mean():.2f}")
     logging.info(f"std dev ambient = {df['ambient_temp'].std():.2f}")
 
+    temps = df['ambient_temp']  # this is a Series
+    logging.debug("ambient temps...")
+    logging.debug(temps)
+
     logging.info("===========================")
     logging.info("Fermenter temperature data")
     logging.info("---------------------------")
