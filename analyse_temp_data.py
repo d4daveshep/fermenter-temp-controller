@@ -63,9 +63,10 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.debug(temps)
     zscores = stats.zscore(temps)
     abs_zscores = np.abs(zscores)
-    filtered = (abs_zscores < 3).all()
-    new_df = df[filtered]
-    logging.debug(f"now have {new_df.index.count():d} records")
+    filtered = (abs_zscores < 3)
+    logging.debug(filtered)
+    # new_df = df[filtered]
+    # logging.debug(f"now have {new_df.index.count():d} records")
 
     # new_temps = df[filtered]
 
