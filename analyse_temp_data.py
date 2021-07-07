@@ -58,7 +58,8 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.info(f"std dev fermenter = {df['fermenter_temp'].std():.2f}")
 
     # calculate zscore to identify outliers
-    temps = df['fermenter_temp']  # this is a Series
+    # temps = df['fermenter_temp']  # this is a Series
+    temps = df
     logging.debug("fermenter temps...")
     logging.debug(temps)
     zscores = stats.zscore(temps)
