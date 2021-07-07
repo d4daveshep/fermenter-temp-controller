@@ -59,13 +59,10 @@ def analyse_db(db_name, host="localhost", port=8086):
 
     # calculate zscore to identify outliers
     temps = df['fermenter_temp']  # this is a Series
-    # temps = df
-    # logging.debug("fermenter temps...")
-    # logging.debug(temps)
     zscores = stats.zscore(temps)
     abs_zscores = np.abs(zscores)
 
-    outliers = (abs_zscores < 3).all(level=0)
+    outliers = (abs_zscores < 3).groupby(level=0).all() # This gives us a Series with True/False values
     # logging.debug(outliers)
 
     new_df = df[outliers]
