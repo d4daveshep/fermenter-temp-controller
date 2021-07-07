@@ -69,9 +69,9 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.debug(outliers)
 
     new_df = df[outliers]
-    logging.debug("new_df....")
-    logging.debug(new_df)
-    # logging.debug(f"now have {new_df.count():d} records")
+    # logging.debug("new_df....")
+    # logging.debug(new_df)
+    logging.debug(f"now have {new_df['fermenter_temp'].count():d} records")
 
     # new_temps = df[filtered]
 
