@@ -25,7 +25,7 @@ def analyse_db(db_name, host="localhost", port=8086):
         exit(-1)
 
     # query last 24hrs - this will return 24*60*60/10 = 8640 records
-    hours = 48
+    hours = 3
     logging.info(f"Analysing last {hours:d} hours")
     query = "select * from temperature where time >= now() - " + str(hours) + "h"
     logging.debug("Running query: " + query)
@@ -58,13 +58,14 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.info(f"std dev fermenter = {df['fermenter_temp'].std():.2f}")
 
     # calculate zscore to identify outliers
-    # temps = df['fermenter_temp']  # this is a Series
-    temps = df
+    temps = df['fermenter_temp']  # this is a Series
+    # temps = df
     logging.debug("fermenter temps...")
     logging.debug(temps)
     zscores = stats.zscore(temps)
     abs_zscores = np.abs(zscores)
-    outliers = (abs_zscores < 3).all(axis=1)
+
+    outliers = (abs_zscores < 3)
     logging.debug(outliers)
     # new_df = df[filtered]
     # logging.debug(f"now have {new_df.index.count():d} records")
