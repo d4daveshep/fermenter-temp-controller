@@ -24,7 +24,7 @@ def analyse_db(db_name, host="localhost", port=8086):
         exit(-1)
 
     # query last 24hrs - this will return 24*60*60/10 = 8640 records
-    hours = 1
+    hours = 48
     logging.info(f"Analysing last {hours:d} hours")
     query = "select * from temperature where time >= now() - " + str(hours) + "h"
     logging.debug("Running query: " + query)
@@ -46,6 +46,7 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.info(f"average ambient = {df['ambient_temp'].mean():.2f}")
     logging.info(f"std dev ambient = {df['ambient_temp'].std():.2f}")
 
+    # calculate zscore to indentify outliers
     temps = df['ambient_temp']  # this is a Series
     logging.debug("ambient temps...")
     logging.debug(temps)
