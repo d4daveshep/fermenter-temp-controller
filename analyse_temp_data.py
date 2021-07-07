@@ -2,6 +2,7 @@ import argparse
 import logging
 
 import pandas as pd
+import stats as stats
 from influxdb import DataFrameClient
 
 
@@ -48,6 +49,9 @@ def analyse_db(db_name, host="localhost", port=8086):
     temps = df['ambient_temp']  # this is a Series
     logging.debug("ambient temps...")
     logging.debug(temps)
+    zscores = stats.zscore(temps)
+    logging.debug("ambient zscores...")
+    logging.debug(zscores)
 
     logging.info("===========================")
     logging.info("Fermenter temperature data")
