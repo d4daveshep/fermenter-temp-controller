@@ -1,4 +1,4 @@
 #!/bin/bash
 
-arduino --verify ./TempController/TempController.ino
+arduino --verify /home/pi/dev/fermenter-temp-controller/arduino/TempController/TempController.ino
 
