@@ -37,9 +37,11 @@ float coolStartTemp; // temp above target we will start cooling
 float coolStopTemp; // temp above target we will stop cooling
 float heatStartTemp; // temp below target we will start heating
 float heatStopTemp; // temp below target we will stop heating
-const float TEMP_DIFF = 0.3; // the tolerance we allow before taking action
-float heatLag, heatOverrun = 0.0;
-float coolLag, coolOverrun = 0.0;
+//======================
+const float TEMP_DIFF = 0.2; // the tolerance we allow before taking action
+//======================
+//float heatLag, heatOverrun = 0.0;
+//float coolLag, coolOverrun = 0.0;
 
 float minTemp, cycleMinTemp = 1000.0; // min temperature set to a really high value initally
 float maxTemp, cycleMaxTemp = -1000.0; // max temperature set to a really low value initally
@@ -464,9 +466,6 @@ void debug() {
 
   Serial.print(", heatStartTemp=");
   Serial.print(heatStartTemp);
-
-  Serial.print(", heatLag=");
-  Serial.print(heatLag);
 
   Serial.print(", changeAction=");
   Serial.print(changeAction);
