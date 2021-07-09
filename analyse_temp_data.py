@@ -25,7 +25,7 @@ def analyse_db(db_name, host="localhost", port=8086):
         exit(-1)
 
     # query last 24hrs - this will return 24*60*60/10 = 8640 records
-    hours = 48
+    hours = 3
     logging.info(f"Analysing last {hours:d} hours")
     query = "select * from temperature where time >= now() - " + str(hours) + "h"
     logging.debug("Running query: " + query)
