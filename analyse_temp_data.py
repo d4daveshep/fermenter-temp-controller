@@ -65,7 +65,7 @@ def analyse_db(db_name, host="localhost", port=8086):
     outliers = (abs_zscores < 3).groupby(level=0).all()  # this gives us a Series with True/False values
     # logging.debug(outliers)
 
-    new_df = df[outliers] # don't really understand how this works but it removes the False values (i.e. outliers)
+    new_df = df[outliers]  # don't really understand how this works but it removes the False values (i.e. outliers)
     logging.debug(f"After removing outliers we now have {new_df['fermenter_temp'].count():d} records")
 
     logging.info("===========================")
@@ -81,6 +81,17 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.info(f"std dev fermenter = {new_df['fermenter_temp'].std():.2f}")
 
     logging.info("===========================")
+
+    # Calculate the heat start lag
+    # find heat start times
+    logging.info("Finding heat start lag")
+    logging.info("======================")
+    query = "select fermenter_temp, change_action from temperature where change_action='START HEATING' and time >= now() - " + str(
+        hours) + "h"
+    logging.debug("Running query: " + query)
+    rs = client.query(query)
+    df = pd.DataFrame(rs['temperature'])
+    logging.debug("dataframe is ...", df)
 
     #
     # print("from", df['fermenter_temp'].count(), "records")
