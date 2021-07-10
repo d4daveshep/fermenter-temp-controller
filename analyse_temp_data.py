@@ -92,16 +92,16 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
     rs = client.query(query)
     df = pd.DataFrame(rs['temperature'])
     df.index = df.index.tz_convert('Pacific/Auckland')
-    logging.debug(df)
+    # logging.debug(df)
 
     for index, row in df.iterrows():
         time0 = rfc3339.rfc3339(index)
         time5 = rfc3339.rfc3339(index + timedelta(minutes=5))
 
-        logging.debug(f"Heat start = {time0}")
-        logging.debug(f"End window = {time5}")
+        # logging.debug(f"Heat start = {time0}")
+        # logging.debug(f"End window = {time5}")
         query = "select min(fermenter_temp) from temperature where '" + time0 + "' <= time and time <= '" + time5 + "'"
-        logging.debug(query)
+        # logging.debug(query)
         rs1 = client.query(query)
         df1 = pd.DataFrame(rs1['temperature'])
         df1.index = df1.index.tz_convert('Pacific/Auckland')
