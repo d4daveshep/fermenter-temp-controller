@@ -98,7 +98,7 @@ def analyse_db(db_name, host="localhost", port=8086):
 
     for index, row in df.iterrows():
         time0 = rfc3339.rfc3339(index)
-        time5 = time0 + timedelta(minutes=5)
+        time5 = index + timedelta(minutes=5)
 
         logging.debug(f"Heat start = {time0}")
         logging.debug(f"End window = {time5}")
