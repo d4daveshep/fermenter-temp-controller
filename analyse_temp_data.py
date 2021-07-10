@@ -3,6 +3,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+import rfc3339 as rfc3339
 from influxdb import DataFrameClient
 from scipy import stats
 
@@ -95,7 +96,12 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.debug(df)
 
     for index, row in df.iterrows():
-        logging.debug(index)
+        tstamp = rfc3339.rfc3339(index)
+        logging.debug(tstamp)
+        # query = "select min(fermenter_temp) from temperature where " +
+
+
+
     # logging.debug(df.index)
 
     #
