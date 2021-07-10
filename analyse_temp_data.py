@@ -105,7 +105,7 @@ def analyse_db(db_name, host="localhost", port=8086):
         query = "select min(fermenter_temp) from temperature where '" + time0 + "' <= time and time <= '" + time5 + "'"
         logging.debug(query)
         rs1 = client.query(query)
-        df1 = pd.DataFrame(rs['temperature'])
+        df1 = pd.DataFrame(rs1['temperature'])
         logging.debug(df1)
 
 
