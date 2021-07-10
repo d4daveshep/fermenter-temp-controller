@@ -106,6 +106,7 @@ def analyse_db(db_name, host="localhost", port=8086):
         logging.debug(query)
         rs1 = client.query(query)
         df1 = pd.DataFrame(rs1['temperature'])
+        df1.index = df1.index.tz_convert('Pacific/Auckland')
         logging.debug(df1)
 
 
