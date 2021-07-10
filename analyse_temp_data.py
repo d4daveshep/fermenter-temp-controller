@@ -129,7 +129,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Analyse fermenter temperature data')
     parser.add_argument('db_name', type=str, help="name of the InfluxDB database to analyse")  # mandatory
-    parser.add_argument('-tf', '--timeframe', required=False, default='12h', help='timeframe to analyse')
+    parser.add_argument('-tf', '--timeframe', type=str, required=False, default='12h', help='timeframe to analyse')
     parser.add_argument('--host', type=str, required=False, default='localhost', help='hostname of InfluxDB http API')
     parser.add_argument('--port', type=int, required=False, default=8086, help='port of InfluxDB http API')
 
