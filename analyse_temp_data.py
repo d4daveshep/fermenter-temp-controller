@@ -9,7 +9,7 @@ from influxdb import DataFrameClient
 from scipy import stats
 
 
-def analyse_db(db_name, host="localhost", port=8086):
+def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
     logging.info("Analysing temperature database: " + db_name)
     client = DataFrameClient(host, port)
     logging.debug("InfluxDB dataframe client created")
@@ -26,10 +26,8 @@ def analyse_db(db_name, host="localhost", port=8086):
         logging.critical("Can't find database: " + db_name)
         exit(-1)
 
-    # query last 24hrs - this will return 24*60*60/10 = 8640 records
-    hours = 3
-    logging.info(f"Analysing last {hours:d} hours")
-    query = "select * from temperature where time >= now() - " + str(hours) + "h"
+    logging.info(f"Analysing last {timeframe}")
+    query = "select * from temperature where time >= now() - " + timeframe
     logging.debug("Running query: " + query)
 
     # run the query and load the result set into a dataframe
@@ -88,8 +86,8 @@ def analyse_db(db_name, host="localhost", port=8086):
     # find heat start times
     logging.info("Finding heat start lag")
     logging.info("======================")
-    query = "select fermenter_temp, change_action from temperature where change_action='START HEATING' and time >= now() - " + str(
-        hours) + "h"
+    query = "select fermenter_temp, change_action from temperature where change_action='START HEATING' and time >= now() - " + timeframe
+
     logging.debug("Running query: " + query)
     rs = client.query(query)
     df = pd.DataFrame(rs['temperature'])
@@ -131,6 +129,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Analyse fermenter temperature data')
     parser.add_argument('db_name', type=str, help="name of the InfluxDB database to analyse")  # mandatory
+    parser.add_argument('-tf', '--timeframe', required=False, default='12h', help='timeframe to analyse')
     parser.add_argument('--host', type=str, required=False, default='localhost', help='hostname of InfluxDB http API')
     parser.add_argument('--port', type=int, required=False, default=8086, help='port of InfluxDB http API')
 
@@ -146,4 +145,4 @@ if __name__ == '__main__':
     args = parse_args()  # database name is a mandatory parameter
 
     # run the analysis function
-    analyse_db(db_name=args.db_name, host=args.host, port=args.port)
+    analyse_db(db_name=args.db_name, timeframe=args.tf, host=args.host, port=args.port)
