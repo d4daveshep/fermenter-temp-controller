@@ -97,7 +97,8 @@ def analyse_db(db_name, host="localhost", port=8086):
 
     for index, row in df.iterrows():
         tstamp = rfc3339.rfc3339(index)
-        logging.debug(tstamp)
+        # tstamp
+        logging.debug(f"Heat start = {tstamp}")
         # query = "select min(fermenter_temp) from temperature where " +
 
 
