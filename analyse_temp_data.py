@@ -95,7 +95,7 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.debug(df)
 
     for index, row in df.iterrows():
-        logging.debug(index, row['fermenter_temp'])
+        logging.debug(index)
     # logging.debug(df.index)
 
     #
