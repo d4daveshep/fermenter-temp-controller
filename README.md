@@ -1,7 +1,17 @@
 # fermenter-temp-controller
 
-## Dealing with temperature outliers
+## Calculating "heating lag"
+Heating lag is when we tell the temperature controller to stop or start heating but it takes a while before hte temperature changes direction
+psuedo code...
+````buildoutcfg
+temp_range_min = target_temp - temp_diff  # eg 20.0 C - 0.2 C = 19.8 C
+heat_stop_lag = abs( heat_stop_temp - min_temp_after_heat_stop )  # e.g. 19.8 - 19.75 = 0.05
+heat_stop_temp = temp_range_min + heat_stop_lag
 
+````
+
+
+## Dealing with temperature outliers
 ### Using InfluxDB continuous queries to calculate a z-score so we can detect outliers before adding them to the dataabse
 
 Creates a new measurement called "temp_mean_stddev" and stores the mean and stddev of "fermenter_temp" data every 5 mins
