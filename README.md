@@ -2,20 +2,28 @@
 
 ## Calculating "heating lag"
 Heating lag is when we tell the temperature controller to stop or start heating but it takes a while before hte temperature changes direction
-psuedo code...
-````buildoutcfg
-temp_range_min = target_temp - temp_diff  # eg 20.0 C - 0.2 C = 19.8 C
-heat_stop_lag = abs( heat_stop_temp - min_temp_after_heat_stop )  # e.g. 19.8 - 19.75 = 0.05
-heat_stop_temp = temp_range_min + heat_stop_lag
-
+Psuedo code...
 ````
+temp_range_min = target_temp - temp_diff  # eg 20.0 C - 0.2 C = 19.8 C
+heat_start_lag = abs( heat_start_temp - min_temp_after_heat_start )  # e.g. 19.8 - 19.75 = 0.05
+heat_start_temp = temp_range_min + heat_start_lag
+
+So start heating when temp < heat_start_temp
+
+temp_range_max = target_temp + temp_diff  # eg 20.0 C + 0.2 C = 20.2 C
+heat_stop_lag = abs( heat_stop_lag - max_temp_after_heat_stop )
+heat_stop_temp = temp_max_range - heat_stop_lag
+
+So stop heating when temp > heat_stop_temp 
+````
+
 
 
 ## Dealing with temperature outliers
 ### Using InfluxDB continuous queries to calculate a z-score so we can detect outliers before adding them to the dataabse
 
 Creates a new measurement called "temp_mean_stddev" and stores the mean and stddev of "fermenter_temp" data every 5 mins
-````
+````buildoutcfg
 create continuous query "Get_Temp_Aggregate_Data" on "99-TEST-v99"
 begin
     select mean("fermenter_temp"), stddev("fermenter_temp") into "temp_mean_stddev" from "temperature" group by time(5m)
@@ -23,11 +31,11 @@ end
 ````
 
 Can't alter it once created do need to drop and re-create if changes needed
-````
+````buildoutcfg
 drop continuous query "Get_Temp_Aggregate_Data" on "99-TEST-v99"
 ````
 The "temp_mean_stddev" contains...
-````
+````buildoutcfg
 > select * from temp_mean_stddev
 name: temp_mean_stddev
 time                 mean               stddev
@@ -38,11 +46,11 @@ time                 mean               stddev
 ````
 
 Get the last record
-````
+````buildoutcfg
 select last(*) from temp_mean_stddev
 ````
 Returns
-````
+````buildoutcfg
 name: temp_mean_stddev
 time                 last_mean          last_stddev
 ----                 ---------          -----------
@@ -50,6 +58,8 @@ time                 last_mean          last_stddev
 ````
 
 ### Formula to calculate a z-score:
-`z = (temp - mean) / stddev` 
+````buildoutcfg
+z = (temp - mean) / stddev
+```` 
 
 

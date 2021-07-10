@@ -32,6 +32,10 @@ def open_influxdb(dbname):
         client.create_database(dbname)
         logging.info("Created database " + dbname)
         client.create_retention_policy("my_policy", "4w", "1", dbname, default=True)
+        continuous_query = 'select mean("fermenter_temp"), stddev("fermenter_temp") into "temp_mean_stddev" from ' \
+                           '"temperature" group by time(5m) '
+        client.create_continuous_query("Get_Temp_Aggregate_Data", continuous_query, dbname)
+        logging.debug("Created continuous query: " + continuous_query)
 
     return client
 
