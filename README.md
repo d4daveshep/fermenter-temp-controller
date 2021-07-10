@@ -1,7 +1,8 @@
 # fermenter-temp-controller
 
-##Dealing with temperature outliers
-###Using InfluxDB continuous queries to calculate a z-score so we can detect outliers before adding them to the dataabse
+## Dealing with temperature outliers
+
+### Using InfluxDB continuous queries to calculate a z-score so we can detect outliers before adding them to the dataabse
 
 Creates a new measurement called "temp_mean_stddev" and stores the mean and stddev of "fermenter_temp" data every 5 mins
 ````
@@ -38,7 +39,7 @@ time                 last_mean          last_stddev
 1970-01-01T00:00:00Z 20.076666666666657 0.02218003658672667
 ````
 
-###Formula to calculate a z-score:
+### Formula to calculate a z-score:
 `z = (temp - mean) / stddev` 
 
 
