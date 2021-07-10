@@ -91,7 +91,8 @@ def analyse_db(db_name, host="localhost", port=8086):
     logging.debug("Running query: " + query)
     rs = client.query(query)
     df = pd.DataFrame(rs['temperature'])
-    logging.debug(df)
+    # logging.debug(df)
+    logging.debug(df.index)
 
     #
     # print("from", df['fermenter_temp'].count(), "records")
