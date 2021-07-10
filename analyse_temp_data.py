@@ -145,4 +145,4 @@ if __name__ == '__main__':
     args = parse_args()  # database name is a mandatory parameter
 
     # run the analysis function
-    analyse_db(db_name=args.db_name, timeframe=args.tf, host=args.host, port=args.port)
+    analyse_db(db_name=args.db_name, timeframe=args.timeframe, host=args.host, port=args.port)
