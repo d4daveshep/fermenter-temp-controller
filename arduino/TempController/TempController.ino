@@ -40,7 +40,8 @@ float heatStopTemp; // temp below target we will stop heating
 //======================
 const float TEMP_DIFF = 0.2; // the tolerance we allow before taking action
 //======================
-//float heatLag, heatOverrun = 0.0;
+float heatStartLag = 0.038;
+float heatStopLag = 0.054;
 //float coolLag, coolOverrun = 0.0;
 
 float minTemp, cycleMinTemp = 1000.0; // min temperature set to a really high value initally
@@ -537,8 +538,8 @@ void resetStartStopTemps() {
   
   if (ambientTemp < (targetTemp-TEMP_DIFF) ) {
     // we have natural cooling so maximise the heating
-    heatStartTemp = targetTemp - TEMP_DIFF;
-    heatStopTemp = targetTemp + TEMP_DIFF;
+    heatStartTemp = targetTemp - TEMP_DIFF + heatStartLag;
+    heatStopTemp = targetTemp + TEMP_DIFF - heatStopLag;
     // and minimise the cooling
     coolStartTemp = 100; // i.e. let override take over
     coolStopTemp = targetTemp + TEMP_DIFF;
