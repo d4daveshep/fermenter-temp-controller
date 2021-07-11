@@ -85,8 +85,8 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
 
     # Calculate the heat start lag
     # find heat start times
-    logging.info("Finding heat start lag")
-    logging.info("======================")
+    logging.info("Calculate lag after heating starts")
+    logging.info("==================================")
     query = "select fermenter_temp, change_action from temperature where change_action='START HEATING' and time >= now() - " + timeframe
 
     logging.debug("Running query: " + query)
@@ -155,7 +155,7 @@ def parse_args():
 
 if __name__ == '__main__':
     # Set up logging to console
-    logging.basicConfig(level=logging.DEBUG,
+    logging.basicConfig(level=logging.INFO,
                         format="%(levelname)s: %(asctime)s: %(message)s")
     logging.debug("here I am")
 
