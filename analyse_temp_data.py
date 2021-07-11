@@ -98,10 +98,9 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
     logging.debug(df)
 
     lag_list = []
-
     for index, row in df.iterrows():
-        heat_start_temp = row['fermenter_temp']
-        logging.debug(f"Heat stop temp = {heat_start_temp:.2f}")
+        heat_stop_temp = row['fermenter_temp']
+        logging.debug(f"Heat stop temp = {heat_stop_temp:.2f}")
 
         # find the minimum temp over the next 10 mins after heating starts
         time0 = rfc3339.rfc3339(index)
@@ -111,16 +110,54 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
         rs1 = client.query(query)
         df1 = pd.DataFrame(rs1['temperature'])
         # df1.index = df1.index.tz_convert('Pacific/Auckland')
-        min_temp_after_heat_start = df1.iloc[0]['min']  # get the first & only value in the min column
-        logging.debug(f"Min temp after heat start = {min_temp_after_heat_start:.2f}")
+        max_temp_after_heat_stop = df1.iloc[0]['min']  # get the first & only value in the min column
+        logging.debug(f"Min temp after heat start = {max_temp_after_heat_stop:.2f}")
 
-        heat_start_lag = abs(heat_start_temp - min_temp_after_heat_start)
-        logging.info(f"Heat start lag = {heat_start_lag:.2f}")
-        lag_list.append(heat_start_lag)
+        heat_stop_lag = abs(heat_stop_temp - max_temp_after_heat_stop)
+        logging.info(f"Heat start lag = {heat_stop_lag:.2f}")
+        lag_list.append(heat_stop_lag)
 
     # logging.debug(lag_list)
     lag_mean = mean(lag_list)
     logging.info(f"Average heat start lag = {lag_mean:.3f} C")
+
+    # Calculate the heat stop lag
+    logging.info("Calculate lag after heating stops")
+    logging.info("=================================")
+
+    # find heat stop times
+    query = "select fermenter_temp, change_action from temperature where change_action='STOP HEATING' and time >= now() - " + timeframe
+    logging.debug("Running query: " + query)
+    rs = client.query(query)
+    df = pd.DataFrame(rs['temperature'])
+    df.index = df.index.tz_convert('Pacific/Auckland')
+    logging.info(f"Found {df['change_action'].count():d} instances")
+
+    logging.debug(df)
+
+    lag_list = []
+    for index, row in df.iterrows():
+        heat_stop_temp = row['fermenter_temp']
+        logging.debug(f"Heat stop temp = {heat_stop_temp:.2f}")
+
+        # find the minimum temp over the next 10 mins after heating stops
+        time0 = rfc3339.rfc3339(index)
+        time1 = rfc3339.rfc3339(index + timedelta(minutes=10))
+
+        query = "select max(fermenter_temp) from temperature where '" + time0 + "' <= time and time <= '" + time1 + "'"
+        rs1 = client.query(query)
+        df1 = pd.DataFrame(rs1['temperature'])
+        # df1.index = df1.index.tz_convert('Pacific/Auckland')
+        max_temp_after_heat_stop = df1.iloc[0]['max']  # get the first & only value in the min column
+        logging.debug(f"Max temp after heat stop = {max_temp_after_heat_stop:.2f}")
+
+        heat_stop_lag = abs(heat_stop_temp - max_temp_after_heat_stop)
+        logging.info(f"Heat stop lag = {heat_stop_lag:.2f}")
+        lag_list.append(heat_stop_lag)
+
+    # logging.debug(lag_list)
+    lag_mean = mean(lag_list)
+    logging.info(f"Average heat stop lag = {lag_mean:.3f} C")
 
     # logging.debug(df.index)
 
