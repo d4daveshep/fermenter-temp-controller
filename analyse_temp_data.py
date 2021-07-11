@@ -94,6 +94,8 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
     df.index = df.index.tz_convert('Pacific/Auckland')
     logging.debug(df)
 
+    lag_list = []
+
     for index, row in df.iterrows():
         heat_stop_temp = row['fermenter_temp']
         logging.debug(f"Heat stop temp = {heat_stop_temp:.2f}")
@@ -112,6 +114,11 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
         logging.debug(f"Min temp after heat stop = {min_temp_after_heat_stop:.2f}")
         heat_stop_lag = abs(heat_stop_temp-min_temp_after_heat_stop)
         logging.info(f"Heat stop lag = {heat_stop_lag:.2f}")
+        lag_list.append(heat_stop_lag)
+
+    logging.debug(lag_list)
+
+
 
 
 
