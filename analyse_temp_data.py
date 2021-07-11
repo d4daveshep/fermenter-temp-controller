@@ -93,7 +93,7 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
     rs = client.query(query)
     df = pd.DataFrame(rs['temperature'])
     df.index = df.index.tz_convert('Pacific/Auckland')
-    logging.info(f"Found {df.count():d} instances")
+    logging.info(f"Found {df['change_action'].count():d} instances")
 
     logging.debug(df)
 
