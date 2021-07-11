@@ -84,15 +84,17 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
     logging.info("===========================")
 
     # Calculate the heat start lag
-    # find heat start times
     logging.info("Calculate lag after heating starts")
     logging.info("==================================")
-    query = "select fermenter_temp, change_action from temperature where change_action='START HEATING' and time >= now() - " + timeframe
 
+    # find heat start times
+    query = "select fermenter_temp, change_action from temperature where change_action='START HEATING' and time >= now() - " + timeframe
     logging.debug("Running query: " + query)
     rs = client.query(query)
     df = pd.DataFrame(rs['temperature'])
     df.index = df.index.tz_convert('Pacific/Auckland')
+    logging.info(f"Found {df.count():d} instances")
+
     logging.debug(df)
 
     lag_list = []
@@ -101,31 +103,24 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
         heat_start_temp = row['fermenter_temp']
         logging.debug(f"Heat stop temp = {heat_start_temp:.2f}")
 
+        # find the minimum temp over the next 10 mins after heating starts
         time0 = rfc3339.rfc3339(index)
-        time5 = rfc3339.rfc3339(index + timedelta(minutes=5))
+        time1 = rfc3339.rfc3339(index + timedelta(minutes=10))
 
-        # logging.debug(f"Heat start = {time0}")
-        # logging.debug(f"End window = {time5}")
-        query = "select min(fermenter_temp) from temperature where '" + time0 + "' <= time and time <= '" + time5 + "'"
-        # logging.debug(query)
+        query = "select min(fermenter_temp) from temperature where '" + time0 + "' <= time and time <= '" + time1 + "'"
         rs1 = client.query(query)
         df1 = pd.DataFrame(rs1['temperature'])
-        df1.index = df1.index.tz_convert('Pacific/Auckland')
-        min_temp_after_heat_start = df1.iloc[0]['min']
+        # df1.index = df1.index.tz_convert('Pacific/Auckland')
+        min_temp_after_heat_start = df1.iloc[0]['min']  # get the first & only value in the min column
         logging.debug(f"Min temp after heat start = {min_temp_after_heat_start:.2f}")
-        heat_start_lag = abs(heat_start_temp-min_temp_after_heat_start)
+
+        heat_start_lag = abs(heat_start_temp - min_temp_after_heat_start)
         logging.info(f"Heat start lag = {heat_start_lag:.2f}")
         lag_list.append(heat_start_lag)
 
     # logging.debug(lag_list)
     lag_mean = mean(lag_list)
     logging.info(f"Average heat start lag = {lag_mean:.3f} C")
-
-
-
-
-
-
 
     # logging.debug(df.index)
 
