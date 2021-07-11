@@ -95,7 +95,8 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
     logging.debug(df)
 
     for index, row in df.iterrows():
-        logging.debug(row['fermenter_temp'])
+        heat_stop_temp = row['fermenter_temp']
+        logging.debug(f"Heat stop temp = {heat_stop_temp:.2f}")
 
         time0 = rfc3339.rfc3339(index)
         time5 = rfc3339.rfc3339(index + timedelta(minutes=5))
