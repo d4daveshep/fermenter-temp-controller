@@ -1,6 +1,7 @@
 import argparse
 import logging
 from datetime import timedelta
+from statistics import mean
 
 import numpy as np
 import pandas as pd
@@ -97,8 +98,8 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
     lag_list = []
 
     for index, row in df.iterrows():
-        heat_stop_temp = row['fermenter_temp']
-        logging.debug(f"Heat stop temp = {heat_stop_temp:.2f}")
+        heat_start_temp = row['fermenter_temp']
+        logging.debug(f"Heat stop temp = {heat_start_temp:.2f}")
 
         time0 = rfc3339.rfc3339(index)
         time5 = rfc3339.rfc3339(index + timedelta(minutes=5))
@@ -110,13 +111,15 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
         rs1 = client.query(query)
         df1 = pd.DataFrame(rs1['temperature'])
         df1.index = df1.index.tz_convert('Pacific/Auckland')
-        min_temp_after_heat_stop = df1.iloc[0]['min']
-        logging.debug(f"Min temp after heat stop = {min_temp_after_heat_stop:.2f}")
-        heat_stop_lag = abs(heat_stop_temp-min_temp_after_heat_stop)
-        logging.info(f"Heat stop lag = {heat_stop_lag:.2f}")
-        lag_list.append(heat_stop_lag)
+        min_temp_after_heat_start = df1.iloc[0]['min']
+        logging.debug(f"Min temp after heat start = {min_temp_after_heat_start:.2f}")
+        heat_start_lag = abs(heat_start_temp-min_temp_after_heat_start)
+        logging.info(f"Heat start lag = {heat_start_lag:.2f}")
+        lag_list.append(heat_start_lag)
 
-    logging.debug(lag_list)
+    # logging.debug(lag_list)
+    lag_mean = mean(lag_list)
+    logging.info(f"Average heat start lag = {lag_mean:.3f} C")
 
 
 
