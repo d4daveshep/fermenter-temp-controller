@@ -110,6 +110,8 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
         df1.index = df1.index.tz_convert('Pacific/Auckland')
         min_temp_after_heat_stop = df1.iloc[0]['min']
         logging.debug(f"Min temp after heat stop = {min_temp_after_heat_stop:.2f}")
+        heat_stop_lag = abs(heat_stop_temp-min_temp_after_heat_stop)
+        logging.info(f"Heat stop lag = {heat_stop_lag:.2f}")
 
 
 
