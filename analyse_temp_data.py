@@ -108,7 +108,8 @@ def analyse_db(db_name, timeframe="12h", host="localhost", port=8086):
         rs1 = client.query(query)
         df1 = pd.DataFrame(rs1['temperature'])
         df1.index = df1.index.tz_convert('Pacific/Auckland')
-        logging.debug(df1)
+        min_temp_after_heat_stop = df1
+        logging.debug(f"Min temp after heat stop = {min_temp_after_heat_stop:.2f}")
 
 
 
