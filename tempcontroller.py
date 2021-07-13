@@ -138,7 +138,7 @@ def get_last_mean_stddev(client):
     # run the query and load the result set into a dataframe
     rs = client.query(query)
     df = pd.DataFrame(rs['temp_mean_stddev'])
-    # logging.debug(df)
+    logging.debug(df)
     return df
 
 
