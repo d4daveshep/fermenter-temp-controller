@@ -113,6 +113,9 @@ def main(config_file):
             # check if fermenter_temp value is an outlier
             fermenter_temp = fermenter_data['avg']
             mean_stddev = get_last_mean_stddev(influxdb_client)
+            logging.debug(f"Last mean={mean_stddev['last_mean']:.3f}, last stddev={mean_stddev['last_stddev']:.6f}")
+            z_score = (fermenter_temp - mean_stddev['last_mean']) /mean_stddev['last_stddev']
+            logging.debug(f"Z-score = {z_score:.2f}")
 
             # write data to database as json
             logging.debug("Writing InfluxDB json: %s", json.dumps(influxdb_data))
@@ -130,12 +133,12 @@ def main(config_file):
 def get_last_mean_stddev(client):
 
     query = "select last(*) from temp_mean_stddev"
-    logging.debug("Running query: " + query)
+    # logging.debug("Running query: " + query)
 
     # run the query and load the result set into a dataframe
     rs = client.query(query)
     df = pd.DataFrame(rs['temp_mean_stddev'])
-    logging.debug(df)
+    # logging.debug(df)
     return df
 
 
