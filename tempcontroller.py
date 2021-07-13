@@ -17,6 +17,8 @@ from influxdb.exceptions import InfluxDBClientError
 from pytz import timezone
 from serial import SerialException
 
+import pandas as pd
+
 
 def open_influxdb(dbname):
     client = InfluxDBClient("localhost", 8086)
@@ -38,6 +40,7 @@ def open_influxdb(dbname):
         logging.debug("Created continuous query: " + continuous_query)
 
     return client
+
 
 
 def main(config_file):
@@ -98,14 +101,6 @@ def main(config_file):
             if "change" in fermenter_data.keys():
                 influxdb_data["fields"]["change_action"] = str(fermenter_data["change"]).upper()
 
-            # # add boolean flags for graphing to work
-            # if "heat" in fermenter_data.keys():
-            #     influxdb_data["fields"]["heating"] = True
-            # if "rest" in fermenter_data.keys():
-            #     influxdb_data["fields"]["cooling"] = True
-            # if "rest" in fermenter_data.keys():
-            #     influxdb_data["fields"]["resting"] = True
-
             target = fermenter_data["target"]
 
             # check if we need to update the target temp
@@ -115,9 +110,12 @@ def main(config_file):
                 influxdb_data["fields"]["target_temp"] = new_target
                 logging.info("Updated target temp to %s", str(new_target))
 
-            logging.debug("Writing InfluxDB json: %s", json.dumps(influxdb_data))
+            # check if fermenter_temp value is an outlier
+            fermenter_temp = fermenter_data['fermenter_temp']
+            mean_stddev = get_last_mean_stddev(influxdb_client)
 
             # write data to database as json
+            logging.debug("Writing InfluxDB json: %s", json.dumps(influxdb_data))
             influxdb_client.write_points([influxdb_data], database=brew_id)
 
         except JSONDecodeError as err:
@@ -128,6 +126,18 @@ def main(config_file):
     # close the database if the while loop ends
     influxdb_client.close()
     logging.debug("Database closed")
+
+def get_last_mean_stddev(client):
+
+    query = "select last(*) from temp_mean_stddev"
+    logging.debug("Running query: " + query)
+
+    # run the query and load the result set into a dataframe
+    rs = client.query(query)
+    df = pd.DataFrame(rs['temp_mean_stddef'])
+    logging.debug(df)
+    return df
+
 
 
 def get_serial_port():
