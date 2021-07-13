@@ -33,19 +33,19 @@ double ambientTemp = 0.0; // ambient temp hopefully won't need averaging as it s
 
 // define and initialise the temp control tolerances
 float targetTemp = 20.0; // set default target temperature of the fermentation chamber - this could be overwritten by serial data
+//======================
+const float TEMP_DIFF = 0.2; // the tolerance we allow before taking action
+//======================
 float coolStartTemp; // temp above target we will start cooling
 float coolStopTemp; // temp above target we will stop cooling
 float heatStartTemp; // temp below target we will start heating
 float heatStopTemp; // temp below target we will stop heating
-//======================
-const float TEMP_DIFF = 0.2; // the tolerance we allow before taking action
-//======================
-float heatStartLag = 0.038;
-float heatStopLag = 0.054;
-//float coolLag, coolOverrun = 0.0;
 
-float minTemp, cycleMinTemp = 1000.0; // min temperature set to a really high value initally
-float maxTemp, cycleMaxTemp = -1000.0; // max temperature set to a really low value initally
+float heatStartLag = 0.026;  // calculated from external logging data 11/7/2021 with ambient temp 12-14C
+float heatStopLag = 0.037;
+
+float minTemp, cycleMinTemp = 1000.0; // min temperature set to a really high value initially
+float maxTemp, cycleMaxTemp = -1000.0; // max temperature set to a really low value initially
 
 // define variables for reading temperature from serial
 const byte serialBufSize = 12; // size of serial char buffer
