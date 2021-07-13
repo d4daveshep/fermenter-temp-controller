@@ -111,6 +111,7 @@ def main(config_file):
                 logging.info("Updated target temp to %s", str(new_target))
 
             # check if fermenter_temp value is an outlier
+            logging.debug("got here")
             fermenter_temp = fermenter_data['fermenter_temp']
             mean_stddev = get_last_mean_stddev(influxdb_client)
 
