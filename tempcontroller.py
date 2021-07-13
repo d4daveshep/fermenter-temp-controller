@@ -113,7 +113,7 @@ def main(config_file):
             mean_stddev = get_last_mean_stddev(influxdb_client)
             mean = mean_stddev.iloc[0]['last_mean']
             stddev = mean_stddev.iloc[0]['last_stddev']
-            logging.debug(f"mean={mean:.3f}, stddev={stddev:.6f}")
+            logging.debug(f"temp={fermenter_temp:.2f}, mean={mean:.3f}, stddev={stddev:.6f}")
             z_score = (fermenter_temp - mean) / stddev
             logging.debug(f"Z-score = {z_score:.2f}")
 
@@ -138,7 +138,7 @@ def get_last_mean_stddev(client):
     # run the query and load the result set into a dataframe
     rs = client.query(query)
     df = pd.DataFrame(rs['temp_mean_stddev'])
-    logging.debug(df)
+    # logging.debug(df)
     return df
 
 
