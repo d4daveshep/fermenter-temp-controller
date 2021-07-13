@@ -62,4 +62,15 @@ time                 last_mean          last_stddev
 z = (temp - mean) / stddev
 ```` 
 
+### Psuedo code to check and omit an outlier
+````buildoutcfg
+1. get the fermenter_temp
+2. get the last values from the temp_mean_stddev table
+3. calculate the z-score
+4. if z-score < some tolerance e.g. 3.0 then
+    4.1. write the temp record to database
+    else
+    4.2. don't write the temp record to database
+````
+
 
