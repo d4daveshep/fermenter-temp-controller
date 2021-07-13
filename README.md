@@ -22,11 +22,11 @@ So stop heating when temp > heat_stop_temp
 ## Dealing with temperature outliers
 ### Using InfluxDB continuous queries to calculate a z-score so we can detect outliers before adding them to the dataabse
 
-Creates a new measurement called "temp_mean_stddev" and stores the mean and stddev of "fermenter_temp" data every 5 mins
+Creates a new measurement called "temp_mean_stddev" and stores the mean and stddev of "fermenter_temp" data every 10 mins
 ````buildoutcfg
 create continuous query "Get_Temp_Aggregate_Data" on "99-TEST-v99"
 begin
-    select mean("fermenter_temp"), stddev("fermenter_temp") into "temp_mean_stddev" from "temperature" group by time(5m)
+    select mean("fermenter_temp"), stddev("fermenter_temp") into "temp_mean_stddev" from "temperature" group by time(10m)
 end
 ````
 
