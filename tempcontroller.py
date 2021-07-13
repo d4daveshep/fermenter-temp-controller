@@ -112,7 +112,6 @@ def main(config_file):
 
             # check if fermenter_temp value is an outlier
             fermenter_temp = fermenter_data['avg']
-            logging.debug("got here")
             mean_stddev = get_last_mean_stddev(influxdb_client)
 
             # write data to database as json
@@ -135,7 +134,7 @@ def get_last_mean_stddev(client):
 
     # run the query and load the result set into a dataframe
     rs = client.query(query)
-    df = pd.DataFrame(rs['temp_mean_stddef'])
+    df = pd.DataFrame(rs['temp_mean_stddev'])
     logging.debug(df)
     return df
 
