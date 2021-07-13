@@ -10,14 +10,13 @@ from datetime import datetime
 from json import JSONDecodeError
 from pathlib import Path
 
+import pandas as pd
 import serial
 import time
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError
 from pytz import timezone
 from serial import SerialException
-
-import pandas as pd
 
 
 def open_influxdb(dbname):
@@ -40,7 +39,6 @@ def open_influxdb(dbname):
         logging.debug("Created continuous query: " + continuous_query)
 
     return client
-
 
 
 def main(config_file):
@@ -113,8 +111,10 @@ def main(config_file):
             # check if fermenter_temp value is an outlier
             fermenter_temp = fermenter_data['avg']
             mean_stddev = get_last_mean_stddev(influxdb_client)
-            logging.debug(f"Last mean={mean_stddev['last_mean']:.3f}, last stddev={mean_stddev['last_stddev']:.6f}")
-            z_score = (fermenter_temp - mean_stddev['last_mean']) /mean_stddev['last_stddev']
+            mean = mean_stddev.iloc[0]['last_mean']
+            stddev = mean_stddev.iloc[0]['last_stddev']
+            logging.debug(f"mean={mean:.3f}, stddev={stddev:.6f}")
+            z_score = (fermenter_temp - mean) / stddev
             logging.debug(f"Z-score = {z_score:.2f}")
 
             # write data to database as json
@@ -130,8 +130,8 @@ def main(config_file):
     influxdb_client.close()
     logging.debug("Database closed")
 
-def get_last_mean_stddev(client):
 
+def get_last_mean_stddev(client):
     query = "select last(*) from temp_mean_stddev"
     # logging.debug("Running query: " + query)
 
@@ -140,7 +140,6 @@ def get_last_mean_stddev(client):
     df = pd.DataFrame(rs['temp_mean_stddev'])
     # logging.debug(df)
     return df
-
 
 
 def get_serial_port():
