@@ -114,7 +114,7 @@ def main(config_file):
             if not mean_stddev.empty:
                 mean = mean_stddev.iloc[0]['last_mean']
                 stddev = mean_stddev.iloc[0]['last_stddev']
-                logging.debug(f"temp={fermenter_temp:.2f}, mean={mean:.3f}, stddev={stddev:.6f}")
+                logging.info(f"temp={fermenter_temp:.2f}, mean={mean:.3f}, stddev={stddev:.6f}")
                 z_score = (fermenter_temp - mean) / stddev
                 logging.debug(f"Z-score = {z_score:.2f}")
 
