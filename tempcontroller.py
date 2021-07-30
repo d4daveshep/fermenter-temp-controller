@@ -111,11 +111,12 @@ def main(config_file):
             # check if fermenter_temp value is an outlier
             fermenter_temp = fermenter_data['avg']
             mean_stddev = get_last_mean_stddev(influxdb_client)
-            mean = mean_stddev.iloc[0]['last_mean']
-            stddev = mean_stddev.iloc[0]['last_stddev']
-            logging.debug(f"temp={fermenter_temp:.2f}, mean={mean:.3f}, stddev={stddev:.6f}")
-            z_score = (fermenter_temp - mean) / stddev
-            logging.debug(f"Z-score = {z_score:.2f}")
+            if not mean_stddev.empty:
+                mean = mean_stddev.iloc[0]['last_mean']
+                stddev = mean_stddev.iloc[0]['last_stddev']
+                logging.debug(f"temp={fermenter_temp:.2f}, mean={mean:.3f}, stddev={stddev:.6f}")
+                z_score = (fermenter_temp - mean) / stddev
+                logging.debug(f"Z-score = {z_score:.2f}")
 
             # write data to database as json
             logging.debug("Writing InfluxDB json: %s", json.dumps(influxdb_data))
