@@ -133,12 +133,12 @@ def main(config_file):
 
 def get_last_mean_stddev(client):
     query = "select last(*) from temp_mean_stddev"
-    # logging.debug("Running query: " + query)
+    logging.debug("Running query: " + query)
 
     # run the query and load the result set into a dataframe
     rs = client.query(query)
     df = pd.DataFrame(rs['temp_mean_stddev'])
-    # logging.debug(df)
+    logging.debug(df)
     return df
 
 
