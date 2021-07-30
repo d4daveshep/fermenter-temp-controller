@@ -1,3 +1,3 @@
 [fermenter]
-BrewID = 99-TEST-v99
-TargetTemp = 20.0
+BrewID = 63-APA-v9
+TargetTemp = 19.0

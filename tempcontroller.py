@@ -53,8 +53,8 @@ def main(config_file):
     config.read(config_file)
 
     # get the brew ID
-    if config["fermenter"]["brewID"]:
-        brew_id = config["fermenter"]["brewID"]
+    if config["fermenter"]["BrewID"]:
+        brew_id = config["fermenter"]["BrewID"]
     else:
         brew_id = "no_brew_id"
     logging.info("Brew ID is: " + brew_id)
