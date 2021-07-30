@@ -21,7 +21,7 @@ from serial import SerialException
 
 def open_influxdb(dbname):
     client = InfluxDBClient("localhost", 8086)
-    logging.debug("Database client opened")
+    logging.info("Database client opened")
 
     db_list = client.get_list_database()
 
@@ -36,7 +36,7 @@ def open_influxdb(dbname):
         continuous_query = 'select mean("fermenter_temp"), stddev("fermenter_temp") into "temp_mean_stddev" from ' \
                            '"temperature" group by time(10m) '
         client.create_continuous_query("Get_Temp_Aggregate_Data", continuous_query, dbname)
-        logging.debug("Created continuous query: " + continuous_query)
+        logging.info("Created continuous query: " + continuous_query)
 
     return client
 
@@ -84,11 +84,11 @@ def main(config_file):
         try:
             # convert serial line to string and load to JSON sequence
             fermenter_data = json.loads(line.decode("utf-8"))
-            logging.debug("Fermenter data is: %s", fermenter_data)
+            logging.info("Fermenter data is: %s", fermenter_data)
 
             # get formatted localised timestamp
             stamp = nztz.localize(datetime.now()).isoformat()
-            logging.debug("timestamp is %s", stamp)
+            logging.info("timestamp is %s", stamp)
 
             # populate the influxdb_data dict with relevant data from fermenter
             influxdb_data["time"] = stamp
@@ -119,7 +119,7 @@ def main(config_file):
                 logging.debug(f"Z-score = {z_score:.2f}")
 
             # write data to database as json
-            logging.debug("Writing InfluxDB json: %s", json.dumps(influxdb_data))
+            logging.info("Writing InfluxDB json: %s", json.dumps(influxdb_data))
             influxdb_client.write_points([influxdb_data], database=brew_id)
 
         except JSONDecodeError as err:
@@ -166,7 +166,7 @@ def get_serial_port():
         raise SystemExit("*** ERROR *** Couldn't open serial port")
 
     # sleep for 30 secs to allow arduino to reboot after serial port open
-    logging.debug("Sleeping for 30 sec to allow arduino to reboot after serial port was opened")
+    logging.info("Sleeping for 30 sec to allow arduino to reboot after serial port was opened")
     time.sleep(30)
 
     return port
@@ -198,7 +198,7 @@ if __name__ == '__main__':
     dirname, filename = os.path.split(os.path.abspath(__file__))  # get the directory for the log file
     logging.basicConfig(
         filename=dirname + "/tempcontroller.log",
-        level=logging.DEBUG,
+        level=logging.INFO,
         format="%(levelname)s: %(asctime)s: %(message)s")
 
     logging.info("")
