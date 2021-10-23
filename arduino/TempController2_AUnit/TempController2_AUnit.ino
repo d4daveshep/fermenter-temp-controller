@@ -38,27 +38,54 @@ class FermentationProfile {
     }
 };
 
-test(fermentation_profile_get_set) {    
+enum Action {
+  HEAT,
+  COOL,
+  REST
+};
 
+Action getControllerDecision(FermentationProfile fp, double actualTemp) {
+
+  // check failsafe is not breached
+  double target = fp.getFermentationTemp();
+  double range = fp.getTemperatureRange();
+  if( actualTemp > target + range*2 ) {
+    return COOL;
+  }
+  
+}
+
+/*
+test(fermentation_profile_get_set) {    
   String name = "TestBeer_1";
   double temp = 18.0;
   double range = 0.5;
   FermentationProfile fp1(name, temp, range);
-
   assertTrue(fp1.isValid());
-  assertEqual(fp1.getName(), name);
+  assertEqual(fp1.getName(), name); // not really needed
   assertEqual(fp1.getFermentationTemp(), temp);
   assertEqual(fp1.getTemperatureRange(), range);
-      
-}
+       FermentationProfile fp1("TestBeer_1", 18.0, 0.5);
 
+}
+*/
 test(fermentation_temp_and_range_must_be_positive) {
     FermentationProfile fp1("TestBeer_1", 18.0, -1); // this should fail
     assertFalse(fp1.isValid());
-
     FermentationProfile fp2("TestBeer_2", -1, 1.0 ); // sets to invalid
     assertFalse(fp2.isValid());
-    
+   
+}
+
+// Test the decision making logic
+test(failsafe_exceeded) {
+  String name = "TestBeer_1";
+  double temp = 18.0;
+  double range = 0.5;
+  FermentationProfile fp1(name, temp, range);
+  
+  Action decision = getControllerDecision(fp1, temp+range*3);  // way out of range
+  assertEqual(decision, COOL);
 }
 
 //----------------------------------------------------------------------------
