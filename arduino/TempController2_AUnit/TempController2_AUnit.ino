@@ -38,33 +38,36 @@ class FermentationProfile {
     }
 };
 
-enum Action {
-  HEAT,
-  COOL,
-  REST,
-  ERROR
-};
+enum Action {ERROR,HEAT,COOL,REST};
 
 Action getControllerDecision(FermentationProfile fp, double actualTemp) {
 
   double target = fp.getFermentationTemp();
   double range = fp.getTemperatureRange();
   Action decision = ERROR;  // set error if we can't make a decision
-  
+  //Serial.print(actualTemp);
+  //Serial.print("\n");
+
   // check failsafe is not breached
   if( actualTemp > (target + range*2) ) {
     decision = COOL;
-  } else
+    return decision;
+  }
   if (actualTemp < (target - range*2) ) {
     decision = HEAT;
+    return decision;
   }
-  return decision;
+  
 
   // test above range
   decision = ERROR;
+
+  //Serial.print(target+range);
+  
   if( actualTemp > (target + range )) {
     decision = COOL;
   }
+  
   /*else
   // test below range
   if( actualTemp < target - range ) {
@@ -81,7 +84,8 @@ Action getControllerDecision(FermentationProfile fp, double actualTemp) {
 
 // Test the decision making logic
 
-test(temp_range_exceeded) {
+test(TempRangeExceeded) {
+
   String name = "TestBeer_1";
   double temp = 18.0;
   double range = 0.5;
@@ -90,16 +94,16 @@ test(temp_range_exceeded) {
   Action decision;
   decision = getControllerDecision(fp1, temp + range*1.1);  // just over range - should cool
   assertEqual(decision, COOL);
-/*
-  decision = getControllerDecision(fp1, temp - range*1.1);  // just under range - shoudl heat
-  assertEqual(decision, HEAT);
 
+  decision = getControllerDecision(fp1, temp - range*1.1);  // just under range - should heat
+  assertEqual(decision, HEAT);
+/*
   decision = getControllerDecision(fp1, temp+range*0.9);  // just under top end of range. should rest
   assertEqual(decision, REST);
 */  
 }
 
-test(failsafe_exceeded) {
+test(FailsafeExceeded) {
   String name = "TestBeer_1";
   double temp = 18.0;
   double range = 0.5;
@@ -129,7 +133,7 @@ test(fermentation_profile_get_set) {
 
 }
 */
-test(fermentation_temp_and_range_must_be_positive) {
+test(TempAndRangeMustBePositive) {
     FermentationProfile fp1("TestBeer_1", 18.0, -1); // this should fail
     assertFalse(fp1.isValid());
     FermentationProfile fp2("TestBeer_2", -1, 1.0 ); // sets to invalid
