@@ -41,19 +41,79 @@ class FermentationProfile {
 enum Action {
   HEAT,
   COOL,
-  REST
+  REST,
+  ERROR
 };
 
 Action getControllerDecision(FermentationProfile fp, double actualTemp) {
 
-  // check failsafe is not breached
   double target = fp.getFermentationTemp();
   double range = fp.getTemperatureRange();
-  if( actualTemp > target + range*2 ) {
-    return COOL;
+  Action decision = ERROR;  // set error if we can't make a decision
+  
+  // check failsafe is not breached
+  if( actualTemp > (target + range*2) ) {
+    decision = COOL;
+  } else
+  if (actualTemp < (target - range*2) ) {
+    decision = HEAT;
   }
+  return decision;
+
+  // test above range
+  decision = ERROR;
+  if( actualTemp > (target + range )) {
+    decision = COOL;
+  }
+  /*else
+  // test below range
+  if( actualTemp < target - range ) {
+    decision = HEAT;
+  } else
+  // test within range
+  if( actualTemp >= (target - range) && actualTemp <= (target + range) ) {
+    decision = REST; <= actualTemp 
+  }
+  */
+  return decision;
   
 }
+
+// Test the decision making logic
+
+test(temp_range_exceeded) {
+  String name = "TestBeer_1";
+  double temp = 18.0;
+  double range = 0.5;
+  FermentationProfile fp1(name, temp, range);
+
+  Action decision;
+  decision = getControllerDecision(fp1, temp + range*1.1);  // just over range - should cool
+  assertEqual(decision, COOL);
+/*
+  decision = getControllerDecision(fp1, temp - range*1.1);  // just under range - shoudl heat
+  assertEqual(decision, HEAT);
+
+  decision = getControllerDecision(fp1, temp+range*0.9);  // just under top end of range. should rest
+  assertEqual(decision, REST);
+*/  
+}
+
+test(failsafe_exceeded) {
+  String name = "TestBeer_1";
+  double temp = 18.0;
+  double range = 0.5;
+  FermentationProfile fp1(name, temp, range);
+
+  Action decision;
+  decision = getControllerDecision(fp1, temp+range*3);  // way above range so cool
+  assertEqual(decision, COOL);
+
+  decision = getControllerDecision(fp1, temp-range*3);  // way below range so heat
+  assertEqual(decision, HEAT);
+
+}
+
 
 /*
 test(fermentation_profile_get_set) {    
@@ -77,16 +137,6 @@ test(fermentation_temp_and_range_must_be_positive) {
    
 }
 
-// Test the decision making logic
-test(failsafe_exceeded) {
-  String name = "TestBeer_1";
-  double temp = 18.0;
-  double range = 0.5;
-  FermentationProfile fp1(name, temp, range);
-  
-  Action decision = getControllerDecision(fp1, temp+range*3);  // way out of range
-  assertEqual(decision, COOL);
-}
 
 //----------------------------------------------------------------------------
 // setup() and loop()
