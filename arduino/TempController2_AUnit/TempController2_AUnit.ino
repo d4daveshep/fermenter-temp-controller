@@ -60,24 +60,23 @@ Action getControllerDecision(FermentationProfile fp, double actualTemp) {
   
 
   // test above range
-  decision = ERROR;
-
-  //Serial.print(target+range);
-  
   if( actualTemp > (target + range )) {
     decision = COOL;
+    return decision;
   }
-  
-  /*else
+
   // test below range
   if( actualTemp < target - range ) {
     decision = HEAT;
-  } else
+    return decision;
+  }
+  
   // test within range
   if( actualTemp >= (target - range) && actualTemp <= (target + range) ) {
-    decision = REST; <= actualTemp 
+    decision = REST;
+    return decision;
   }
-  */
+  
   return decision;
   
 }
@@ -97,10 +96,13 @@ test(TempRangeExceeded) {
 
   decision = getControllerDecision(fp1, temp - range*1.1);  // just under range - should heat
   assertEqual(decision, HEAT);
-/*
+
   decision = getControllerDecision(fp1, temp+range*0.9);  // just under top end of range. should rest
   assertEqual(decision, REST);
-*/  
+  
+  decision = getControllerDecision(fp1, temp - range*0.9);  // just above bottom end of range. should rest
+  assertEqual(decision, REST);
+  
 }
 
 test(FailsafeExceeded) {
