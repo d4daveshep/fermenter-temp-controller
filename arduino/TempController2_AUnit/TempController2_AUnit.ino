@@ -56,6 +56,10 @@ class ControllerActionRules {
   ControllerActionRules(FermentationProfile fp) {
     this->profile = fp;
   }
+
+  double getFailsafeMin() {
+    return profile.getFermentationTemp() - ( profile.getTemperatureRange() * 2 );
+  }
   
   Action getAction(double actualTemp) {
 
@@ -70,7 +74,7 @@ class ControllerActionRules {
       action = COOL;
       return action;
     }
-    if (actualTemp < (target - range*2) ) {
+    if (actualTemp < getFailsafeMin() ) {
       action = HEAT;
       return action;
     }
@@ -123,11 +127,61 @@ class ControllerActionRules {
     return DRIFT_ERROR;
   }
 
+  Action getNextAction( Action now, double ambient, double actual ) {
+    // if we've tripped failsafe then disregard ambient and current action
+    
+    if( actual < getFailsafeMin() ) {
+      return HEAT;
+    }
+    return ACTION_ERROR;
+  }
+
 };
   
 
 // Test the decision making logic
+test(WhatToDo) {
+  String name = "TestBeer_1";
+  double target = 18.0;
+  double range = 0.5; 
+  FermentationProfile fp1(name, target, range);
+  ControllerActionRules controller(fp1);
 
+  /*
+   * Target range is 17.5 to 18.5
+   * Failsafe is < 17.0 and > 19.0
+   */
+
+  /*
+   * What to we do when....
+   * 1. we are resting | cooling | heating but ambient is high, temp is below failsafe.  HEAT, HEAT, HEAT
+   * 2. ambient is high, we are resting | cooling | heating but temp is below target range
+   * 3. ambient is high, we are resting | cooling | heating but temp is within target range
+   * 4. ambient is high, we are resting | cooling | heating but temp is above target range
+   * 5. ambient is high, we are resting | cooling | heating but temp is above failsafe
+   * 
+   */
+  double ambientHigh = 22.0;
+  double ambientLow = 14.0;
+  double ambientNeutral = target;
+  double belowFailsafe = 16.5;
+  double belowTargetRange = 17.4;
+  double withinTargetRange = target;
+  double aboveTargetRange = 18.6;
+  double aboveFailsafe = 19.5;
+  Action currentAction, nextAction;
+  
+  // Test 1.1
+  currentAction = REST;
+  nextAction = controller.getNextAction(currentAction, ambientHigh, belowFailsafe);
+  assertEqual(nextAction, HEAT);
+ 
+
+  //assertTrue(false); // deliberately fail this test 
+
+
+  
+}
 
 test(AmbientTempGivesNaturalCoolingOrHeating) {
 
@@ -164,7 +218,6 @@ test(AmbientTempGivesNaturalCoolingOrHeating) {
   drift = controller.getNaturalDrift(ambient);
   assertEqual(drift, NEUTRAL);
   
-  //assertTrue(false); // deliberately fail this test 
   
 }
 
