@@ -42,12 +42,13 @@ class FermentationProfile {
 };
 
 enum Action { ACTION_ERROR, HEAT, COOL, REST };
-enum ActionStop { ACTION_STOP_ERROR, RANGE_MAX, RANGE_MIN, IN_RANGE };
+enum NaturalDrift { DRIFT_ERROR, NATURAL_HEATING, NATURAL_COOLING, NEUTRAL };
 
 class ControllerActionRules {
 
   private:
   FermentationProfile profile;
+  double ambientDriftThreshhold = 1.0; // difference between ambient and target that we assume will be influencial
 
   public:
   ControllerActionRules() {
@@ -96,25 +97,32 @@ class ControllerActionRules {
     
   }
 
-  ActionStop getActionStop(double ambient) {
+
+  NaturalDrift getNaturalDrift(double ambient) {
     double target = profile.getFermentationTemp();
-    //double range = profile.getTemperatureRange();
-    ActionStop actionStop = ACTION_STOP_ERROR;
+    NaturalDrift drift = DRIFT_ERROR;
 
     // if ambient is 1C below target then assume natural cooling to heat to top of range
-    if(ambient < (target - 1.0)) {
-      actionStop = RANGE_MAX;
-      return actionStop;
+    if(ambient < (target - this->ambientDriftThreshhold)) {
+      drift = NATURAL_COOLING;
+      return drift;
     }
 
     // if ambient is 1C above target then assume natural heating and cool to bottom of range
-    if(ambient > (target + 1.0)) {
-      actionStop = RANGE_MIN;
-      return actionStop;
+    if(ambient > (target + this->ambientDriftThreshhold)) {
+      drift = NATURAL_HEATING;
+      return drift;
     }
-    return ACTION_STOP_ERROR;
+
+    // if ambient is within 1C of target then call this a neutral environment
+    if(ambient >= (target - this->ambientDriftThreshhold) && ambient <= (target + this->ambientDriftThreshhold)) {
+      drift = NEUTRAL;
+      return drift;
+    }
+   
+    return DRIFT_ERROR;
   }
-  
+
 };
   
 
@@ -135,8 +143,8 @@ test(AmbientTempGivesNaturalCoolingOrHeating) {
    */
    
   double ambient = target - 1.1; // set below target by > 1C
-  ActionStop actionStop = controller.getActionStop(ambient);
-  assertEqual(actionStop, RANGE_MAX);
+  NaturalDrift drift = controller.getNaturalDrift(ambient);
+  assertEqual(drift, NATURAL_COOLING);
   
   /* 
    *  When ambient temp is "well above" target range then don't need much active heating (except failsafe)
@@ -144,8 +152,17 @@ test(AmbientTempGivesNaturalCoolingOrHeating) {
    */
    
   ambient = target + 1.1; // set above target by > 1C
-  actionStop = controller.getActionStop(ambient);
-  assertEqual(actionStop, RANGE_MIN);
+  drift = controller.getNaturalDrift(ambient);
+  assertEqual(drift, NATURAL_HEATING);
+  
+  /* 
+   *  When ambient temp is close to target range then will rely on active heat and cooling
+   *  So we should heat or cool to the BOTTOM of the range and allow natural heating to do the rest
+   */
+   
+  ambient = target;
+  drift = controller.getNaturalDrift(ambient);
+  assertEqual(drift, NEUTRAL);
   
   //assertTrue(false); // deliberately fail this test 
   
