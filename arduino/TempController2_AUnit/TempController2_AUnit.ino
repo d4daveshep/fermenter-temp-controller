@@ -41,8 +41,8 @@ class FermentationProfile {
     }
 };
 
-enum Action { ERROR, HEAT, COOL, REST };
-enum ActionStop { RANGE_MAX, RANGE_MIN, IN_RANGE };
+enum Action { ACTION_ERROR, HEAT, COOL, REST };
+enum ActionStop { ACTION_STOP_ERROR, RANGE_MAX, RANGE_MIN, IN_RANGE };
 
 class ControllerActionRules {
 
@@ -60,7 +60,7 @@ class ControllerActionRules {
 
     double target = profile.getFermentationTemp();
     double range = profile.getTemperatureRange();
-    Action action = ERROR;  // set error if we can't make a decision
+    Action action = ACTION_ERROR;  // set error if we can't make a decision
     //Serial.print(actualTemp);
     //Serial.print("\n");
   
@@ -95,7 +95,19 @@ class ControllerActionRules {
     return action;
     
   }
-  
+
+  ActionStop getActionStop(double ambient) {
+    double target = profile.getFermentationTemp();
+    double range = profile.getTemperatureRange();
+    ActionStop actionStop = ACTION_STOP_ERROR;
+
+    // if ambient is 1C below target then assume natural cooling to heat to top of range
+    if(ambient < (target - 1.0)) {
+      actionStop = RANGE_MAX;
+      return actionStop;
+    }
+    return ACTION_STOP_ERROR;
+  }
   
 };
   
@@ -103,31 +115,27 @@ class ControllerActionRules {
 // Test the decision making logic
 
 
-//test(AmbientBelowTargetRangeMeansNaturalCooling) {
+test(AmbientBelowTargetRangeMeansNaturalCooling) {
 
   /* 
    *  When ambient temp is "well below" target range then don't need much active cooling (except failsafe)
    *  controller.
+   *  So we should heat or cool to the top of the range and allow natural cooling to do the rest
    */
-//   
-//  String name = "TestBeer_1";
-//  double target = 18.0;
-//  double range = 0.5;
-//  FermentationProfile fp1(name, target, range);
-//
-//  // When temp AND ambient are below targetint a = 1/0; range then heat to top of target range
-//  double actual = target - range*1.1;
-//  double ambient = actual - 1.1;
-//
-//  Action action = getAction(fp1, actual);  // just over range - should cool
-//  ActionStop heatStop = getStopStrategy(fp1, actual, ambient)
-//
-//  assertEqual(action, HEAT); // we should be heating
-//  assertEqual(heatStop, RANGE_MAX)
-//  
+   
+  String name = "TestBeer_1";
+  double target = 18.0;
+  double range = 0.5;
+  FermentationProfile fp1(name, target, range);
+  ControllerActionRules controller(fp1);
+
+  double ambient = target - 1.1; // set below target by > 1C
+  ActionStop actionStop = controller.getActionStop(ambient);
+  assertEqual(actionStop, RANGE_MAX);
+  
   //assertTrue(false); // deliberately fail this test 
   
-//}
+}
 
 test(TempRangeExceeded) {
   String name = "TestBeer_1";
