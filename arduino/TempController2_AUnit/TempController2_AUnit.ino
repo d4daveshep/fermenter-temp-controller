@@ -60,6 +60,10 @@ class ControllerActionRules {
   double getFailsafeMin() {
     return profile.getFermentationTemp() - ( profile.getTemperatureRange() * 2 );
   }
+
+  double getTargetRangeMin() {
+    return profile.getFermentationTemp() - ( profile.getTemperatureRange() );
+  }
   
   Action getAction(double actualTemp) {
 
@@ -128,11 +132,16 @@ class ControllerActionRules {
   }
 
   Action getNextAction( Action now, double ambient, double actual ) {
-    // if we've tripped failsafe then disregard ambient and current action
     
+    // if we've tripped failsafe then disregard ambient and current action
     if( actual < getFailsafeMin() ) {
       return HEAT;
     }
+
+    if( actual < getTargetRangeMin() ) {
+      return HEAT;
+    }
+    
     return ACTION_ERROR;
   }
 
@@ -155,7 +164,7 @@ test(WhatToDo) {
   /*
    * What to we do when....
    * 1. we are resting | cooling | heating but ambient is high, temp is below failsafe.  HEAT, HEAT, HEAT
-   * 2. ambient is high, we are resting | cooling | heating but temp is below target range
+   * 2. ambient is high, we are resting | cooling | heating but temp is below target range.  HEAT, HEAT, HEAT
    * 3. ambient is high, we are resting | cooling | heating but temp is within target range
    * 4. ambient is high, we are resting | cooling | heating but temp is above target range
    * 5. ambient is high, we are resting | cooling | heating but temp is above failsafe
@@ -171,10 +180,36 @@ test(WhatToDo) {
   double aboveFailsafe = 19.5;
   Action currentAction, nextAction;
   
-  // Test 1.1
+  // Test 1.1 we are resting and ambient is high but temp is below failsafe so HEAT
   currentAction = REST;
   nextAction = controller.getNextAction(currentAction, ambientHigh, belowFailsafe);
   assertEqual(nextAction, HEAT);
+
+  // Test 1.2 we are cooling and ambient is high but temp is below failsafe so HEAT
+  currentAction = COOL;
+  nextAction = controller.getNextAction(currentAction, ambientHigh, belowFailsafe);
+  assertEqual(nextAction, HEAT);
+
+  // Test 1.3 we are heating and ambient is high but temp is below failsafe so HEAT
+  currentAction = HEAT;
+  nextAction = controller.getNextAction(currentAction, ambientHigh, belowFailsafe);
+  assertEqual(nextAction, HEAT);
+
+  // Test 2.1 we are resting and ambient is high but temp is below target range so HEAT
+  currentAction = REST;
+  nextAction = controller.getNextAction(currentAction, ambientHigh, belowTargetRange);
+  assertEqual(nextAction, HEAT);
+
+  // Test 1.2 we are cooling and ambient is high but temp is below target range so HEAT
+  currentAction = COOL;
+  nextAction = controller.getNextAction(currentAction, ambientHigh, belowTargetRange);
+  assertEqual(nextAction, HEAT);
+
+  // Test 1.3 we are heating and ambient is high but temp is below target range so HEAT
+  currentAction = HEAT;
+  nextAction = controller.getNextAction(currentAction, ambientHigh, belowTargetRange);
+  assertEqual(nextAction, HEAT);
+
  
 
   //assertTrue(false); // deliberately fail this test 
