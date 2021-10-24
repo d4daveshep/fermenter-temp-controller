@@ -98,12 +98,18 @@ class ControllerActionRules {
 
   ActionStop getActionStop(double ambient) {
     double target = profile.getFermentationTemp();
-    double range = profile.getTemperatureRange();
+    //double range = profile.getTemperatureRange();
     ActionStop actionStop = ACTION_STOP_ERROR;
 
     // if ambient is 1C below target then assume natural cooling to heat to top of range
     if(ambient < (target - 1.0)) {
       actionStop = RANGE_MAX;
+      return actionStop;
+    }
+
+    // if ambient is 1C above target then assume natural heating and cool to bottom of range
+    if(ambient > (target + 1.0)) {
+      actionStop = RANGE_MIN;
       return actionStop;
     }
     return ACTION_STOP_ERROR;
@@ -115,23 +121,31 @@ class ControllerActionRules {
 // Test the decision making logic
 
 
-test(AmbientBelowTargetRangeMeansNaturalCooling) {
+test(AmbientTempGivesNaturalCoolingOrHeating) {
 
-  /* 
-   *  When ambient temp is "well below" target range then don't need much active cooling (except failsafe)
-   *  controller.
-   *  So we should heat or cool to the top of the range and allow natural cooling to do the rest
-   */
-   
   String name = "TestBeer_1";
   double target = 18.0;
   double range = 0.5;
   FermentationProfile fp1(name, target, range);
   ControllerActionRules controller(fp1);
 
+  /* 
+   *  When ambient temp is "well below" target range then don't need much active cooling (except failsafe)
+   *  So we should heat or cool to the TOP of the range and allow natural cooling to do the rest
+   */
+   
   double ambient = target - 1.1; // set below target by > 1C
   ActionStop actionStop = controller.getActionStop(ambient);
   assertEqual(actionStop, RANGE_MAX);
+  
+  /* 
+   *  When ambient temp is "well above" target range then don't need much active heating (except failsafe)
+   *  So we should heat or cool to the BOTTOM of the range and allow natural heating to do the rest
+   */
+   
+  ambient = target + 1.1; // set above target by > 1C
+  actionStop = controller.getActionStop(ambient);
+  assertEqual(actionStop, RANGE_MIN);
   
   //assertTrue(false); // deliberately fail this test 
   
