@@ -38,7 +38,13 @@ class FermentationProfile {
     }
 };
 
-enum Action {ERROR,HEAT,COOL,REST};
+enum Action { ERROR, HEAT, COOL, REST };
+enum ActionStop { ERROR, RANGE_MAX, RANGE_MIN, IN_RANGE };
+
+class ControllerActionRules {
+  
+};
+  
 
 Action getControllerDecision(FermentationProfile fp, double actualTemp) {
 
@@ -83,8 +89,34 @@ Action getControllerDecision(FermentationProfile fp, double actualTemp) {
 
 // Test the decision making logic
 
-test(TempRangeExceeded) {
 
+//test(AmbientBelowTargetRangeMeansNaturalCooling) {
+
+  /* 
+   *  When ambient temp is "well below" target range then don't need much active cooling (except failsafe)
+   *  
+   */
+//   
+//  String name = "TestBeer_1";
+//  double target = 18.0;
+//  double range = 0.5;
+//  FermentationProfile fp1(name, target, range);
+//
+//  // When temp AND ambient are below target range then heat to top of target range
+//  double actual = target - range*1.1;
+//  double ambient = actual - 1.1;
+//
+//  Action decision = getControllerDecision(fp1, actual);  // just over range - should cool
+//  ActionStop heatStop = getStopStrategy(fp1, actual, ambient)
+//
+//  assertEqual(decision, HEAT); // we should be heating
+//  assertEqual(heatStop, RANGE_MAX)
+//  
+  //assertTrue(false); // deliberately fail this test 
+  
+//}
+
+test(TempRangeExceeded) {
   String name = "TestBeer_1";
   double temp = 18.0;
   double range = 0.5;
@@ -97,7 +129,7 @@ test(TempRangeExceeded) {
   decision = getControllerDecision(fp1, temp - range*1.1);  // just under range - should heat
   assertEqual(decision, HEAT);
 
-  decision = getControllerDecision(fp1, temp+range*0.9);  // just under top end of range. should rest
+  decision = getControllerDecision(fp1, temp + range*0.9);  // just under top end of range. should rest
   assertEqual(decision, REST);
   
   decision = getControllerDecision(fp1, temp - range*0.9);  // just above bottom end of range. should rest
