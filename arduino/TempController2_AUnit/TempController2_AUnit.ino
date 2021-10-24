@@ -207,6 +207,19 @@ test(WhatToDo) {
    * 4. ambient is high, we are resting | cooling | heating but temp is above target range.  COOL, COOL, COOL
    * 5. ambient is high, we are resting | cooling | heating but temp is above failsafe. COOL, COOL, COOL
    * 
+   * 6. ambient is low, we are resting | cooling | heating but temp is below failsafe.  HEAT, HEAT, HEAT
+   * 7. ambient is low, we are resting | cooling | heating but temp is below target range. HEAT, HEAT, HEAT 
+   * 8. ambient is low, we are resting | cooling | heating but temp is within target range. REST, REST, HEAT
+   * 9. ambient is low, we are resting | cooling | heating but temp is above target range. REST, REST, REST 
+   * 10. ambient is low, we are resting | cooling | heating but temp is above failsafe. COOL, COOL, COOL
+   * 
+   * 11. ambient near target, we are resting | cooling | heating but temp is below failsafe. HEAT. HEAT, HEAT 
+   * 12. ambient near target, we are resting | cooling | heating but temp is below target range. HEAT. HEAT, HEAT
+   * 13. ambient near target, we are resting | cooling | heating but temp is within target range. REST, 
+   * 14. ambient near target, we are resting | cooling | heating but temp is above target range. COOL, COOL, COOL
+   * 15. ambient near target, we are resting | cooling | heating but temp is above failsafe. COOL, COOL, COOL
+   * 
+   * 
    */
   double ambientHigh = 22.0;
   double ambientLow = 14.0;
@@ -296,7 +309,7 @@ test(WhatToDo) {
 
 
 
-  //assertTrue(false); // deliberately fail this test 
+  assertTrue(false); // finishing these tests
 
 
   
