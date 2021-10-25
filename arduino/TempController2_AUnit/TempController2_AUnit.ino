@@ -1,6 +1,15 @@
 #line 2 "TempController2_Aunit.ino"
 
+#define DO_UNIT_TESTING
+
+#ifdef DO_UNIT_TESTING
 #include <AUnit.h>
+#endif
+
+#include "MyClass.h"
+
+MyClass me;
+String name = me.getName();
 
 class FermentationProfile {
 
@@ -30,6 +39,10 @@ class FermentationProfile {
 
     double getFermentationTemp() {
       return this->temp;
+    }
+
+    double setFermentationTemp(double new_temp) {
+      this->temp = new_temp;
     }
 
     double getTemperatureRange() {
@@ -167,6 +180,7 @@ class ControllerActionRules {
 
 };
   
+#ifdef DO_UNIT_TESTING
 
 // Test the decision making logic
 test(WhatToDoNext) {
@@ -433,6 +447,7 @@ test(TempAndRangeMustBePositive) {
    
 }
 
+#endif
 
 //----------------------------------------------------------------------------
 // setup() and loop()
@@ -448,5 +463,7 @@ void setup() {
 }
 
 void loop() {
+#ifdef DO_UNIT_TESTING
   aunit::TestRunner::run();
+#endif
 }
