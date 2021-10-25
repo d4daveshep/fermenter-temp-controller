@@ -42,7 +42,7 @@ class FermentationProfile {
 };
 
 enum Action { ACTION_ERROR, HEAT, COOL, REST };
-enum NaturalDrift { DRIFT_ERROR, NATURAL_HEATING, NATURAL_COOLING, NEUTRAL };
+enum NaturalDrift { DRIFT_ERROR, NATURAL_HEATING, NATURAL_COOLING };
 
 class ControllerActionRules {
 
@@ -118,28 +118,24 @@ class ControllerActionRules {
   }
 
 
-  NaturalDrift getNaturalDrift(double ambient) {
-    double target = profile.getFermentationTemp();
-    NaturalDrift drift = DRIFT_ERROR;
+  /*
+   * Natural Drift hapens is when ambient temp is different to actual fermenter temp.
+   * When ambient > actual we have natural heating
+   * When ambient < actual we have natural cooling
+   * Note:  target temp is irrelevant
+   */
+  NaturalDrift getNaturalDrift(double ambient, double actual) {
 
-    // if ambient is 1C below target then assume natural cooling to heat to top of range
-    if(ambient < (target - this->ambientDriftThreshhold)) {
-      drift = NATURAL_COOLING;
-      return drift;
+    // if ambient is below actual then assume natural cooling will happen
+    if(ambient < actual) {
+      return NATURAL_COOLING;
     }
 
-    // if ambient is 1C above target then assume natural heating and cool to bottom of range
-    if(ambient > (target + this->ambientDriftThreshhold)) {
-      drift = NATURAL_HEATING;
-      return drift;
+    // if ambient is above actualthen assume natural heating will happen
+    if(ambient >= actual) {
+      return NATURAL_HEATING;
     }
 
-    // if ambient is within 1C of target then call this a neutral environment
-    if(ambient >= (target - this->ambientDriftThreshhold) && ambient <= (target + this->ambientDriftThreshhold)) {
-      drift = NEUTRAL;
-      return drift;
-    }
-   
     return DRIFT_ERROR;
   }
 
@@ -150,60 +146,60 @@ class ControllerActionRules {
       return HEAT;
     }
 
-    // Test 5. if we've tripped failsafe then disregard ambient and current action
+    // Test 5,10. if we've tripped failsafe then disregard ambient and current action
     if( actual > getFailsafeMax() ) {
       return COOL;
     }
 
     // Test 2. regardless of what we're currently doing, we are above our target range and have natural heating so start cooling
-    if(actual > getTargetRangeMax() && getNaturalDrift(ambient) == NATURAL_HEATING ) {
+    if(actual > getTargetRangeMax() && getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
       return COOL;
     }
 
     // Test 4. Regardless of what we're doing, when ambient is high and we are below target range, just REST and use natural heating
-    if( actual < getTargetRangeMin() && getNaturalDrift(ambient) == NATURAL_HEATING ) {
+    if( actual < getTargetRangeMin() && getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
       return REST;
     }
 
     // Test 7.  Regardless of what we're currently doing, we are below our target range and have natural cooling so start heating
-    if(actual < getTargetRangeMin() && getNaturalDrift(ambient) == NATURAL_COOLING ) {
+    if(actual < getTargetRangeMin() && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
       return HEAT;
     }
 
     // Test 9. Regardless of what we're doing, when ambient is low, but temp is above target range, we REST and use natural cooling
-    if(actual > getTargetRangeMax() && getNaturalDrift(ambient) == NATURAL_COOLING ) {
+    if(actual > getTargetRangeMax() && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
       return REST;
     }
 
     
     
-    // we're already resting within our target range and have natural heating so keep resting
-    if( now == REST && inTargetRange(actual) && getNaturalDrift(ambient) == NATURAL_HEATING ) {
+    // Test 3.1 we're already resting within our target range and have natural heating so keep resting
+    if( now == REST && inTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
       return REST;
     }
     
-    // we're already cooling within our target range and have natural heating so keep cooling
-    if( now == COOL && inTargetRange(actual) && getNaturalDrift(ambient) == NATURAL_HEATING ) {
+    // Test 3.2 we're already cooling within our target range and have natural heating so keep cooling
+    if( now == COOL && inTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
       return COOL;
     }
     
-    // we're heating within our target range and have natural heating so stop and rest
-    if( now == HEAT && inTargetRange(actual) && getNaturalDrift(ambient) == NATURAL_HEATING ) {
+    // Test 3.3 we're heating within our target range and have natural heating so stop and rest
+    if( now == HEAT && inTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
       return REST;
     }
 
     // Test 8.1 we are resting within our target range and ambient is low so keep RESTing
-    if( now == REST && inTargetRange(actual) && getNaturalDrift(ambient) == NATURAL_COOLING ) {
+    if( now == REST && inTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
       return REST;
     }
 
     // Test 8.2 we are cooling, temp is within target range and ambient is low so REST (and use natural cooling)
-    if( now == COOL && inTargetRange(actual) && getNaturalDrift(ambient) == NATURAL_COOLING ) {
+    if( now == COOL && inTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
       return REST;
     }
   
     // Test 8.3 we are heating. temp is within target range and ambient is low so keep HEATing
-    if( now == HEAT && inTargetRange(actual) && getNaturalDrift(ambient) == NATURAL_COOLING ) {
+    if( now == HEAT && inTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
       return HEAT;
     }
   
@@ -443,7 +439,7 @@ test(WhatToDo) {
 
 
   
-  //assertTrue(false); // finishing these tests
+  assertTrue(false); // finishing these tests
 
 
   
@@ -457,32 +453,23 @@ test(AmbientTempGivesNaturalCoolingOrHeating) {
   FermentationProfile fp1(name, target, range);
   ControllerActionRules controller(fp1);
 
-  /* 
-   *  When ambient temp is "well below" target range then don't need much active cooling (except failsafe)
-   *  So we should heat or cool to the TOP of the range and allow natural cooling to do the rest
-   */
-   
-  double ambient = target - 1.1; // set below target by > 1C
-  NaturalDrift drift = controller.getNaturalDrift(ambient);
-  assertEqual(drift, NATURAL_COOLING);
   
-  /* 
-   *  When ambient temp is "well above" target range then don't need much active heating (except failsafe)
-   *  So we should heat or cool to the BOTTOM of the range and allow natural heating to do the rest
-   */
-   
-  ambient = target + 1.1; // set above target by > 1C
-  drift = controller.getNaturalDrift(ambient);
-  assertEqual(drift, NATURAL_HEATING);
+  // Test natural cooling
+  double ambient = 18.0;
+  double actual = 20.0;
+  assertEqual( controller.getNaturalDrift( ambient, actual ), NATURAL_COOLING );
+
+  // Test natural heating
+  ambient = 18.0;
+  actual = 16.0;
+  assertEqual( controller.getNaturalDrift( ambient, actual ), NATURAL_HEATING );
+
+  // Test neutral = natural heating
+  ambient = 18.0;
+  actual = 18.0;
+  assertEqual( controller.getNaturalDrift( ambient, actual ), NATURAL_HEATING );
   
-  /* 
-   *  When ambient temp is close to target range then will rely on active heat and cooling
-   *  So we should heat or cool to the BOTTOM of the range and allow natural heating to do the rest
-   */
-   
-  ambient = target;
-  drift = controller.getNaturalDrift(ambient);
-  assertEqual(drift, NEUTRAL);
+
   
   
 }
