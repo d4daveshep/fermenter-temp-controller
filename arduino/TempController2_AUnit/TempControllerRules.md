@@ -1,5 +1,4 @@
 # Temperature Controller Rules #  
-### Easy Rules ###  
 
 #### Natural heating and cooling ####
 1. Natural heating is when the ambient temp is above the actual fermenter temp.
@@ -8,21 +7,18 @@
 Notes:
 * The larger the temperature difference the stronger the natural effect.  
 
-### Natural Heating Rules ###
-#### Failsafe Exceeded ####
-1. If we are outside target range by a lot then trigger a **failsafe**, and HEAT or COOL until we are back within the target range.  
-
-#### Outside of Target Range ####  
-1. If we are below the target range AND have natural heating, then HEAT to bottom of target range then REST to naturally warm up.  
-1. If we are above the target range AND have natural heating, then COOL to near bottom of target range 
-
-#### Within Target Range ####
-1. If we are within target range and COOLING then keep COOLIING to near bottom of target range then REST to naturally warm up.
-
-
-2. If we are below the target range AND have natural cooling, then HEAT to near top of target range then REST to naturally cool down.
-4. If we are above the target range AND have natural cooling, then COOL to top of target range then REST to naturally cool down
-
-THIS IS REALLY HARD!!!  
-Should I try to remember and stick to the previous strategy e.g. heat to top of target range.  Or should I just heat until another rule takes over?
+### What to we do when....###
+##### We have natural heating...#####
+1. ambient is high, we are resting | cooling | heating but temp is below failsafe.  HEAT, HEAT, HEAT
+2. ambient is high, we are resting | cooling | heating but temp is below target range.  REST, REST, REST
+3. ambient is high, we are resting | cooling | heating but temp is within target range.  REST, COOL, REST
+4. ambient is high, we are resting | cooling | heating but temp is above target range.  COOL, COOL, COOL
+5. ambient is high, we are resting | cooling | heating but temp is above failsafe. COOL, COOL, COOL
+##### We have natural cooling...#####
+6. ambient is low, we are resting | cooling | heating but temp is below failsafe.  HEAT, HEAT, HEAT
+7. ambient is low, we are resting | cooling | heating but temp is below target range. HEAT, HEAT, HEAT 
+8. ambient is low, we are resting | cooling | heating but temp is within target range. REST, REST, HEAT
+9. ambient is low, we are resting | cooling | heating but temp is above target range. REST, REST, REST 
+10. ambient is low, we are resting | cooling | heating but temp is above failsafe. COOL, COOL, COOL
+ 
 
