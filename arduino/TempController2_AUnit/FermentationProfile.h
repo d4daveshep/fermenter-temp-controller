@@ -1,3 +1,6 @@
+#ifndef _FERMENTATION_PROFILE_H
+#define _FERMENTATION_PROFILE_H
+
 #include <Arduino.h>
 
 class FermentationProfile {
@@ -21,3 +24,5 @@ class FermentationProfile {
 
     bool isValid();
 };
+
+#endif

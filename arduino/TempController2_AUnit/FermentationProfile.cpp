@@ -1,3 +1,5 @@
+#define _DO_UNIT_TESTING
+
 #include <Arduino.h>
 #include <AUnit.h>
 #include "FermentationProfile.h"
@@ -34,6 +36,8 @@ bool FermentationProfile::isValid() {
 	return this->valid;
 }
 
+
+#ifdef _DO_UNIT_TESTING
 /*
  * AUnit Tests
  */
@@ -44,4 +48,6 @@ test(TempAndRangeMustBePositive) {
     assertFalse(fp2.isValid());
    
 }
+#endif
+
 
