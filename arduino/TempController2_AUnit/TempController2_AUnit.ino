@@ -185,6 +185,22 @@ class ControllerActionRules {
       return REST;
     }
 
+    // Test 8.1 we are resting within our target range and ambient is low so keep RESTing
+    if( now == REST && inTargetRange(actual) && getNaturalDrift(ambient) == NATURAL_COOLING ) {
+      return REST;
+    }
+
+    // Test 8.2 we are cooling, temp is within target range and ambient is low so REST (and use natural cooling)
+    if( now == COOL && inTargetRange(actual) && getNaturalDrift(ambient) == NATURAL_COOLING ) {
+      return REST;
+    }
+  
+    // Test 8.3 we are heating. temp is within target range and ambient is low so keep HEATing
+    if( now == HEAT && inTargetRange(actual) && getNaturalDrift(ambient) == NATURAL_COOLING ) {
+      return HEAT;
+    }
+  
+
     return ACTION_ERROR;
   }
 
@@ -363,7 +379,23 @@ test(WhatToDo) {
   nextAction = controller.getNextAction(currentAction, ambientLow, belowTargetRange);
   assertEqual(nextAction, HEAT);
 
+  /*
+   * Test 8. ambient is low, we are resting | cooling | heating but temp is within target range. REST, REST, HEAT
+   */
+  // Test 8.1 we are resting and ambient is low but temp is within target range so keep RESTing
+  currentAction = REST;
+  nextAction = controller.getNextAction(currentAction, ambientLow, withinTargetRange);
+  assertEqual(nextAction, REST);
 
+  // Test 8.2 we are cooling and ambient is low but temp is within target range so REST
+  currentAction = COOL;
+  nextAction = controller.getNextAction(currentAction, ambientLow, withinTargetRange);
+  assertEqual(nextAction, REST);
+
+  // Test 8.3 we are heating and ambient is low but temp is within target range so keep HEATing
+  currentAction = HEAT;
+  nextAction = controller.getNextAction(currentAction, ambientLow, withinTargetRange);
+  assertEqual(nextAction, HEAT);
 
   
   //assertTrue(false); // finishing these tests
