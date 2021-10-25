@@ -6,53 +6,50 @@
 #include <AUnit.h>
 #endif
 
-#include "MyClass.h"
+#include "FermentationProfile.h"
 
-MyClass me;
-String name = me.getName();
-
-class FermentationProfile {
-
-  private:
-    String name;
-    double temp, range;
-    bool valid = false;
-    
-  public:
-
-    FermentationProfile() {
-    }
-    
-    FermentationProfile(String name, double temp, double range){
-      this->name = name;
-
-      if( temp > 0.0 && range > 0.0) {
-        this->valid = true;
-      }
-      this->temp = temp;
-      this->range = range;
-    }
-
-    String getName() {
-      return this->name;
-    }
-
-    double getFermentationTemp() {
-      return this->temp;
-    }
-
-    double setFermentationTemp(double new_temp) {
-      this->temp = new_temp;
-    }
-
-    double getTemperatureRange() {
-      return this->range;
-    }
-
-    bool isValid() {
-      return this->valid;
-    }
-};
+//class FermentationProfile {
+//
+//  private:
+//    String name;
+//    double temp, range;
+//    bool valid = false;
+//    
+//  public:
+//
+//    FermentationProfile() {
+//    }
+//    
+//    FermentationProfile(String name, double temp, double range){
+//      this->name = name;
+//
+//      if( temp > 0.0 && range > 0.0) {
+//        this->valid = true;
+//      }
+//      this->temp = temp;
+//      this->range = range;
+//    }
+//
+//    String getName() {
+//      return this->name;
+//    }
+//
+//    double getFermentationTemp() {
+//      return this->temp;
+//    }
+//
+//    double setFermentationTemp(double new_temp) {
+//      this->temp = new_temp;
+//    }
+//
+//    double getTemperatureRange() {
+//      return this->range;
+//    }
+//
+//    bool isValid() {
+//      return this->valid;
+//    }
+//};
 
 enum Action { ACTION_ERROR, HEAT, COOL, REST };
 enum NaturalDrift { DRIFT_ERROR, NATURAL_HEATING, NATURAL_COOLING };
@@ -439,13 +436,7 @@ test(AmbientTempGivesNaturalCoolingOrHeating) {
   
 }
 
-test(TempAndRangeMustBePositive) {
-    FermentationProfile fp1("TestBeer_1", 18.0, -1); // this should fail
-    assertFalse(fp1.isValid());
-    FermentationProfile fp2("TestBeer_2", -1, 1.0 ); // sets to invalid
-    assertFalse(fp2.isValid());
-   
-}
+
 
 #endif
 
