@@ -17,7 +17,7 @@ Notes:
 #### We have natural cooling...
 6. Ambient is low, we are resting | cooling | heating but temp is **below failsafe.** -> *HEAT, HEAT, HEAT*
 7. Ambient is low, we are resting | cooling | heating but temp is **below target range.** -> *HEAT, HEAT, HEAT*
-8. Ambient is low, we are resting | cooling | heating but temp is **within target range.** -> *REST, REST, HEAT*
+8. Ambient is low, we are resting | cooling | heating but temp is **within target range.** -> *REST, REST, **HEAT*
 9. Ambient is low, we are resting | cooling | heating but temp is **above target range.** -> *REST, REST, REST*
 10. Ambient is low, we are resting | cooling | heating but temp is **above failsafe.** -> *COOL, COOL, COOL*
  
