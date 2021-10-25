@@ -20,5 +20,8 @@ Notes:
 8. Ambient is low, we are resting | cooling | heating but temp is **within target range.** -> *REST, REST, **HEAT***
 9. Ambient is low, we are resting | cooling | heating but temp is **above target range.** -> *REST, REST, REST*
 10. Ambient is low, we are resting | cooling | heating but temp is **above failsafe.** -> *COOL, COOL, COOL*
- 
+
+Notes:
+* These rules should allow for the *HEAT to top of target range* and *COOL to bottom of target range* scenarios.  
+
 
