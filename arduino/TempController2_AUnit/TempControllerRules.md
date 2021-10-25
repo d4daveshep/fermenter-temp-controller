@@ -9,11 +9,11 @@ Notes:
 
 ### What to we do when....
 #### We have natural heating...
-1. Ambient is high, we are resting | cooling | heating but temp is *below failsafe*.  HEAT, HEAT, HEAT
-2. Ambient is high, we are resting | cooling | heating but temp is below target range.  REST, REST, REST
-3. Ambient is high, we are resting | cooling | heating but temp is within target range.  REST, COOL, REST
-4. Ambient is high, we are resting | cooling | heating but temp is above target range.  COOL, COOL, COOL
-5. Ambient is high, we are resting | cooling | heating but temp is above failsafe. COOL, COOL, COOL
+1. Ambient is high, we are resting | cooling | heating but temp is **below failsafe.** -> *HEAT, HEAT, HEAT*
+2. Ambient is high, we are resting | cooling | heating but temp is **below target range.** -> *REST, REST, REST*
+3. Ambient is high, we are resting | cooling | heating but temp is **within target range.** ->  *REST, COOL, REST*
+4. Ambient is high, we are resting | cooling | heating but temp is **above target range.** -> *COOL, COOL, COOL*
+5. Ambient is high, we are resting | cooling | heating but temp is **above failsafe.** -> *COOL, COOL, COOL*
 #### We have natural cooling...
 6. ambient is low, we are resting | cooling | heating but temp is below failsafe.  HEAT, HEAT, HEAT
 7. ambient is low, we are resting | cooling | heating but temp is below target range. HEAT, HEAT, HEAT 
