@@ -230,7 +230,10 @@ test(WhatToDo) {
   double aboveTargetRange = 18.6;
   double aboveFailsafe = 19.5;
   Action currentAction, nextAction;
-  
+
+  /*
+   * Test 1. ambient is high, we are resting | cooling | heating but temp is below failsafe.  HEAT, HEAT, HEAT
+   */
   // Test 1.1 we are resting and ambient is high but temp is below failsafe so HEAT
   currentAction = REST;
   nextAction = controller.getNextAction(currentAction, ambientHigh, belowFailsafe);
@@ -246,6 +249,9 @@ test(WhatToDo) {
   nextAction = controller.getNextAction(currentAction, ambientHigh, belowFailsafe);
   assertEqual(nextAction, HEAT);
 
+  /*
+   * Test 2. ambient is high, we are resting | cooling | heating but temp is below target range.  REST, REST, REST
+   */
   // Test 2.1 we are resting and ambient is high and temp is below target range so REST and use natural heating
   currentAction = REST;
   nextAction = controller.getNextAction(currentAction, ambientHigh, belowTargetRange);
@@ -261,6 +267,9 @@ test(WhatToDo) {
   nextAction = controller.getNextAction(currentAction, ambientHigh, belowTargetRange);
   assertEqual(nextAction, REST);
 
+  /*
+   * Test 3. ambient is high, we are resting | cooling | heating but temp is within target range.  REST, COOL, REST
+   */
   // Test 3.1 we are resting and ambient is high but temp is within target range so keep RESTing
   currentAction = REST;
   nextAction = controller.getNextAction(currentAction, ambientHigh, withinTargetRange);
@@ -276,6 +285,9 @@ test(WhatToDo) {
   nextAction = controller.getNextAction(currentAction, ambientHigh, withinTargetRange);
   assertEqual(nextAction, REST);
 
+  /*
+   * Test 4. ambient is high, we are resting | cooling | heating but temp is above target range.  COOL, COOL, COOL
+   */
   // Test 4.1 we are resting and ambient is high but temp is above target range so start COOLing
   currentAction = REST;
   nextAction = controller.getNextAction(currentAction, ambientHigh, aboveTargetRange);
@@ -292,7 +304,10 @@ test(WhatToDo) {
   assertEqual(nextAction, COOL);
 
 
-   // Test 5.1 we are resting and ambient is high but temp is above failsafe so COOL
+  /*
+   * Test 5. ambient is high, we are resting | cooling | heating but temp is above failsafe. COOL, COOL, COOL
+   */
+  // Test 5.1 we are resting and ambient is high but temp is above failsafe so COOL
   currentAction = REST;
   nextAction = controller.getNextAction(currentAction, ambientHigh, aboveFailsafe);
   assertEqual(nextAction, COOL);
@@ -307,9 +322,26 @@ test(WhatToDo) {
   nextAction = controller.getNextAction(currentAction, ambientHigh, aboveFailsafe);
   assertEqual(nextAction, COOL);
 
+  /*
+   * Test 6. ambient is low, we are resting | cooling | heating but temp is below failsafe.  HEAT, HEAT, HEAT
+   */
+  // Test 6.1 we are resting and ambient is low and temp is below failsafe so HEAT
+  currentAction = REST;
+  nextAction = controller.getNextAction(currentAction, ambientLow, belowFailsafe);
+  assertEqual(nextAction, HEAT);
+
+  // Test 6.2 we are cooling and ambient is low but temp is below failsafe so HEAT
+  currentAction = COOL;
+  nextAction = controller.getNextAction(currentAction, ambientLow, belowFailsafe);
+  assertEqual(nextAction, HEAT);
+
+  // Test 6.3 we are heating and ambient is low but temp is below failsafe so HEAT
+  currentAction = HEAT;
+  nextAction = controller.getNextAction(currentAction, ambientLow, belowFailsafe);
+  assertEqual(nextAction, HEAT);
 
 
-  assertTrue(false); // finishing these tests
+  //assertTrue(false); // finishing these tests
 
 
   
