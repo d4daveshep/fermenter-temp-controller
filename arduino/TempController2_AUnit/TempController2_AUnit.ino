@@ -145,19 +145,24 @@ class ControllerActionRules {
 
   Action getNextAction( Action now, double ambient, double actual ) {
     
-    // if we've tripped failsafe then disregard ambient and current action
+    // Test 1,6. if we've tripped failsafe then disregard ambient and current action
     if( actual < getFailsafeMin() ) {
       return HEAT;
     }
 
-    // if we've tripped failsafe then disregard ambient and current action
+    // Test 5. if we've tripped failsafe then disregard ambient and current action
     if( actual > getFailsafeMax() ) {
       return COOL;
     }
 
-    // regardless of what we're currently doing, we are above our target range and have natural heating so start cooling
+    // Test 2. regardless of what we're currently doing, we are above our target range and have natural heating so start cooling
     if(actual > getTargetRangeMax() && getNaturalDrift(ambient) == NATURAL_HEATING ) {
       return COOL;
+    }
+
+    // Test 7.  Regardless of what we're currently doing, we are below our target range and have natural cooling so start heating
+    if(actual < getTargetRangeMin() && getNaturalDrift(ambient) == NATURAL_COOLING ) {
+      return HEAT;
     }
     
     // we're below our target range but we have natural heating so just rest and use natural heating
@@ -340,7 +345,27 @@ test(WhatToDo) {
   nextAction = controller.getNextAction(currentAction, ambientLow, belowFailsafe);
   assertEqual(nextAction, HEAT);
 
+  /*
+   * Test 7. ambient is low, we are resting | cooling | heating but temp is below target range. HEAT, HEAT, HEAT 
+   */
+  // Test 7.1 we are resting and ambient is low and temp is below target range so HEAT to counteract natural cooling
+  currentAction = REST;
+  nextAction = controller.getNextAction(currentAction, ambientLow, belowTargetRange);
+  assertEqual(nextAction, HEAT);
 
+  // Test 7.2 we are cooling and ambient is low but temp is below target range so HEAT to counteract natural cooling
+  currentAction = COOL;
+  nextAction = controller.getNextAction(currentAction, ambientLow, belowTargetRange);
+  assertEqual(nextAction, HEAT);
+
+  // Test 7.3 we are heating and ambient is low but temp is below target range so HEAT to counteract natural cooling
+  currentAction = HEAT;
+  nextAction = controller.getNextAction(currentAction, ambientLow, belowTargetRange);
+  assertEqual(nextAction, HEAT);
+
+
+
+  
   //assertTrue(false); // finishing these tests
 
 
