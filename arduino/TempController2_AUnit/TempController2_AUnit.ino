@@ -160,16 +160,23 @@ class ControllerActionRules {
       return COOL;
     }
 
-    // Test 7.  Regardless of what we're currently doing, we are below our target range and have natural cooling so start heating
-    if(actual < getTargetRangeMin() && getNaturalDrift(ambient) == NATURAL_COOLING ) {
-      return HEAT;
-    }
-    
-    // we're below our target range but we have natural heating so just rest and use natural heating
+    // Test 4. Regardless of what we're doing, when ambient is high and we are below target range, just REST and use natural heating
     if( actual < getTargetRangeMin() && getNaturalDrift(ambient) == NATURAL_HEATING ) {
       return REST;
     }
 
+    // Test 7.  Regardless of what we're currently doing, we are below our target range and have natural cooling so start heating
+    if(actual < getTargetRangeMin() && getNaturalDrift(ambient) == NATURAL_COOLING ) {
+      return HEAT;
+    }
+
+    // Test 9. Regardless of what we're doing, when ambient is low, but temp is above target range, we REST and use natural cooling
+    if(actual > getTargetRangeMax() && getNaturalDrift(ambient) == NATURAL_COOLING ) {
+      return REST;
+    }
+
+    
+    
     // we're already resting within our target range and have natural heating so keep resting
     if( now == REST && inTargetRange(actual) && getNaturalDrift(ambient) == NATURAL_HEATING ) {
       return REST;
@@ -396,6 +403,44 @@ test(WhatToDo) {
   currentAction = HEAT;
   nextAction = controller.getNextAction(currentAction, ambientLow, withinTargetRange);
   assertEqual(nextAction, HEAT);
+
+  /*
+   * Test 9. ambient is low, we are resting | cooling | heating but temp is above target range. REST, REST, REST 
+   */
+   // Test 9.1 we are resting and ambient is low but temp is above target range so keep RESTing and use natural cooling
+  currentAction = REST;
+  nextAction = controller.getNextAction(currentAction, ambientLow, aboveTargetRange);
+  assertEqual(nextAction, REST);
+
+  // Test 9.2 we are cooling and ambient is low but temp is above target range so REST (and use natural cooling
+  currentAction = COOL;
+  nextAction = controller.getNextAction(currentAction, ambientLow, aboveTargetRange);
+  assertEqual(nextAction, REST);
+
+  // Test 9.3 we are heating and ambient is low but temp is above target range so REST (and use natural cooling)
+  currentAction = HEAT;
+  nextAction = controller.getNextAction(currentAction, ambientLow, aboveTargetRange);
+  assertEqual(nextAction, REST);
+
+  /*
+   * Test 10. ambient is low, we are resting | cooling | heating but temp is above failsafe. COOL, COOL, COOL
+   */
+  // Test 10.1 we are resting and ambient is low but temp is above failsafe so COOL
+  currentAction = REST;
+  nextAction = controller.getNextAction(currentAction, ambientLow, aboveFailsafe);
+  assertEqual(nextAction, COOL);
+
+  // Test 10.2 we are cooling and ambient is low but temp is above failsafe so COOL
+  currentAction = COOL;
+  nextAction = controller.getNextAction(currentAction, ambientLow, aboveFailsafe);
+  assertEqual(nextAction, COOL);
+
+  // Test 10.3 we are heating and ambient is low but temp is above failsafe so COOL
+  currentAction = HEAT;
+  nextAction = controller.getNextAction(currentAction, ambientLow, aboveFailsafe);
+  assertEqual(nextAction, COOL);
+
+
 
   
   //assertTrue(false); // finishing these tests
