@@ -79,15 +79,11 @@ char buf[6]; // char buffer used to convert numbers to strings to write to lcd
 const int HEAT_RELAY = 11; //  Heating relay pin
 const int COOL_RELAY = 12; // Cooling relay pin
 
-// define the action states and current action
-//const int REST_OLD = 0;
-//const int HEAT_OLD = 1;
-//const int COOL_OLD = 2;
 Action currentAction = REST;
-//int currentAction = REST; // the current thing we're doing (e.g. REST, HEAT or COOL)
 String changeAction = "NOT_USED"; // used to record when our action changes
 
 /*
+ * NEW GLOBAL VARIABLES
  * Create a global instance of our new controller class
  */
 String beerName = "TestBeer_1";
@@ -150,19 +146,21 @@ void loop(void) {
     checkLCDButtons();
   }
 
+  // TO-DO put readTargetTempFromSerial into a class or method that returns a new target temp
   // read any data from the serial port
   readSerialWithStartEndMarkers();
   updateTargetTemp();
-  
-  // TO-DO put readTargetTempFromSerial into a class or method that returns a new target temp
   fp1.setFermentationTemp(targetTemp);
 
   // do the temp readings and average calculation
   doTempReadings();
 
-  // TO-DO replace *_OLD actions with new Action enum
+  // use our new ControllerActionRules class to determine the next action
   Action nextAction = controller.getNextAction( currentAction, ambientTemp, averageTemp );
   
+  currentAction = nextAction; // TO-DO probably don't need to do this
+  
+/*  TO-DO Remove all this  
   // --- Start OVERRIDE logic ---
   // what are we doing and do we need to change
   // first check if we are well out of target temp tolerance, in which case we should override the normal logic ignoring ambient temp
@@ -273,29 +271,7 @@ void loop(void) {
         break;
     } // end switch
   } // end override
-  
-  /*
-    // MACHINE LEARNING BIT!!
-    // update the differences in temp from target and tolerance based on current conditions
-    if( changeAction == "START HEATING" ) {
-      // we've just started heating again so we're near the bottom of the cycle
-
-      // aim for heating to start so that the heat lag time takes us just to the tolerance temp
-      // so update the temp at which we start heating
-      heatStartTemp = averageTemp; // reset the temp we start heating
-      heatLag = heatStartTemp - cycleMinTemp;
-
-      heatStartTempDiff = targetTemp - heatStartTemp - heatLag;
-      cycleMinTemp = averageTemp; // record the cycle min temp so we can use it to adjust the point we start heating in the future
-
-    }
-    else if( changeAction == "STOP HEATING" ) {
-      // we've just stopped heating so update the heat lag and temperature to start heating at again
-      heatLag = heatStartTemp - cycleMinTemp;
-      //heatStartTemp =
-
-    }
-  */
+*/
 
   // do the action
   switch ( currentAction) {
