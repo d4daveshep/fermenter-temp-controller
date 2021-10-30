@@ -80,11 +80,12 @@ const int HEAT_RELAY = 11; //  Heating relay pin
 const int COOL_RELAY = 12; // Cooling relay pin
 
 // define the action states and current action
-const int REST_OLD = 0;
-const int HEAT_OLD = 1;
-const int COOL_OLD = 2;
-int currentAction = REST_OLD; // the current thing we're doing (e.g. REST_OLD, HEAT_OLD or COOL_OLD)
-String changeAction = ""; // used to record when our action changes
+//const int REST_OLD = 0;
+//const int HEAT_OLD = 1;
+//const int COOL_OLD = 2;
+Action currentAction = REST;
+//int currentAction = REST; // the current thing we're doing (e.g. REST, HEAT or COOL)
+String changeAction = "NOT_USED"; // used to record when our action changes
 
 /*
  * Create a global instance of our new controller class
@@ -133,7 +134,6 @@ void setup(void) {
   cycleMaxTemp = targetTemp + TEMP_DIFF;
 
   resetStartStopTemps();
-
   lastPrintTimestamp = millis();
   lastDelayTimestamp = millis();
 
@@ -160,6 +160,9 @@ void loop(void) {
   // do the temp readings and average calculation
   doTempReadings();
 
+  // TO-DO replace *_OLD actions with new Action enum
+  Action nextAction = controller.getNextAction( currentAction, ambientTemp, averageTemp );
+  
   // --- Start OVERRIDE logic ---
   // what are we doing and do we need to change
   // first check if we are well out of target temp tolerance, in which case we should override the normal logic ignoring ambient temp
@@ -167,18 +170,18 @@ void loop(void) {
   
   // too cold! start heating
   if ( averageTemp < (targetTemp - (1.5*TEMP_DIFF)) ) { 
-    if ( currentAction != HEAT_OLD) {
-      currentAction = HEAT_OLD;
-      changeAction = "START HEATING";
+    if ( currentAction != HEAT) {
+      currentAction = HEAT;
+      //changeAction = "START HEATING";
     }
     override = true;
   } 
 
   // too hot! start cooling
   else if ( averageTemp > (targetTemp + 1.5*TEMP_DIFF)) {
-    if (currentAction != COOL_OLD ) {
-      currentAction = COOL_OLD;
-      changeAction = "START COOLING";
+    if (currentAction != COOL ) {
+      currentAction = COOL;
+      //changeAction = "START COOLING";
     }
     override = true;
   }
@@ -194,12 +197,12 @@ void loop(void) {
 
   if (!override) {
     switch ( currentAction ) {
-      case REST_OLD:
+      case REST:
         // are we within tolerance?
         if ( averageTemp < heatStartTemp) {
           // we are too cold so start heating 
-          currentAction = HEAT_OLD;
-          changeAction = "START HEATING";
+          currentAction = HEAT;
+          //changeAction = "START HEATING";
           cycleMinTemp = averageTemp;
   
           // we've started heating again so calculate the next point we should stop heating at to keep within tolerance
@@ -209,8 +212,8 @@ void loop(void) {
   
         else if ( averageTemp > coolStartTemp) {
           // we are too hot so start cooling
-          currentAction = COOL_OLD;
-          changeAction = "START COOLING";
+          currentAction = COOL;
+          //changeAction = "START COOLING";
           cycleMaxTemp = averageTemp;
 
           // we've started cooling again so calculate the next point we should stop cooling to keep within tolerance
@@ -220,7 +223,7 @@ void loop(void) {
   
         else {
           // we are within tolerance so keep resting
-          currentAction = REST_OLD;
+          currentAction = REST;
           //changeAction = "";
   
           // update the cycleMaxTemp or cycleMinTemp
@@ -233,12 +236,12 @@ void loop(void) {
         }
         break;
   
-      case HEAT_OLD:
+      case HEAT:
         // have we reached or exceeded our target yet, but we don't want to overshoot
         if ( averageTemp >= heatStopTemp || averageTemp > targetTemp + TEMP_DIFF ) {
           // yes so stop heating and rest
-          currentAction = REST_OLD;
-          changeAction = "STOP HEATING";
+          currentAction = REST;
+          //changeAction = "STOP HEATING";
           cycleMaxTemp = averageTemp;
   
           // we've stopped heating so calculate the point at which we should start heating again
@@ -257,12 +260,12 @@ void loop(void) {
         }
         break;
   
-      case COOL_OLD:
+      case COOL:
         // have we reached or exceeded our target yet, but we don't wnat to overshoot
         if ( averageTemp <= coolStopTemp ) {
           // yes so stop cooling and rest
-          currentAction = REST_OLD;
-          changeAction = "STOP COOLING";
+          currentAction = REST;
+          //changeAction = "STOP COOLING";
         }
         else {
           //changeAction = "";
@@ -297,17 +300,17 @@ void loop(void) {
   // do the action
   switch ( currentAction) {
 
-    case REST_OLD:
+    case REST:
       digitalWrite(HEAT_RELAY, LOW); // turn the Heat off
       digitalWrite(COOL_RELAY, LOW); // turn the Cool off
       break;
 
-    case HEAT_OLD:
+    case HEAT:
       digitalWrite(HEAT_RELAY, HIGH); // turn the Heat on
       digitalWrite(COOL_RELAY, LOW); // turn the Cool off
       break;
 
-    case COOL_OLD:
+    case COOL:
       digitalWrite(HEAT_RELAY, LOW); // turn the Heat off
       digitalWrite(COOL_RELAY, HIGH); // turn the Cool on
       break;
@@ -408,15 +411,15 @@ void printJSON() {
   }
 
   switch ( currentAction) {
-    case REST_OLD:
+    case REST:
       Serial.print(",\"action\":\"Rest\"");
       Serial.print(",\"rest\":true");
       break;
-    case HEAT_OLD:
+    case HEAT:
       Serial.print(",\"action\":\"Heat\"");
       Serial.print(",\"heat\":true");
       break;
-    case COOL_OLD:
+    case COOL:
       Serial.print(",\"action\":\"Cool\"");
       Serial.print(",\"cool\":true");
       break;
@@ -428,7 +431,7 @@ void printJSON() {
     Serial.print(",\"change\":\"");
     Serial.print(changeAction);
     Serial.print("\"");
-    changeAction = ""; // reset the changeAction once we're printed it
+    //changeAction = ""; // reset the changeAction once we're printed it
   }
 
   Serial.print(",\"heatstart\":");
@@ -465,13 +468,13 @@ void debug() {
 
   Serial.print(", action=");
   switch ( currentAction) {
-    case REST_OLD:
+    case REST:
       Serial.print("REST");
       break;
-    case HEAT_OLD:
+    case HEAT:
       Serial.print("HEAT");
       break;
-    case COOL_OLD:
+    case COOL:
       Serial.print("COOL");
       break;
     default:
@@ -486,7 +489,7 @@ void debug() {
 
   Serial.print(", changeAction=");
   Serial.print(changeAction);
-  changeAction = ""; // reset the changeAction once we're printed it
+  //changeAction = ""; // reset the changeAction once we're printed it
 
   Serial.println();
 }
@@ -645,13 +648,13 @@ void updateLCD() {
   // current action
   switch ( currentAction) {
 
-    case REST_OLD:
+    case REST:
       lcd.print("Rest");
       break;
-    case HEAT_OLD:
+    case HEAT:
       lcd.print("Heat");
       break;
-    case COOL_OLD:
+    case COOL:
       lcd.print("Cool");
       break;
     default:
@@ -683,7 +686,7 @@ double simCurrentTemp() {
 
   switch ( currentAction ) {
 
-    case REST_OLD:
+    case REST:
       // if we are resting then adjust sim temp based on ambient
       //Serial.print("currentTemp = ");
       //Serial.println(currentTemp);
@@ -691,12 +694,12 @@ double simCurrentTemp() {
       return currentTemp - (tempDiff / 5000.0);
       break;
 
-    case HEAT_OLD:
+    case HEAT:
       // if we're heating then raise the temp by a fixed amount
       return currentTemp + 0.002;
       break;
       
-    case COOL_OLD:
+    case COOL:
       // if we're heating then raise the temp by a fixed amount
       return currentTemp - 0.002;
       break;
