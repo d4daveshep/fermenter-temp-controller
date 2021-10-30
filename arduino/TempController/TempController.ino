@@ -88,7 +88,7 @@ String changeAction = "NOT_USED"; // used to record when our action changes
  */
 String beerName = "TestBeer_1";
 double defaultTargetTemp = 20.0;
-double defaultRange = 0.5; // i.e. +/- either side of target
+double defaultRange = 0.3; // i.e. +/- either side of target
 FermentationProfile fp1(beerName, defaultTargetTemp, defaultRange);
 ControllerActionRules controller(fp1);
 
@@ -157,7 +157,20 @@ void loop(void) {
 
   // use our new ControllerActionRules class to determine the next action
   Action nextAction = controller.getNextAction( currentAction, ambientTemp, averageTemp );
-  
+
+    // do some debugging
+  Serial.print("currentAction: ");
+  Serial.print(currentAction);
+  Serial.print(" ambient: ");
+  Serial.print(ambientTemp);
+  Serial.print(" target: ");
+  Serial.print(targetTemp);
+  Serial.print(" current: ");
+  Serial.print(averageTemp);
+  Serial.print(" nextAction: ");
+  Serial.print(nextAction);
+  Serial.print("\n");
+
   currentAction = nextAction; // TO-DO probably don't need to do this
   
 /*  TO-DO Remove all this  

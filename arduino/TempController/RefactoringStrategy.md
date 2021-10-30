@@ -5,6 +5,8 @@
 [x] replace *_OLD actions with new Action enum  
 [x] remove changeAction string (set to NOT_USED)  
 [ ] remove changeAction entirely  
+[ ] remove heat/cool stop/start variables and output in json and debug  
+[ ] add debugging output__
 
 
 
