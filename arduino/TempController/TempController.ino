@@ -6,6 +6,10 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+#include "FermentationProfile.h"
+#include "ControllerActionRules.h"
+
+
 // define we are in simulation mode or sensor mode (simulation mode generates a random temp rather than reading the sensor)
 const boolean SIMULATE = false;
 //const boolean SIMULATE = true;
@@ -76,11 +80,20 @@ const int HEAT_RELAY = 11; //  Heating relay pin
 const int COOL_RELAY = 12; // Cooling relay pin
 
 // define the action states and current action
-const int REST = 0;
-const int HEAT = 1;
-const int COOL = 2;
-int currentAction = REST; // the current thing we're doing (e.g. REST, HEAT or COOL)
+const int REST_OLD = 0;
+const int HEAT_OLD = 1;
+const int COOL_OLD = 2;
+int currentAction = REST_OLD; // the current thing we're doing (e.g. REST_OLD, HEAT_OLD or COOL_OLD)
 String changeAction = ""; // used to record when our action changes
+
+/*
+ * Create a global instance of our new controller class
+ */
+String beerName = "TestBeer_1";
+double defaultTargetTemp = 20.0;
+double defaultRange = 0.5; // i.e. +/- either side of target
+FermentationProfile fp1(beerName, defaultTargetTemp, defaultRange);
+ControllerActionRules controller(fp1);
 
 /*
    Setup runs once
@@ -140,6 +153,9 @@ void loop(void) {
   // read any data from the serial port
   readSerialWithStartEndMarkers();
   updateTargetTemp();
+  
+  // TO-DO put readTargetTempFromSerial into a class or method that returns a new target temp
+  fp1.setFermentationTemp(targetTemp);
 
   // do the temp readings and average calculation
   doTempReadings();
@@ -151,8 +167,8 @@ void loop(void) {
   
   // too cold! start heating
   if ( averageTemp < (targetTemp - (1.5*TEMP_DIFF)) ) { 
-    if ( currentAction != HEAT) {
-      currentAction = HEAT;
+    if ( currentAction != HEAT_OLD) {
+      currentAction = HEAT_OLD;
       changeAction = "START HEATING";
     }
     override = true;
@@ -160,8 +176,8 @@ void loop(void) {
 
   // too hot! start cooling
   else if ( averageTemp > (targetTemp + 1.5*TEMP_DIFF)) {
-    if (currentAction != COOL ) {
-      currentAction = COOL;
+    if (currentAction != COOL_OLD ) {
+      currentAction = COOL_OLD;
       changeAction = "START COOLING";
     }
     override = true;
@@ -178,11 +194,11 @@ void loop(void) {
 
   if (!override) {
     switch ( currentAction ) {
-      case REST:
+      case REST_OLD:
         // are we within tolerance?
         if ( averageTemp < heatStartTemp) {
           // we are too cold so start heating 
-          currentAction = HEAT;
+          currentAction = HEAT_OLD;
           changeAction = "START HEATING";
           cycleMinTemp = averageTemp;
   
@@ -193,7 +209,7 @@ void loop(void) {
   
         else if ( averageTemp > coolStartTemp) {
           // we are too hot so start cooling
-          currentAction = COOL;
+          currentAction = COOL_OLD;
           changeAction = "START COOLING";
           cycleMaxTemp = averageTemp;
 
@@ -204,7 +220,7 @@ void loop(void) {
   
         else {
           // we are within tolerance so keep resting
-          currentAction = REST;
+          currentAction = REST_OLD;
           //changeAction = "";
   
           // update the cycleMaxTemp or cycleMinTemp
@@ -217,11 +233,11 @@ void loop(void) {
         }
         break;
   
-      case HEAT:
+      case HEAT_OLD:
         // have we reached or exceeded our target yet, but we don't want to overshoot
         if ( averageTemp >= heatStopTemp || averageTemp > targetTemp + TEMP_DIFF ) {
           // yes so stop heating and rest
-          currentAction = REST;
+          currentAction = REST_OLD;
           changeAction = "STOP HEATING";
           cycleMaxTemp = averageTemp;
   
@@ -241,11 +257,11 @@ void loop(void) {
         }
         break;
   
-      case COOL:
+      case COOL_OLD:
         // have we reached or exceeded our target yet, but we don't wnat to overshoot
         if ( averageTemp <= coolStopTemp ) {
           // yes so stop cooling and rest
-          currentAction = REST;
+          currentAction = REST_OLD;
           changeAction = "STOP COOLING";
         }
         else {
@@ -281,17 +297,17 @@ void loop(void) {
   // do the action
   switch ( currentAction) {
 
-    case REST:
+    case REST_OLD:
       digitalWrite(HEAT_RELAY, LOW); // turn the Heat off
       digitalWrite(COOL_RELAY, LOW); // turn the Cool off
       break;
 
-    case HEAT:
+    case HEAT_OLD:
       digitalWrite(HEAT_RELAY, HIGH); // turn the Heat on
       digitalWrite(COOL_RELAY, LOW); // turn the Cool off
       break;
 
-    case COOL:
+    case COOL_OLD:
       digitalWrite(HEAT_RELAY, LOW); // turn the Heat off
       digitalWrite(COOL_RELAY, HIGH); // turn the Cool on
       break;
@@ -392,15 +408,15 @@ void printJSON() {
   }
 
   switch ( currentAction) {
-    case REST:
+    case REST_OLD:
       Serial.print(",\"action\":\"Rest\"");
       Serial.print(",\"rest\":true");
       break;
-    case HEAT:
+    case HEAT_OLD:
       Serial.print(",\"action\":\"Heat\"");
       Serial.print(",\"heat\":true");
       break;
-    case COOL:
+    case COOL_OLD:
       Serial.print(",\"action\":\"Cool\"");
       Serial.print(",\"cool\":true");
       break;
@@ -449,13 +465,13 @@ void debug() {
 
   Serial.print(", action=");
   switch ( currentAction) {
-    case REST:
+    case REST_OLD:
       Serial.print("REST");
       break;
-    case HEAT:
+    case HEAT_OLD:
       Serial.print("HEAT");
       break;
-    case COOL:
+    case COOL_OLD:
       Serial.print("COOL");
       break;
     default:
@@ -629,13 +645,13 @@ void updateLCD() {
   // current action
   switch ( currentAction) {
 
-    case REST:
+    case REST_OLD:
       lcd.print("Rest");
       break;
-    case HEAT:
+    case HEAT_OLD:
       lcd.print("Heat");
       break;
-    case COOL:
+    case COOL_OLD:
       lcd.print("Cool");
       break;
     default:
@@ -667,7 +683,7 @@ double simCurrentTemp() {
 
   switch ( currentAction ) {
 
-    case REST:
+    case REST_OLD:
       // if we are resting then adjust sim temp based on ambient
       //Serial.print("currentTemp = ");
       //Serial.println(currentTemp);
@@ -675,12 +691,12 @@ double simCurrentTemp() {
       return currentTemp - (tempDiff / 5000.0);
       break;
 
-    case HEAT:
+    case HEAT_OLD:
       // if we're heating then raise the temp by a fixed amount
       return currentTemp + 0.002;
       break;
       
-    case COOL:
+    case COOL_OLD:
       // if we're heating then raise the temp by a fixed amount
       return currentTemp - 0.002;
       break;
