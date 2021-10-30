@@ -87,7 +87,7 @@ String changeAction = "NOT_USED"; // used to record when our action changes
 * Create a global instance of our new controller class
 */
 String beerName = "TestBeer_1";
-double defaultTargetTemp = 20.0;
+double defaultTargetTemp = 6.0;
 double defaultRange = 0.3; // i.e. +/- either side of target
 FermentationProfile fp1(beerName, defaultTargetTemp, defaultRange);
 ControllerActionRules controller(fp1);
