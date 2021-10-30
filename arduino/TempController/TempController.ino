@@ -158,8 +158,9 @@ void loop(void) {
   // use our new ControllerActionRules class to determine the next action
   Action nextAction = controller.getNextAction( currentAction, ambientTemp, averageTemp );
   
+  currentAction = nextAction; // TO-DO probably don't need to do this
   
-  
+/*  TO-DO Remove all this  
   // --- Start OVERRIDE logic ---
   // what are we doing and do we need to change
   // first check if we are well out of target temp tolerance, in which case we should override the normal logic ignoring ambient temp
@@ -270,7 +271,7 @@ void loop(void) {
         break;
     } // end switch
   } // end override
-  
+*/
 
   // do the action
   switch ( currentAction) {
