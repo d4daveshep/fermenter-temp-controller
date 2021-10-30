@@ -87,7 +87,7 @@ String changeAction = "NOT_USED"; // used to record when our action changes
 * Create a global instance of our new controller class
 */
 String beerName = "TestBeer_1";
-double defaultTargetTemp = 20.0;
+double defaultTargetTemp = 6.0;
 double defaultRange = 0.3; // i.e. +/- either side of target
 FermentationProfile fp1(beerName, defaultTargetTemp, defaultRange);
 ControllerActionRules controller(fp1);
@@ -151,24 +151,19 @@ void loop(void) {
 	// TO-DO put readTargetTempFromSerial into a class or method that returns a new target temp
 	// read any data from the serial port
 	readSerialWithStartEndMarkers();
-	updateTargetTemp();
-	fp1.setFermentationTemp(targetTemp);
+	double newTargetTemp = updateTargetTemp();
+	fp1.setFermentationTemp(newTargetTemp);
 
 	// do the temp readings and average calculation
 	doTempReadings();
 
-	// use our new ControllerActionRules class to determine the next action
-	Action nextAction = controller.getNextAction( currentAction, ambientTemp, averageTemp );
-
-		// do some debugging
+	// do some debugging
 	Serial.print("currentAction: ");
 	Serial.print(currentAction);
-	Serial.print(" ambient: ");
-	Serial.print(ambientTemp);
-	Serial.print(" target: ");
-	Serial.print(fp1.getFermentationTemp());
-	Serial.print(" current: ");
-	Serial.print(averageTemp);
+
+	// use our new ControllerActionRules class to determine the next action
+	Action nextAction = controller.getNextAction( currentAction, ambientTemp, averageTemp );
+	
 	Serial.print(" nextAction: ");
 	Serial.print(nextAction);
 	Serial.print("\n");
@@ -330,55 +325,6 @@ void loop(void) {
 }
 
 /*
- *Read the lcd button state and adjust the temperature accordingly
-void checkLCDButtons(void) {
-
-	lcd_key = read_LCD_buttons();   // read the buttons
-
-	// depending on which button was pushed, we perform an action
-	switch ( lcd_key ) {
-
-			case btnRIGHT:
-				break;
-			case btnLEFT:
-				break;
-			case btnUP:
-				targetTemp += 1.0;  // increase target temp by 1C
-				break;
-			case btnDOWN:
-				targetTemp -= 1.0;  // decrease target temp by 1C
-				break;
-			case btnSELECT:
-				break;
-				case btnNONE:
-			break;
-	}
-}
- */
-
-/*
- *Read the LCD buttons
-int read_LCD_buttons() {              // read the buttons
-	adc_key_in = analogRead(0);       // read the value from the sensor
-
-	// my buttons when read are centered at these valies: 0, 144, 329, 504, 741
-	// we add approx 50 to those values and check to see if we are close
-	// We make this the 1st option for speed reasons since it will be the most likely result
-
-	if (adc_key_in > 1000) return btnNONE;
-
-	// For V1.0 comment the other threshold and use the one below:
-	if (adc_key_in < 50)   return btnRIGHT;
-	if (adc_key_in < 195)  return btnUP;
-	if (adc_key_in < 380)  return btnDOWN;
-	if (adc_key_in < 555)  return btnLEFT;
-	if (adc_key_in < 790)  return btnSELECT;
-
-	return btnNONE;                // when all others fail, return this.
-}
-*/
-
-/*
 Print JSON format to Serial port
 */
 void printJSON() {
@@ -531,45 +477,17 @@ void readSerialWithStartEndMarkers() {
 /*
  * Update the target temperature
  */
-void updateTargetTemp() {
+double updateTargetTemp() {
 	if (newSerialDataReceived == true) {
 		float newTarget = atof(receivedChars);
 		if ( newTarget != 0.0 ) {
 		targetTemp = newTarget;
-		//resetStartStopTemps();
 		}
 		newSerialDataReceived = false;
 	}
+	return targetTemp;
 }
 
-/* TO-DO this is not needed anymore,  can be removed
-void resetStartStopTemps() {
-
-	if (ambientTemp < (targetTemp-TEMP_DIFF) ) {
-		// we have natural cooling so maximise the heating
-		heatStartTemp = targetTemp - TEMP_DIFF + heatStartLag;
-		heatStopTemp = targetTemp + TEMP_DIFF - heatStopLag;
-		// and minimise the cooling
-		coolStartTemp = 100; // i.e. let override take over
-		coolStopTemp = targetTemp + TEMP_DIFF;
-	}
-	else if (ambientTemp > (targetTemp+TEMP_DIFF)){
-		// we have natural heating so maximise the cooling
-		coolStartTemp = targetTemp + TEMP_DIFF;
-		coolStopTemp = targetTemp - TEMP_DIFF;
-		// and minimise the heating
-		heatStartTemp = 0; // i.e. let override take over
-		heatStopTemp = targetTemp - TEMP_DIFF;;
-	}
-	else {
-		// ambient temp is within our range so set all start/stop temps to +/- TEMP_DIFF
-		coolStartTemp = targetTemp + TEMP_DIFF;
-		coolStopTemp = targetTemp - TEMP_DIFF;
-		heatStartTemp = targetTemp - TEMP_DIFF;
-		heatStopTemp = targetTemp + TEMP_DIFF;
-	}
-
-}
 
 /*
 Read the temperature sensors and calculate the averages, update the min and max
