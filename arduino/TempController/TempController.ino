@@ -151,8 +151,8 @@ void loop(void) {
 	// TO-DO put readTargetTempFromSerial into a class or method that returns a new target temp
 	// read any data from the serial port
 	readSerialWithStartEndMarkers();
-	updateTargetTemp();
-	fp1.setFermentationTemp(targetTemp);
+	double newTargetTemp = updateTargetTemp();
+	fp1.setFermentationTemp(newTargetTemp);
 
 	// do the temp readings and average calculation
 	doTempReadings();
@@ -477,45 +477,17 @@ void readSerialWithStartEndMarkers() {
 /*
  * Update the target temperature
  */
-void updateTargetTemp() {
+double updateTargetTemp() {
 	if (newSerialDataReceived == true) {
 		float newTarget = atof(receivedChars);
 		if ( newTarget != 0.0 ) {
 		targetTemp = newTarget;
-		//resetStartStopTemps();
 		}
 		newSerialDataReceived = false;
 	}
+	return targetTemp;
 }
 
-/* TO-DO this is not needed anymore,  can be removed
-void resetStartStopTemps() {
-
-	if (ambientTemp < (targetTemp-TEMP_DIFF) ) {
-		// we have natural cooling so maximise the heating
-		heatStartTemp = targetTemp - TEMP_DIFF + heatStartLag;
-		heatStopTemp = targetTemp + TEMP_DIFF - heatStopLag;
-		// and minimise the cooling
-		coolStartTemp = 100; // i.e. let override take over
-		coolStopTemp = targetTemp + TEMP_DIFF;
-	}
-	else if (ambientTemp > (targetTemp+TEMP_DIFF)){
-		// we have natural heating so maximise the cooling
-		coolStartTemp = targetTemp + TEMP_DIFF;
-		coolStopTemp = targetTemp - TEMP_DIFF;
-		// and minimise the heating
-		heatStartTemp = 0; // i.e. let override take over
-		heatStopTemp = targetTemp - TEMP_DIFF;;
-	}
-	else {
-		// ambient temp is within our range so set all start/stop temps to +/- TEMP_DIFF
-		coolStartTemp = targetTemp + TEMP_DIFF;
-		coolStopTemp = targetTemp - TEMP_DIFF;
-		heatStartTemp = targetTemp - TEMP_DIFF;
-		heatStopTemp = targetTemp + TEMP_DIFF;
-	}
-
-}
 
 /*
 Read the temperature sensors and calculate the averages, update the min and max
