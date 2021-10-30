@@ -1,5 +1,5 @@
 #!/bin/bash
 
-arduino --board arduino:avr:uno --port /dev/ttyACM0 --upload /home/pi/dev/fermenter-temp-controller/arduino/TempController/TempController.ino
+arduino --board arduino:avr:uno --port /dev/ttyACM0 --upload ./TempController/TempController.ino
 
 
