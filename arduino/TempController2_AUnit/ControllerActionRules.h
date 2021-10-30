@@ -5,7 +5,7 @@
 
 #include "FermentationProfile.h"
 
-enum Action { ACTION_ERROR, HEAT, COOL, REST };
+enum Action { ACTION_ERROR, REST, HEAT, COOL };
 enum NaturalDrift { DRIFT_ERROR, NATURAL_HEATING, NATURAL_COOLING };
 
 class ControllerActionRules {
