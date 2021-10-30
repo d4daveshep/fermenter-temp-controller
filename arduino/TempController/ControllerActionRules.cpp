@@ -52,35 +52,48 @@ ControllerActionRules::ControllerActionRules(FermentationProfile fp) {
   }
 
   Action ControllerActionRules::getNextAction( Action now, double ambient, double actual ) {
-    
+	  Serial.print(" ambient: ");
+	  Serial.print(ambient);
+	  Serial.print(" target: ");
+	  Serial.print(profile.getFermentationTemp());
+	  Serial.print(" actual: ");
+	  Serial.print(actual);
+	  
     // Test 1,6. if we've tripped failsafe then disregard ambient and current action
     if( actual < getFailsafeMin() ) {
+		Serial.print(" Below failsafe min ");
       return HEAT;
     }
 
     // Test 5,10. if we've tripped failsafe then disregard ambient and current action
     if( actual > getFailsafeMax() ) {
-      return COOL;
+		Serial.print(" Above failsafe max ");
+		return COOL;
     }
 
     // Test 2. regardless of what we're currently doing, we are above our target range and have natural heating so start cooling
     if(actual > getTargetRangeMax() && getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
+		Serial.print(" Test 2 ");
+		
       return COOL;
     }
 
     // Test 4. Regardless of what we're doing, when ambient is high and we are below target range, just REST and use natural heating
     if( actual < getTargetRangeMin() && getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
-      return REST;
+		Serial.print(" Test 4 ");
+		return REST;
     }
 
     // Test 7.  Regardless of what we're currently doing, we are below our target range and have natural cooling so start heating
     if(actual < getTargetRangeMin() && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
-      return HEAT;
+		Serial.print(" Test 7 ");
+		return HEAT;
     }
 
     // Test 9. Regardless of what we're doing, when ambient is low, but temp is above target range, we REST and use natural cooling
     if(actual > getTargetRangeMax() && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
-      return REST;
+		Serial.print(" Test 9 ");
+		return REST;
     }
 
     
@@ -112,7 +125,8 @@ ControllerActionRules::ControllerActionRules(FermentationProfile fp) {
   
     // Test 8.3 we are heating. temp is within target range and ambient is low so keep HEATing
     if( now == HEAT && inTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
-      return HEAT;
+		Serial.print(" Test 8.3 ");
+		return HEAT;
     }
   
 
