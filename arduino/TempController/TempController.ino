@@ -6,7 +6,6 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-#include "FermentationProfile.h"
 #include "ControllerActionRules.h"
 
 
@@ -86,11 +85,9 @@ String changeAction = "NOT_USED"; // used to record when our action changes
 * NEW GLOBAL VARIABLES
 * Create a global instance of our new controller class
 */
-String beerName = "TestBeer_1";
 double defaultTargetTemp = 6.0;
 double defaultRange = 0.3; // i.e. +/- either side of target
-FermentationProfile fp1(beerName, defaultTargetTemp, defaultRange);
-ControllerActionRules controller(fp1);
+ControllerActionRules controller(defaultTargetTemp, defaultRange);
 
 /*
 Setup runs once
@@ -152,24 +149,16 @@ void loop(void) {
 	// read any data from the serial port
 	readSerialWithStartEndMarkers();
 	double newTargetTemp = updateTargetTemp();
-	fp1.setFermentationTemp(targetTemp);
+	controller.setTargetTemp(newTargetTemp);
 
 	// do the temp readings and average calculation
 	doTempReadings();
 
 	// do some debugging
-// 	Serial.print("currentAction: ");
-// 	Serial.print(currentAction);
-	Serial.print(" targetInMainLoop: ");
-	Serial.print(fp1.getFermentationTemp());
 
 	// use our new ControllerActionRules class to determine the next action
 	Action nextAction = controller.getNextAction( currentAction, ambientTemp, averageTemp );
 	
-// 	Serial.print(" nextAction: ");
-// 	Serial.print(nextAction);
-	Serial.print("\n");
-
 	currentAction = nextAction; // TO-DO probably don't need to do this
 
 	// do the action
@@ -284,10 +273,10 @@ void printJSON() {
 void debug(Action nextAction) {
 	Serial.print("DEBUG: ");
 	Serial.print("target=");
-	Serial.print(fp1.getFermentationTemp());
+	Serial.print(controller.getTargetTemp());
 
 	Serial.print(", range=");
-	Serial.print(fp1.getTemperatureRange());
+	Serial.print(controller.getTargetRange());
 
 	Serial.print(", actual=");
 	Serial.print(averageTemp);
