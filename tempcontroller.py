@@ -80,7 +80,7 @@ def main(config_file):
     while True:
         logging.debug("--------------------")
         line = serial_port.readline()  # read serial line as bytes
-		logging.debug(line)
+        # logging.debug(line.decode("utf-8"))
 
         try:
             # convert serial line to string and load to JSON sequence
