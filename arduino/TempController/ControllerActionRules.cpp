@@ -54,7 +54,7 @@ ControllerActionRules::ControllerActionRules(FermentationProfile fp) {
   Action ControllerActionRules::getNextAction( Action now, double ambient, double actual ) {
 	  Serial.print(" ambient: ");
 	  Serial.print(ambient);
-	  Serial.print(" target: ");
+	  Serial.print(" targetInGetNextAction: ");
 	  Serial.print(profile.getFermentationTemp());
 	  Serial.print(" actual: ");
 	  Serial.print(actual);

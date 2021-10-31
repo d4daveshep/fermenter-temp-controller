@@ -160,6 +160,8 @@ void loop(void) {
 	// do some debugging
 // 	Serial.print("currentAction: ");
 // 	Serial.print(currentAction);
+	Serial.print(" targetInMainLoop: ");
+	Serial.print(fp1.getFermentationTemp());
 
 	// use our new ControllerActionRules class to determine the next action
 	Action nextAction = controller.getNextAction( currentAction, ambientTemp, averageTemp );
