@@ -152,7 +152,7 @@ void loop(void) {
 	// read any data from the serial port
 	readSerialWithStartEndMarkers();
 	double newTargetTemp = updateTargetTemp();
-	fp1.setFermentationTemp(newTargetTemp);
+	fp1.setFermentationTemp(targetTemp);
 
 	// do the temp readings and average calculation
 	doTempReadings();
@@ -169,119 +169,6 @@ void loop(void) {
 	Serial.print("\n");
 
 	currentAction = nextAction; // TO-DO probably don't need to do this
-
-	/*  TO-DO Remove all this  
-	// --- Start OVERRIDE logic ---
-	// what are we doing and do we need to change
-	// first check if we are well out of target temp tolerance, in which case we should override the normal logic ignoring ambient temp
-	override = false;
-
-	// too cold! start heating
-	if ( averageTemp < (targetTemp - (1.5*TEMP_DIFF)) ) { 
-		if ( currentAction != HEAT) {
-		currentAction = HEAT;
-		//changeAction = "START HEATING";
-		}
-		override = true;
-	} 
-
-	// too hot! start cooling
-	else if ( averageTemp > (targetTemp + 1.5*TEMP_DIFF)) {
-		if (currentAction != COOL ) {
-		currentAction = COOL;
-		//changeAction = "START COOLING";
-		}
-		override = true;
-	}
-
-	// OK we don't need override but so check its turned off and reset the start/stop temps if we just turned if off
-	else {
-		if ( override ) {
-		resetStartStopTemps();
-		}
-		override = false;
-	}
-	// --- End OVERRIDE logic ---
-
-	if (!override) {
-		switch ( currentAction ) {
-		case REST:
-			// are we within tolerance?
-			if ( averageTemp < heatStartTemp) {
-			// we are too cold so start heating 
-			currentAction = HEAT;
-			//changeAction = "START HEATING";
-			cycleMinTemp = averageTemp;
-
-			// we've started heating again so calculate the next point we should stop heating at to keep within tolerance
-			//heatOverrun = cycleMaxTemp - heatStopTemp;
-			//heatStopTemp = targetTemp + TEMP_DIFF - heatOverrun;
-			}
-
-			else if ( averageTemp > coolStartTemp) {
-			// we are too hot so start cooling
-			currentAction = COOL;
-			//changeAction = "START COOLING";
-			cycleMaxTemp = averageTemp;
-
-			// we've started cooling again so calculate the next point we should stop cooling to keep within tolerance
-			//coolOverrun = cycle
-			//coolStopTemp = cycle
-			}
-
-			else {
-			// we are within tolerance so keep resting
-			currentAction = REST;
-			//changeAction = "";
-
-			// update the cycleMaxTemp or cycleMinTemp
-			if ( averageTemp > cycleMaxTemp ) {
-				cycleMaxTemp = averageTemp;
-			} else if ( averageTemp < cycleMinTemp ) {
-				cycleMinTemp = averageTemp;
-			}
-
-			}
-			break;
-
-		case HEAT:
-			// have we reached or exceeded our target yet, but we don't want to overshoot
-			if ( averageTemp >= heatStopTemp || averageTemp > targetTemp + TEMP_DIFF ) {
-			// yes so stop heating and rest
-			currentAction = REST;
-			//changeAction = "STOP HEATING";
-			cycleMaxTemp = averageTemp;
-
-			// we've stopped heating so calculate the point at which we should start heating again
-			//heatLag = heatStartTemp - cycleMinTemp;
-			//heatStartTemp = targetTemp - TEMP_DIFF + heatLag;
-
-			}
-			else {
-			//changeAction = "";
-
-			// update the cycleMinTemp
-			if ( averageTemp < cycleMinTemp ) {
-				cycleMinTemp = averageTemp;
-				//heatlag =
-			}
-			}
-			break;
-
-		case COOL:
-			// have we reached or exceeded our target yet, but we don't wnat to overshoot
-			if ( averageTemp <= coolStopTemp ) {
-			// yes so stop cooling and rest
-			currentAction = REST;
-			//changeAction = "STOP COOLING";
-			}
-			else {
-			//changeAction = "";
-			}
-			break;
-		} // end switch
-	} // end override
-	*/
 
 	// do the action
 	switch ( currentAction) {
