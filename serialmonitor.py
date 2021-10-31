@@ -52,7 +52,7 @@ def main(config_file):
     while True:
         logging.debug("--------------------")
         line = serial_port.readline()  # read serial line as bytes
-		logging.debug(line)
+        logging.debug(line)
 
 
 
