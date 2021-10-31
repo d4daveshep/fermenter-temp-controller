@@ -199,8 +199,8 @@ if __name__ == '__main__':
     dirname, filename = os.path.split(os.path.abspath(__file__))  # get the directory for the log file
     logging.basicConfig(
         filename=dirname + "/tempcontroller.log",
-#        level=logging.INFO,
-        level=logging.DEBUG,
+        level=logging.INFO,
+#        level=logging.DEBUG,
         format="%(levelname)s: %(asctime)s: %(message)s")
 
     logging.info("")

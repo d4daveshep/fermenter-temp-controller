@@ -9,14 +9,6 @@
 #include "ControllerActionRules.h"
 
 
-// define we are in simulation mode or sensor mode (simulation mode generates a random temp rather than reading the sensor)
-const boolean SIMULATE = false;
-//const boolean SIMULATE = true;
-
-//double simAmbientTemp, simCurrentTemp = 0.0;  // store the simulation temps here
-//const int SIM_CURRENT = 1;
-//const int SIM_AMBIENT = 2;
-
 // initialise the OneWire sensors
 const int ONE_WIRE_BUS = 3;  // Data wire is plugged into pin 3 on the Arduino
 OneWire oneWire(ONE_WIRE_BUS);  // Setup a oneWire instance to communicate with any OneWire devices
@@ -35,14 +27,14 @@ long lastDelayTimestamp = 0.0; // timestamp of last delay reading
 double ambientTemp = 0.0; // ambient temp hopefully won't need averaging as it shouldn't change quickly
 
 // define and initialise the temp control tolerances
-float targetTemp = 20.0; // set default target temperature of the fermentation chamber - this could be overwritten by serial data
-//======================
-const float TEMP_DIFF = 0.2; // the tolerance we allow before taking action
-//======================
-float coolStartTemp; // temp above target we will start cooling
-float coolStopTemp; // temp above target we will stop cooling
-float heatStartTemp; // temp below target we will start heating
-float heatStopTemp; // temp below target we will stop heating
+// float targetTemp = 20.0; // set default target temperature of the fermentation chamber - this could be overwritten by serial data
+// ======================
+// const float TEMP_DIFF = 0.2; // the tolerance we allow before taking action
+// ======================
+// float coolStartTemp; // temp above target we will start cooling
+// float coolStopTemp; // temp above target we will stop cooling
+// float heatStartTemp; // temp below target we will start heating
+// float heatStopTemp; // temp below target we will stop heating
 
 float heatStartLag = 0.026;  // calculated from external logging data 11/7/2021 with ambient temp 12-14C
 float heatStopLag = 0.037;
@@ -103,17 +95,10 @@ void setup(void) {
 	lcd.begin(16, 2);
 
 	double firstReading = 0;
-	if (!SIMULATE) {
-		sensors.begin(); // set up the temp sensors
-		sensors.requestTemperatures();  // read the sensors
-		firstReading = sensors.getTempCByIndex(0); // read the temp into index location
-		ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
-	} else {
-		//setupSimulation();
-		firstReading = simCurrentTemp(); // get the current sim temp
-		ambientTemp = simAmbientTemp(); // get the ambient sim temp
-		currentTemp = firstReading;
-	}
+	sensors.begin(); // set up the temp sensors
+	sensors.requestTemperatures();  // read the sensors
+	firstReading = sensors.getTempCByIndex(0); // read the temp into index location
+	ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
 
 	// initialise the temp readings to the first reading just taken
 	for ( int thisReading = 0; thisReading < NUM_READINGS; thisReading++ ) {
@@ -123,8 +108,8 @@ void setup(void) {
 
 	tempTotal = averageTemp * NUM_READINGS;
 
-	cycleMinTemp = targetTemp - TEMP_DIFF;
-	cycleMaxTemp = targetTemp + TEMP_DIFF;
+// 	cycleMinTemp = targetTemp - TEMP_DIFF;
+// 	cycleMaxTemp = targetTemp + TEMP_DIFF;
 
 	//resetStartStopTemps();
 	lastPrintTimestamp = millis();
@@ -145,11 +130,12 @@ void loop(void) {
 	}
 	*/
 
-	// TO-DO put readTargetTempFromSerial into a class or method that returns a new target temp
 	// read any data from the serial port
 	readSerialWithStartEndMarkers();
-	double newTargetTemp = updateTargetTemp();
-	controller.setTargetTemp(newTargetTemp);
+	double newTargetTemp = getUpdatedTargetTemp();
+	if( newTargetTemp > 0) {
+		controller.setTargetTemp(newTargetTemp);
+	}
 
 	// do the temp readings and average calculation
 	doTempReadings();
@@ -190,8 +176,8 @@ void loop(void) {
 	//  if ( ( millis() - lastPrintTimestamp ) > 59600 ) { // every minute
 	if ( ( millis() - lastPrintTimestamp ) > 9900 ) { // every 10 secs
 		lastPrintTimestamp = millis();
-		//printJSON();
-		debug(nextAction);
+		printJSON();
+// 		debug(nextAction);
 	}
 
 	// smart delay of 1000 msec
@@ -249,18 +235,8 @@ void printJSON() {
 		//changeAction = ""; // reset the changeAction once we're printed it
 	}
 
-	Serial.print(",\"heatstart\":");
-	Serial.print(heatStartTemp);
-	Serial.print(",\"heatstop\":");
-	Serial.print(heatStopTemp);
-
-	Serial.print(",\"coolstart\":");
-	Serial.print(coolStartTemp);
-	Serial.print(",\"coolstop\":");
-	Serial.print(coolStopTemp);
-
 	Serial.print(",\"target\":");
-	Serial.print(targetTemp);
+	Serial.print(controller.getTargetTemp());
 	Serial.print(",\"ambient\":");
 	Serial.print(ambientTemp);
 	Serial.print(",\"timestamp\":");
@@ -361,17 +337,17 @@ void readSerialWithStartEndMarkers() {
 }
 
 /*
- * Update the target temperature
+ * Get the updated target temp or -1 if no updated target temp
  */
-double updateTargetTemp() {
+double getUpdatedTargetTemp() {
 	if (newSerialDataReceived == true) {
 		float newTarget = atof(receivedChars);
 		if ( newTarget != 0.0 ) {
-		targetTemp = newTarget;
+		return newTarget;
 		}
 		newSerialDataReceived = false;
 	}
-	return targetTemp;
+	return -1.0;
 }
 
 
@@ -380,14 +356,9 @@ Read the temperature sensors and calculate the averages, update the min and max
 */
 void doTempReadings() {
 	tempTotal -= tempReadings[tempIndex]; // subtract the last temp reading
-	if (!SIMULATE) {
-		sensors.requestTemperatures();  // read the sensors
-		currentTemp = sensors.getTempCByIndex(0); // read the temp
-		ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
-	} else {
-		ambientTemp = simAmbientTemp();
-		currentTemp = simCurrentTemp();
-	}
+	sensors.requestTemperatures();  // read the sensors
+	currentTemp = sensors.getTempCByIndex(0); // read the temp
+	ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
 	tempReadings[tempIndex] = currentTemp; // store it in the index location
 
 	tempTotal += tempReadings[tempIndex]; // add the new temp reading to the total
@@ -428,7 +399,7 @@ void updateLCD() {
 
 	// target temp
 	lcd.print("T");
-	lcd.print( dtostrf(targetTemp, 2, 0, buf) );
+	lcd.print( dtostrf(controller.getTargetTemp(), 2, 0, buf) );
 	lcd.print(" ");
 
 	// ambient temp
@@ -469,55 +440,55 @@ void setupSimulation() {
 
 }
 
-double simCurrentTemp() {
-
-	float startTempOffset = 0;  // use -1, 0, 1
-
-	if ( currentTemp == 0.0 ) {
-		currentTemp = targetTemp + startTempOffset;
-	}
-	double tempDiff = currentTemp - ambientTemp;
-
-	switch ( currentAction ) {
-
-		case REST:
-		// if we are resting then adjust sim temp based on ambient
-		//Serial.print("currentTemp = ");
-		//Serial.println(currentTemp);
-		
-		return currentTemp - (tempDiff / 5000.0);
-		break;
-
-		case HEAT:
-		// if we're heating then raise the temp by a fixed amount
-		return currentTemp + 0.002;
-		break;
-		
-		case COOL:
-		// if we're heating then raise the temp by a fixed amount
-		return currentTemp - 0.002;
-		break;
-		
-		default:
-		return currentTemp;
-		break;
-		
-	}
-
-}
-
-double simAmbientTemp() {
-	float startAmbientTemp = 20.0;  // use 15.0, 20.0 or 25.0
-	float ambientTempDiff = -0.01;  // use -0.1, 0.0, 0.1
-
-	if ( ambientTemp == 0.0 ) {
-		ambientTemp = startAmbientTemp;
-		return ambientTemp;
-	} else { 
-		ambientTemp = ambientTemp + ambientTempDiff;
-		return ambientTemp;
-	}
-
-}
+// double simCurrentTemp() {
+// 
+// 	float startTempOffset = 0;  // use -1, 0, 1
+// 
+// 	if ( currentTemp == 0.0 ) {
+// 		currentTemp = targetTemp + startTempOffset;
+// 	}
+// 	double tempDiff = currentTemp - ambientTemp;
+// 
+// 	switch ( currentAction ) {
+// 
+// 		case REST:
+// 		if we are resting then adjust sim temp based on ambient
+// 		Serial.print("currentTemp = ");
+// 		Serial.println(currentTemp);
+// 		
+// 		return currentTemp - (tempDiff / 5000.0);
+// 		break;
+// 
+// 		case HEAT:
+// 		if we're heating then raise the temp by a fixed amount
+// 		return currentTemp + 0.002;
+// 		break;
+// 		
+// 		case COOL:
+// 		if we're heating then raise the temp by a fixed amount
+// 		return currentTemp - 0.002;
+// 		break;
+// 		
+// 		default:
+// 		return currentTemp;
+// 		break;
+// 		
+// 	}
+// 
+// }
+// 
+// double simAmbientTemp() {
+// 	float startAmbientTemp = 20.0;  // use 15.0, 20.0 or 25.0
+// 	float ambientTempDiff = -0.01;  // use -0.1, 0.0, 0.1
+// 
+// 	if ( ambientTemp == 0.0 ) {
+// 		ambientTemp = startAmbientTemp;
+// 		return ambientTemp;
+// 	} else { 
+// 		ambientTemp = ambientTemp + ambientTempDiff;
+// 		return ambientTemp;
+// 	}
+// 
+//}
 
 
