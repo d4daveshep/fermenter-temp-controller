@@ -26,6 +26,7 @@ double FermentationProfile::getFermentationTemp() {
 
 double FermentationProfile::setFermentationTemp(double new_temp) {
 	this->temp = new_temp;
+	return this->temp;
 }
 
 double FermentationProfile::getTemperatureRange() {
