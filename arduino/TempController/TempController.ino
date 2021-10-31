@@ -312,8 +312,8 @@ void loop(void) {
 	//  if ( ( millis() - lastPrintTimestamp ) > 59600 ) { // every minute
 	if ( ( millis() - lastPrintTimestamp ) > 9900 ) { // every 10 secs
 		lastPrintTimestamp = millis();
-		printJSON();
-		//    debug();
+		//printJSON();
+		debug(nextAction);
 	}
 
 	// smart delay of 1000 msec
@@ -392,41 +392,49 @@ void printJSON() {
 	Serial.println();
 }
 
-void debug() {
+void debug(Action nextAction) {
 	Serial.print("DEBUG: ");
 	Serial.print("target=");
-	Serial.print(targetTemp);
+	Serial.print(fp1.getFermentationTemp());
 
-	Serial.print(", tol=");
-	Serial.print(TEMP_DIFF);
+	Serial.print(", range=");
+	Serial.print(fp1.getTemperatureRange());
 
-	Serial.print(", avg=");
+	Serial.print(", actual=");
 	Serial.print(averageTemp);
 
-	Serial.print(", action=");
+	Serial.print(", currentAction=");
 	switch ( currentAction) {
-		case REST:
-		Serial.print("REST");
-		break;
-		case HEAT:
-		Serial.print("HEAT");
-		break;
-		case COOL:
-		Serial.print("COOL");
-		break;
-		default:
-		Serial.print("ERROR");
-	}
+	 case REST:
+	 Serial.print("REST");
+	  break;
+	 case HEAT:
+	 Serial.print("HEAT");
+	  break;
+	 case COOL:
+	 Serial.print("COOL");
+	  break;
+	 default:
+	 Serial.print("ERROR");
+   }
 
-	Serial.print(", cycleMin=");
-	Serial.print(cycleMinTemp);
+	Serial.print(", nextAction=");
+	switch ( nextAction) {
+	 case REST:
+	 Serial.print("REST");
+	  break;
+	 case HEAT:
+	 Serial.print("HEAT");
+	  break;
+	 case COOL:
+	 Serial.print("COOL");
+	  break;
+	 default:
+	 Serial.print("ERROR");
+   }
 
-	Serial.print(", heatStartTemp=");
-	Serial.print(heatStartTemp);
-
-	Serial.print(", changeAction=");
-	Serial.print(changeAction);
-	//changeAction = ""; // reset the changeAction once we're printed it
+	Serial.print(", ambient=");
+	Serial.print(ambientTemp);
 
 	Serial.println();
 }
