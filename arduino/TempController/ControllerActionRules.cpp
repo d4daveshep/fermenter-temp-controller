@@ -34,6 +34,10 @@ void ControllerActionRules::setTargetTemp(double newTargetTemp) {
 	this->target = newTargetTemp;
 }
 
+double ControllerActionRules::getTargetRange() {
+	return this->range;
+}
+
 bool ControllerActionRules::inTargetRange(double temp) {
 	return getTargetRangeMin() <= temp && temp <= getTargetRangeMax();
 }

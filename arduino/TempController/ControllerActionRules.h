@@ -19,6 +19,7 @@ class ControllerActionRules {
 	double getFailsafeMax();
 	double getTargetTemp();
 	void   setTargetTemp(double newTargetTemp);
+	double getTargetRange();
 	double getTargetRangeMin();
 	double getTargetRangeMax();
 	bool inTargetRange(double temp);
