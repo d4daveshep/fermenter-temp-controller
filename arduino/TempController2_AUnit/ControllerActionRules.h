@@ -11,8 +11,8 @@ class ControllerActionRules {
 	private:
 	double target = 20.0;
 	double range = 0.3;
-	//double ambientDriftThreshhold = 1.0; // difference between ambient and target that we assume will be influencial
-
+	String lastReason = "";
+	
 	public:
 	ControllerActionRules(double targetTemp, double targetRange);
 	double getFailsafeMin();
@@ -24,6 +24,10 @@ class ControllerActionRules {
 	bool inTargetRange(double temp);
 	NaturalDrift getNaturalDrift(double ambient, double actual);
 	Action getNextAction( Action currentAction, double ambient, double actual );
+	/*
+	 * Get the reason for the last decision according to the rules
+	 */
+	String getReason();
 
 };
 
