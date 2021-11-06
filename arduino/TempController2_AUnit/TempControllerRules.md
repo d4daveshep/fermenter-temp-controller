@@ -26,8 +26,10 @@ Notes:
 
 ### Reason Codes
 #### Failsafe range exceeded
-|RC1, RC6|HEAT because the temperature is below the failsafe minimum, regardless of ambient conditions|  
-| RC5, RC10 | COOL because the temperature is above the failsafe maximum, regardless of ambient conditions |  
+| Code | Reason |
+| ---- | ------ |
+| RC1, RC6 | HEAT because the temperature is below the failsafe minimum, regardless of ambient conditions |
+| RC5, RC10 | COOL because the temperature is above the failsafe maximum, regardless of ambient conditions |
 
 #### With natural heating
 | RC2.1 | REST->HEAT because even though there is natural heating, the temperature is below the target range |
