@@ -32,27 +32,27 @@ Notes:
 | RC5, RC10 | COOL because the temperature is above the failsafe maximum, regardless of ambient conditions |
 
 #### With natural heating
+| Code | Reason |
+| ---- | ------ |
 | RC2.1 | REST->HEAT because even though there is natural heating, the temperature is below the target range |
 | RC2.2 | COOL->REST because we are at the bottom of the target range and there is natural heating |
 | RC2.3 | HEAT->REST because we are at the bottom of the target range and there is natural heating |
-
 | RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
 | RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
 | RC3.3 | HEAT->REST because we are in the target range.  There is natural heating so expect temperature to rise |
-
 | RC4.1 | REST->COOL because the temperature is above the target range and we have natural heating |
 | RC4.2 | COOL->COOL becuase the temperature is above the target range and we have natural heating |
 | RC4.3 | HEAT->COOL because the temperature is above target range and we have natural heating.  (adjust heating lag?) |
 
 #### With natural cooling
+| Code | Reason |
+| ---- | ------ |
 | RC7.1 | REST->HEAT because the temperature is below target range and there is natural cooling |
 | RC7.2 | COOL->HEAT because the temperature is below the target range and there is natural cooling (adjust cooling lag?) |
 | RC7.3 | HEAT->HEAT because the temperature is below target range and there is natural cooling |
-
 | RC8.1 | REST->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
 | RC8.2 | COOL->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
 | RC8.3 | HEAT->HEAT because the temperature is still within target range and there is natural cooling |
-
 | RC9.1 | REST->COOL because even though there is natural cooling the temperature is above target range | 
 | RC9.2 | COOL->REST because the temperature is above target range and there is natural cooling |
 | RC9.3 | HEAT->REST because the temperature is above target range and there is natural cooling |
