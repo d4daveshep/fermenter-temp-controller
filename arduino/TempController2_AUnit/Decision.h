@@ -9,7 +9,7 @@ enum Action { NO_ACTION, REST, HEAT, COOL, ACTION_ERROR };
 class Decision {
 private:
 	Action action;
-	String reason;
+	String reasonCode;
 	
 public:
 	Action getNextAction();

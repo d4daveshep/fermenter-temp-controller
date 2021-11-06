@@ -6,18 +6,18 @@
 #include "Decision.h"
 
 Action Decision::getNextAction() {
-	return NO_ACTION;
+	return this->action;
 }
 void Decision::setNextAction(Action nextAction) {
-	
+	this->action = nextAction;
 }
 
 String Decision::getReasonCode(){
-	return "ERROR";
+	return this->reasonCode;
 }
 
 void Decision::setReasonCode(String reasonCode) {
-	
+	this->reasonCode = reasonCode;
 }
 
 
@@ -25,5 +25,14 @@ void Decision::setReasonCode(String reasonCode) {
 /*
  * AUnit Tests
  */
-
+test(StoresActionAndReason) {
+	Action action = HEAT;
+	String code = "RC_TEST";
+	Decision decision;
+	decision.setNextAction(action);
+	decision.setReasonCode(code);
+	
+	assertEqual(decision.getNextAction(), action);
+	assertEqual(decision.getReasonCode(), code);
+}
 #endif
