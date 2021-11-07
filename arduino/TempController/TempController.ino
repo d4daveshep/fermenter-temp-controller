@@ -143,7 +143,8 @@ void loop(void) {
 	// do some debugging
 
 	// use our new ControllerActionRules class to determine the next action
-	Action nextAction = controller.getNextAction( currentAction, ambientTemp, averageTemp );
+	Decision decision = controller.getActionDecision( currentAction, ambientTemp, averageTemp );
+	Action nextAction = decision.getNextAction();
 	
 	currentAction = nextAction; // TO-DO probably don't need to do this
 
@@ -251,8 +252,8 @@ void debug(Action nextAction) {
 	Serial.print("target=");
 	Serial.print(controller.getTargetTemp());
 
-	Serial.print(", range=");
-	Serial.print(controller.getTargetRange());
+// 	Serial.print(", range=");
+// 	Serial.print(controller.getTargetRange());
 
 	Serial.print(", actual=");
 	Serial.print(averageTemp);

@@ -2,8 +2,9 @@
 #define _CONTROLLER_ACTION_RULES_H
 
 #include <Arduino.h>
+#include "Decision.h"
 
-enum Action { ACTION_ERROR, REST, HEAT, COOL };
+// enum Action { NO_ACTION, REST, HEAT, COOL, ACTION_ERROR };
 enum NaturalDrift { DRIFT_ERROR, NATURAL_HEATING, NATURAL_COOLING };
 
 class ControllerActionRules {
@@ -11,8 +12,8 @@ class ControllerActionRules {
 	private:
 	double target = 20.0;
 	double range = 0.3;
-	//double ambientDriftThreshhold = 1.0; // difference between ambient and target that we assume will be influencial
-
+// 	String lastReason = "";
+	
 	public:
 	ControllerActionRules(double targetTemp, double targetRange);
 	double getFailsafeMin();
@@ -21,9 +22,17 @@ class ControllerActionRules {
 	void   setTargetTemp(double newTargetTemp);
 	double getTargetRangeMin();
 	double getTargetRangeMax();
-	bool inTargetRange(double temp);
+	bool isTempInTargetRange(double temp);
+	bool isTempBelowTargetRange(double temp);
+	bool isTempAboveTargetRange(double temp);
+	bool isTempBelowFailsafe(double temp);
+	bool isTempAboveFailsafe(double temp);
 	NaturalDrift getNaturalDrift(double ambient, double actual);
-	Action getNextAction( Action currentAction, double ambient, double actual );
+	Decision getActionDecision( Action currentAction, double ambient, double actual );
+	/*
+	 * Get the reason for the last decision according to the rules
+	 */
+// 	String getReason();
 
 };
 
