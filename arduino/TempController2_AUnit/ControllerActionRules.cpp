@@ -103,6 +103,29 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 			}
 			return decision;
 		}
+
+		/*
+		 *	| RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
+		 *	| RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
+		 *	| RC3.3 | HEAT->REST because we are in the target range.  There is natural heating so expect temperature to rise |
+		 */
+		if( inTargetRange(actual) ) {
+			if( now == REST) {
+				decision.setNextAction(REST);
+				decision.setReasonCode("RC3.1");
+			} else if(now == COOL) {
+				decision.setNextAction(COOL);
+				decision.setReasonCode("RC3.2");
+			} else if(now == HEAT) {
+				decision.setNextAction(REST);
+				decision.setReasonCode("RC3.3");
+			} else {
+				decision.setNextAction(ACTION_ERROR);
+				decision.setReasonCode("RC_ERR");
+			}
+			return decision;
+		}
+			
 		/*
 		 *	| RC4.1 | REST->COOL because the temperature is above the target range and we have natural heating |
 		 *	| RC4.2 | COOL->COOL becuase the temperature is above the target range and we have natural heating |
@@ -143,26 +166,6 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 
 	
 	
-	// Test 3.1 we're already resting within our target range and have natural heating so keep resting
-	if( now == REST && inTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
-		decision.setNextAction(REST);
-		decision.setReasonCode("RC3.1");
-		return decision;
-	}
-	
-	// Test 3.2 we're already cooling within our target range and have natural heating so keep cooling
-	if( now == COOL && inTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
-		decision.setNextAction(COOL);
-		decision.setReasonCode("RC3.2");
-		return decision;
-	}
-	
-	// Test 3.3 we're heating within our target range and have natural heating so stop and rest
-	if( now == HEAT && inTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
-		decision.setNextAction(REST);
-		decision.setReasonCode("RC3.3");
-		return decision;
-	}
 
 	// Test 8.1 we are resting within our target range and ambient is low so keep RESTing
 	if( now == REST && inTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
