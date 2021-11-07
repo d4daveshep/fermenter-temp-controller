@@ -5,6 +5,7 @@
 
 #include "ControllerActionRules.h"
 #include "Decision.h"
+// #include "ControllerTestOnce.cpp"
 
 ControllerActionRules::ControllerActionRules(double targetTemp, double targetRange) {
 	this->target = targetTemp;
@@ -164,7 +165,15 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 /*
 * AUnit Tests
 */
+/*
+Test below failsafe
+testF(ControllerTestOnce, BelowFailsafe) {
+	assertEqual(name, "David");
+}
+*/
+
 // Test the decision making logic
+
 test(WhatToDoNext) {
 	double target = 18.0;
 	double range = 0.5; 
@@ -206,24 +215,23 @@ test(WhatToDoNext) {
 	*/
 	// Test 1.1 we are resting and ambient is high but temp is below failsafe so HEAT
 	currentAction = REST;
-// 	nextAction = controller.getNextAction(currentAction, ambientHigh, belowFailsafe);
 	decision = controller.getActionDecision(currentAction, ambientHigh, belowFailsafe);
 	assertEqual(decision.getNextAction(), HEAT);
 	assertEqual(decision.getReasonCode(), "RC1");
-// 	assertEqual("Reason: below failsafe temp, so start heating", controller.getReason());
-/*
+	
 	// Test 1.2 we are cooling and ambient is high but temp is below failsafe so HEAT
 	currentAction = COOL;
-	nextAction = controller.getNextAction(currentAction, ambientHigh, belowFailsafe);
-	assertEqual(nextAction, HEAT);
-	assertEqual("Reason: below failsafe temp, so start heating", controller.getReason());
+	decision = controller.getActionDecision(currentAction, ambientHigh, belowFailsafe);
+	assertEqual(decision.getNextAction(), HEAT);
+	assertEqual(decision.getReasonCode(), "RC1");
 	
 	// Test 1.3 we are heating and ambient is high but temp is below failsafe so HEAT
 	currentAction = HEAT;
-	nextAction = controller.getNextAction(currentAction, ambientHigh, belowFailsafe);
-	assertEqual(nextAction, HEAT);
-	assertEqual("Reason: below failsafe temp, so keep heating", controller.getReason());
-*/	
+	decision = controller.getActionDecision(currentAction, ambientHigh, belowFailsafe);
+	assertEqual(decision.getNextAction(), HEAT);
+	assertEqual(decision.getReasonCode(), "RC1");
+	
+
 	/*
 	* Test 2. ambient is high, we are resting | cooling | heating but temp is below target range.  REST, REST, REST
 	// Test 2.1 we are resting and ambient is high and temp is below target range so REST and use natural heating
