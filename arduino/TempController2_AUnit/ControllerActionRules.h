@@ -22,7 +22,11 @@ class ControllerActionRules {
 	void   setTargetTemp(double newTargetTemp);
 	double getTargetRangeMin();
 	double getTargetRangeMax();
-	bool inTargetRange(double temp);
+	bool isTempInTargetRange(double temp);
+	bool isTempBelowTargetRange(double temp);
+	bool isTempAboveTargetRange(double temp);
+	bool isTempBelowFailsafe(double temp);
+	bool isTempAboveFailsafe(double temp);
 	NaturalDrift getNaturalDrift(double ambient, double actual);
 	Decision getActionDecision( Action currentAction, double ambient, double actual );
 	/*
