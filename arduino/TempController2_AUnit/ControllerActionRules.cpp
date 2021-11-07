@@ -524,11 +524,9 @@ test(WhatToDoNext) {
 
 	//assertTrue(false); // finishing these tests
 
+}
 
-
-	}
-
-	test(AmbientTempGivesNaturalCoolingOrHeating) {
+test(AmbientTempGivesNaturalCoolingOrHeating) {
 
 	double target = 18.0;
 	double range = 0.5;
@@ -549,9 +547,6 @@ test(WhatToDoNext) {
 	ambient = 18.0;
 	actual = 18.0;
 	assertEqual( controller.getNaturalDrift( ambient, actual ), NATURAL_HEATING );
-
-
-
 
 }
 
