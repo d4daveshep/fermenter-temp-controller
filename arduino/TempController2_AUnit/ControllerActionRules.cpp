@@ -79,11 +79,25 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 		decision.setReasonCode("RC5");
 		return decision;
 	}
-
-	// Test 2. regardless of what we're currently doing, we are above our target range and have natural heating so start cooling
-	if(actual > getTargetRangeMax() && getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
-		decision.setNextAction(NO_ACTION);
-		decision.setReasonCode("NO_RC");
+/*
+	| RC2.1 | REST->HEAT because even though there is natural heating, the temperature is below the target range |
+	| RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
+	| RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
+*/
+	if( actual < getTargetRangeMax() && getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
+		if( now == REST) {
+			decision.setNextAction(HEAT);
+			decision.setReasonCode("RC2.1");
+		} else if(now == COOL) {
+			decision.setNextAction(REST);
+			decision.setReasonCode("RC2.2");
+		} else if(now == HEAT) {
+			decision.setNextAction(REST);
+			decision.setReasonCode("RC2.3");
+		} else {
+			decision.setNextAction(ACTION_ERROR);
+			decision.setReasonCode("RC_ERR");
+		}
 		return decision;
 	}
 
@@ -254,6 +268,10 @@ test(WhatToDoNext) {
 	
 	/*
 	 * Test 2. ambient is high, we are resting | cooling | heating but temp is below target range.  REST, REST, REST
+	 * | RC2.1 | REST->HEAT because even though there is natural heating, the temperature is below the target range |
+	 * | RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
+	 * | RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
+	 * 
 	 */
 	// Test 2.1 we are resting and ambient is high and temp is below target range so REST and use natural heating
 	currentAction = REST;

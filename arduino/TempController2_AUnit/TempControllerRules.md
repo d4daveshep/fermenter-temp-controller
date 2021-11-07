@@ -35,8 +35,8 @@ Notes:
 | Code | Reason |
 | ---- | ------ |
 | RC2.1 | REST->HEAT because even though there is natural heating, the temperature is below the target range |
-| RC2.2 | COOL->REST because we are at the bottom of the target range and there is natural heating |
-| RC2.3 | HEAT->REST because we are at the bottom of the target range and there is natural heating |
+| RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
+| RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
 | RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
 | RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
 | RC3.3 | HEAT->REST because we are in the target range.  There is natural heating so expect temperature to rise |
