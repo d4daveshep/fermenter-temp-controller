@@ -213,38 +213,28 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 		return decision;
 	}
 	
-	
+	/*
+	 * | RC9.1 | REST->COOL because even though there is natural cooling the temperature is above target range | 
+	 * | RC9.2 | COOL->REST because the temperature is above target range and there is natural cooling |
+	 * | RC9.3 | HEAT->REST because the temperature is above target range and there is natural cooling |
+	 */
+	if( actual > getTargetRangeMax() ) {
+		if( now == REST) {
+			decision.setNextAction(COOL);
+			decision.setReasonCode("RC9.1");
+		} else if(now == COOL) {
+			decision.setNextAction(REST);
+			decision.setReasonCode("RC9.2");
+		} else if(now == HEAT) {
+			decision.setNextAction(REST);
+			decision.setReasonCode("RC9.3");
+		} else {
+			decision.setNextAction(ACTION_ERROR);
+			decision.setReasonCode("RC_ERR");
+		}
+		return decision;
+	}
 		
-	// Test 9. Regardless of what we're doing, when ambient is low, but temp is above target range, we REST and use natural cooling
-	if(actual > getTargetRangeMax() && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
-		decision.setNextAction(NO_ACTION);
-		decision.setReasonCode("NO_RC");
-		return decision;
-	}
-
-	
-	
-
-	// Test 8.1 we are resting within our target range and ambient is low so keep RESTing
-	if( now == REST && isTempInTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
-		decision.setNextAction(NO_ACTION);
-		decision.setReasonCode("NO_RC");
-		return decision;
-	}
-
-	// Test 8.2 we are cooling, temp is within target range and ambient is low so REST (and use natural cooling)
-	if( now == COOL && isTempInTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
-		decision.setNextAction(NO_ACTION);
-		decision.setReasonCode("NO_RC");
-		return decision;
-	}
-
-	// Test 8.3 we are heating. temp is within target range and ambient is low so keep HEATing
-	if( now == HEAT && isTempInTargetRange(actual) && getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
-		decision.setNextAction(NO_ACTION);
-		decision.setReasonCode("NO_RC");
-		return decision;
-	}
 
 	decision.setNextAction(ACTION_ERROR);
 	decision.setReasonCode("ERROR");
@@ -488,22 +478,27 @@ test(WhatToDoNext) {
 	assertEqual(decision.getNextAction(), HEAT);
 	
 	/*
-	* Test 9. ambient is low, we are resting | cooling | heating but temp is above target range. REST, REST, REST 
+	 * | RC9.1 | REST->COOL because even though there is natural cooling the temperature is above target range | 
+	 * | RC9.2 | COOL->REST because the temperature is above target range and there is natural cooling |
+	 * | RC9.3 | HEAT->REST because the temperature is above target range and there is natural cooling |
+	 */
 	// Test 9.1 we are resting and ambient is low but temp is above target range so keep RESTing and use natural cooling
 	currentAction = REST;
 	decision = controller.getActionDecision(currentAction, ambientLow, aboveTargetRange);
-	assertEqual(decision.getNextAction(), REST);
+	assertEqual(decision.getReasonCode(), "RC9.1");
+	assertEqual(decision.getNextAction(), COOL);
 
 	// Test 9.2 we are cooling and ambient is low but temp is above target range so REST (and use natural cooling
 	currentAction = COOL;
 	decision = controller.getActionDecision(currentAction, ambientLow, aboveTargetRange);
+	assertEqual(decision.getReasonCode(), "RC9.2");
 	assertEqual(decision.getNextAction(), REST);
 
 	// Test 9.3 we are heating and ambient is low but temp is above target range so REST (and use natural cooling)
 	currentAction = HEAT;
 	decision = controller.getActionDecision(currentAction, ambientLow, aboveTargetRange);
+	assertEqual(decision.getReasonCode(), "RC9.3");
 	assertEqual(decision.getNextAction(), REST);
-	*/
 	
 	/*
 	* Test 10. ambient is low, we are resting | cooling | heating but temp is above failsafe. COOL, COOL, COOL
