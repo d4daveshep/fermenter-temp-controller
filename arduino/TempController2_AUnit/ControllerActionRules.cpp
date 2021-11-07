@@ -502,24 +502,25 @@ test(WhatToDoNext) {
 	
 	/*
 	* Test 10. ambient is low, we are resting | cooling | heating but temp is above failsafe. COOL, COOL, COOL
+	*/
 	// Test 10.1 we are resting and ambient is low but temp is above failsafe so COOL
 	currentAction = REST;
 	decision = controller.getActionDecision(currentAction, ambientLow, aboveFailsafe);
+	assertEqual(decision.getReasonCode(), "RC5");
 	assertEqual(decision.getNextAction(), COOL);
 
 	// Test 10.2 we are cooling and ambient is low but temp is above failsafe so COOL
 	currentAction = COOL;
 	decision = controller.getActionDecision(currentAction, ambientLow, aboveFailsafe);
+	assertEqual(decision.getReasonCode(), "RC5");
 	assertEqual(decision.getNextAction(), COOL);
 
 	// Test 10.3 we are heating and ambient is low but temp is above failsafe so COOL
 	currentAction = HEAT;
 	decision = controller.getActionDecision(currentAction, ambientLow, aboveFailsafe);
+	assertEqual(decision.getReasonCode(), "RC5");
 	assertEqual(decision.getNextAction(), COOL);
-	*/
 	
-
-
 
 	//assertTrue(false); // finishing these tests
 
