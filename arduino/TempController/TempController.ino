@@ -230,8 +230,9 @@ void printJSON() {
 		Serial.print(",\"action\":\"ERROR\"");
 	}
 
-	Serial.print(",\"reason-code\":");
+	Serial.print(",\"reason-code\":\"");
 	Serial.print(decision.getReasonCode());
+	Serial.print("\"");
 	
 // 	if ( changeAction != "" ) {
 // 		Serial.print(",\"change\":\"");
