@@ -192,7 +192,7 @@ void loop(void) {
 /*
 Print JSON format to Serial port
 */
-void printJSON(Decision decision) {
+void printJSON(Decision &decision) {
 
 	Serial.print("{\"now\":");
 	Serial.print(currentTemp);
