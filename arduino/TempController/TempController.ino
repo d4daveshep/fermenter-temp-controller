@@ -80,6 +80,7 @@ Action currentAction = REST;
 double defaultTargetTemp = 20.0;
 double defaultRange = 0.3; // i.e. +/- either side of target
 ControllerActionRules controller(defaultTargetTemp, defaultRange);
+Decision decision;
 
 /*
 Setup runs once
@@ -143,7 +144,7 @@ void loop(void) {
 	// do some debugging
 
 	// use our new ControllerActionRules class to determine the next action
-	Decision decision = controller.getActionDecision( currentAction, ambientTemp, averageTemp );
+	decision = controller.getActionDecision( currentAction, ambientTemp, averageTemp );
 	Action nextAction = decision.getNextAction();
 	
 	currentAction = nextAction; // TO-DO probably don't need to do this
@@ -177,7 +178,7 @@ void loop(void) {
 	//  if ( ( millis() - lastPrintTimestamp ) > 59600 ) { // every minute
 	if ( ( millis() - lastPrintTimestamp ) > 9900 ) { // every 10 secs
 		lastPrintTimestamp = millis();
-		printJSON(decision);
+		printJSON();
 // 		debug(nextAction);
 	}
 
@@ -192,7 +193,7 @@ void loop(void) {
 /*
 Print JSON format to Serial port
 */
-void printJSON(Decision &decision) {
+void printJSON() {
 
 	Serial.print("{\"now\":");
 	Serial.print(currentTemp);
