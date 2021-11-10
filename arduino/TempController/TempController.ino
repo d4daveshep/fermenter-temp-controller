@@ -71,7 +71,7 @@ const int HEAT_RELAY = 11; //  Heating relay pin
 const int COOL_RELAY = 12; // Cooling relay pin
 
 Action currentAction = REST;
-String changeAction = "NOT_USED"; // used to record when our action changes
+// String changeAction = "NOT_USED"; // used to record when our action changes
 
 /*
 * NEW GLOBAL VARIABLES
@@ -177,7 +177,7 @@ void loop(void) {
 	//  if ( ( millis() - lastPrintTimestamp ) > 59600 ) { // every minute
 	if ( ( millis() - lastPrintTimestamp ) > 9900 ) { // every 10 secs
 		lastPrintTimestamp = millis();
-		printJSON();
+		printJSON(decision);
 // 		debug(nextAction);
 	}
 
@@ -192,7 +192,7 @@ void loop(void) {
 /*
 Print JSON format to Serial port
 */
-void printJSON() {
+void printJSON(Decision decision) {
 
 	Serial.print("{\"now\":");
 	Serial.print(currentTemp);
@@ -229,12 +229,15 @@ void printJSON() {
 		Serial.print(",\"action\":\"ERROR\"");
 	}
 
-	if ( changeAction != "" ) {
-		Serial.print(",\"change\":\"");
-		Serial.print(changeAction);
-		Serial.print("\"");
-		//changeAction = ""; // reset the changeAction once we're printed it
-	}
+	Serial.print(",\"reason-code\":");
+	Serial.print(decision.getReasonCode());
+	
+// 	if ( changeAction != "" ) {
+// 		Serial.print(",\"change\":\"");
+// 		Serial.print(changeAction);
+// 		Serial.print("\"");
+// 		changeAction = ""; // reset the changeAction once we're printed it
+// 	}
 
 	Serial.print(",\"target\":");
 	Serial.print(controller.getTargetTemp());
