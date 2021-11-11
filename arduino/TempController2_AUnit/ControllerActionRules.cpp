@@ -36,6 +36,10 @@ void ControllerActionRules::setTargetTemp(double newTargetTemp) {
 	this->target = newTargetTemp;
 }
 
+double ControllerActionRules::getStopCoolingTemp() {
+	return getTargetRangeMin() + this->coolingOverrunAdjustment;
+}
+
 bool ControllerActionRules::isTempInTargetRange(double temp) {
 	return getTargetRangeMin() <= temp && temp <= getTargetRangeMax();
 }
@@ -548,6 +552,19 @@ test(AmbientTempGivesNaturalCoolingOrHeating) {
 	actual = 18.0;
 	assertEqual( controller.getNaturalDrift( ambient, actual ), NATURAL_HEATING );
 
+}
+
+test(AdjustmentForCoolingOverrun) {
+	// implement this assertEqual to test we stop cooling when we are at bottom of target range + cooling overrun adjustment.  
+	// i.e. 18.0 - 0.5 + adjustment.  test all rules where we are switching cooling off RC2.2 RC7.2 RC8.2 RC9.2
+	double target = 18.0;
+	double range = 0.5;
+	ControllerActionRules controller(target, range);
+	
+	double expectedStopCoolingTemp = target - range + 0.3;
+	double actualStopCoolingTemp = controller.getStopCoolingTemp();
+	
+	assertEqual(expectedStopCoolingTemp, actualStopCoolingTemp); 
 }
 
 
