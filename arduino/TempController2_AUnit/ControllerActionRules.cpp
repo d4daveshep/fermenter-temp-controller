@@ -183,13 +183,18 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 		 * | RC7.2 | COOL->HEAT because the temperature is below the target range and there is natural cooli*ng (adjust cooling lag?) |
 		 * | RC7.3 | HEAT->HEAT because the temperature is below target range and there is natural cooling |
 		 */
+		if(now == COOL && actual < getStopCoolingTemp() ) {
+			decision.setNextAction(HEAT);
+			decision.setReasonCode("RC7.2");
+			return decision;
+		}
 		if( actual < getTargetRangeMin() ) {
 			if( now == REST) {
 				decision.setNextAction(HEAT);
 				decision.setReasonCode("RC7.1");
-			} else if(now == COOL) {
-				decision.setNextAction(HEAT);
-				decision.setReasonCode("RC7.2");
+// 			} else if(now == COOL) {
+// 				decision.setNextAction(HEAT);
+// 				decision.setReasonCode("RC7.2");
 			} else if(now == HEAT) {
 				decision.setNextAction(HEAT);
 				decision.setReasonCode("RC7.3");
@@ -464,7 +469,13 @@ test(WhatToDoNext) {
 	decision = controller.getActionDecision(currentAction, ambientLow, belowTargetRange);
 	assertEqual(decision.getReasonCode(), "RC7.2");
 	assertEqual(decision.getNextAction(), HEAT);
-
+	
+	// Test 7.2.1 we are cooling and ambient is low but temp is below below the adjusted stop cooling temp so HEAT to counteract natural cooling
+	currentAction = COOL;
+	decision = controller.getActionDecision(currentAction, ambientLow, adjustedStopCoolingTemp);
+	assertEqual(decision.getReasonCode(), "RC7.2");
+	assertEqual(decision.getNextAction(), HEAT);
+	
 	// Test 7.3 we are heating and ambient is low but temp is below target range so HEAT to counteract natural cooling
 	currentAction = HEAT;
 	decision = controller.getActionDecision(currentAction, ambientLow, belowTargetRange);
