@@ -117,9 +117,6 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 			if( now == REST) {
 				decision.setNextAction(HEAT);
 				decision.setReasonCode("RC2.1");
-			/*} else if(now == COOL) {
-				decision.setNextAction(REST);
-				decision.setReasonCode("RC2.2");*/
 			} else if(now == HEAT) {
 				decision.setNextAction(REST);
 				decision.setReasonCode("RC2.3");
@@ -192,9 +189,6 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 			if( now == REST) {
 				decision.setNextAction(HEAT);
 				decision.setReasonCode("RC7.1");
-// 			} else if(now == COOL) {
-// 				decision.setNextAction(HEAT);
-// 				decision.setReasonCode("RC7.2");
 			} else if(now == HEAT) {
 				decision.setNextAction(HEAT);
 				decision.setReasonCode("RC7.3");
@@ -498,7 +492,7 @@ test(WhatToDoNext) {
 	decision = controller.getActionDecision(currentAction, ambientLow, withinTargetRange);
 	assertEqual(decision.getReasonCode(), "RC8.2");
 	assertEqual(decision.getNextAction(), REST);
-
+	
 	// Test 8.3 we are heating and ambient is low but temp is within target range so keep HEATing
 	currentAction = HEAT;
 	decision = controller.getActionDecision(currentAction, ambientLow, withinTargetRange);
@@ -580,7 +574,7 @@ test(AmbientTempGivesNaturalCoolingOrHeating) {
 
 test(AdjustmentForCoolingOverrun) {
 	// implement this assertEqual to test we stop cooling when we are at bottom of target range + cooling overrun adjustment.  
-	// i.e. 18.0 - 0.5 + adjustment.  test all rules where we are switching cooling off RC2.2 RC7.2 RC8.2 RC9.2
+	// i.e. 18.0 - 0.5 + adjustment.  test all rules where we are switching cooling off but don't want to overrun the bottom of target range.  RC2.2 RC7.2
 	double target = 18.0;
 	double range = 0.5;
 	ControllerActionRules controller(target, range);
