@@ -12,6 +12,7 @@ class ControllerActionRules {
 	private:
 	double target = 20.0;
 	double range = 0.3;
+	double coolingOverrunAdjustment = 0.3; // adjust this by observing real life behaviour
 // 	String lastReason = "";
 	
 	public:
@@ -22,6 +23,7 @@ class ControllerActionRules {
 	void   setTargetTemp(double newTargetTemp);
 	double getTargetRangeMin();
 	double getTargetRangeMax();
+	double getStopCoolingTemp();
 	bool isTempInTargetRange(double temp);
 	bool isTempBelowTargetRange(double temp);
 	bool isTempAboveTargetRange(double temp);
