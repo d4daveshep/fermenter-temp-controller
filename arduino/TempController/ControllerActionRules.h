@@ -12,7 +12,7 @@ class ControllerActionRules {
 	private:
 	double target = 20.0;
 	double range = 0.3;
-	double coolingOverrunAdjustment = 0.3; // adjust this by observing real life behaviour
+	double coolingOverrunAdjustment = 0.2; // adjust this by observing real life behaviour
 // 	String lastReason = "";
 	
 	public:
