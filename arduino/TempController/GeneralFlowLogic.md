@@ -9,7 +9,6 @@
 * Initialises timestamps  
 
 ### Main Loop
-* Checks the LCD buttons - which i've never been able to use reliably
 * Reads the serial port and sets the target temp if updated
 * Reads actual and ambient temp sensors
 Decides what to do from temp control rules
@@ -23,7 +22,6 @@ Carries out the action
 * Does a smart delay of 1 sec
 
 ### Fuctions defined - these rely on lots of global variables 
-* `checkLCDButtons(void)` which calls `read_LCD_buttons`
 * `printJSON()` to Serial
 * `debug` prints similar info to Serial as printJSON()
 * `randomTemp()` returns random temp value between 15 - 25
