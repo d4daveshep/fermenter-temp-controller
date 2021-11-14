@@ -26,16 +26,6 @@ long lastPrintTimestamp = 0.0; // timestamp of last serial print
 long lastDelayTimestamp = 0.0; // timestamp of last delay reading
 double ambientTemp = 0.0; // ambient temp hopefully won't need averaging as it shouldn't change quickly
 
-// define and initialise the temp control tolerances
-// float targetTemp = 20.0; // set default target temperature of the fermentation chamber - this could be overwritten by serial data
-// ======================
-// const float TEMP_DIFF = 0.2; // the tolerance we allow before taking action
-// ======================
-// float coolStartTemp; // temp above target we will start cooling
-// float coolStopTemp; // temp above target we will stop cooling
-// float heatStartTemp; // temp below target we will start heating
-// float heatStopTemp; // temp below target we will stop heating
-
 float heatStartLag = 0.026;  // calculated from external logging data 11/7/2021 with ambient temp 12-14C
 float heatStopLag = 0.037;
 
@@ -71,7 +61,6 @@ const int HEAT_RELAY = 11; //  Heating relay pin
 const int COOL_RELAY = 12; // Cooling relay pin
 
 Action currentAction = REST;
-// String changeAction = "NOT_USED"; // used to record when our action changes
 
 /*
 * NEW GLOBAL VARIABLES
@@ -109,10 +98,6 @@ void setup(void) {
 
 	tempTotal = averageTemp * NUM_READINGS;
 
-// 	cycleMinTemp = targetTemp - TEMP_DIFF;
-// 	cycleMaxTemp = targetTemp + TEMP_DIFF;
-
-	//resetStartStopTemps();
 	lastPrintTimestamp = millis();
 	lastDelayTimestamp = millis();
 
@@ -125,11 +110,6 @@ void setup(void) {
 void loop(void) {
 
 	// read the lcd button state and adjust the temperature accordingly
-	/*
-	if (!SIMULATE) {
-		checkLCDButtons();
-	}
-	*/
 
 	// read any data from the serial port
 	readSerialWithStartEndMarkers();
@@ -199,14 +179,6 @@ void printJSON() {
 	Serial.print(currentTemp);
 	Serial.print(",\"avg\":");
 	Serial.print(averageTemp);
-	//  Serial.print(",\"min\":");
-	//  Serial.print(minTemp);
-	//Serial.print(",\"cyclemin\":");
-	//Serial.print(cycleMinTemp);
-	//  Serial.print(",\"max\":");
-	//  Serial.print(maxTemp);
-	//Serial.print(",\"cyclemax\":");
-	//Serial.print(cycleMaxTemp);
 
 	if (override) {
 		Serial.print(",\"override\":");
@@ -233,13 +205,6 @@ void printJSON() {
 	Serial.print(",\"reason-code\":\"");
 	Serial.print(decision.getReasonCode());
 	Serial.print("\"");
-	
-// 	if ( changeAction != "" ) {
-// 		Serial.print(",\"change\":\"");
-// 		Serial.print(changeAction);
-// 		Serial.print("\"");
-// 		changeAction = ""; // reset the changeAction once we're printed it
-// 	}
 
 	Serial.print(",\"target\":");
 	Serial.print(controller.getTargetTemp());
@@ -256,9 +221,6 @@ void debug(Action nextAction) {
 	Serial.print("DEBUG: ");
 	Serial.print("target=");
 	Serial.print(controller.getTargetTemp());
-
-// 	Serial.print(", range=");
-// 	Serial.print(controller.getTargetRange());
 
 	Serial.print(", actual=");
 	Serial.print(averageTemp);
