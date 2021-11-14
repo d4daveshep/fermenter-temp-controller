@@ -17,12 +17,14 @@
 * Test real scenario
 */
 
-double defaultTargetTemp = 6.0;
-double defaultRange = 0.3; // i.e. +/- either side of target
-ControllerActionRules controller(defaultTargetTemp, defaultRange);
+//test(
 
 
 test(UpdatedTargetTempIsSaved) {
+    double defaultTargetTemp = 6.0;
+    double defaultRange = 0.3; // i.e. +/- either side of target
+    ControllerActionRules controller(defaultTargetTemp, defaultRange);
+
 	double newTargetTemp = 7.0;
 	controller.setTargetTemp(newTargetTemp);
 	
@@ -41,8 +43,6 @@ void setup() {
 
 void loop() {
 #ifdef _DO_UNIT_TESTING
-	
-	
 	
 	aunit::TestRunner::run();
 
