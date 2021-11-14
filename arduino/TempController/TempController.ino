@@ -26,8 +26,6 @@ long lastPrintTimestamp = 0.0; // timestamp of last serial print
 long lastDelayTimestamp = 0.0; // timestamp of last delay reading
 double ambientTemp = 0.0; // ambient temp hopefully won't need averaging as it shouldn't change quickly
 
-
-
 float heatStartLag = 0.026;  // calculated from external logging data 11/7/2021 with ambient temp 12-14C
 float heatStopLag = 0.037;
 
