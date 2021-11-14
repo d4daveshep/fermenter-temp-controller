@@ -18,18 +18,23 @@ class TemperatureReadings {
 
 private:
     int numberOfReadingsUsedForAverage;
-    double averageTemperature = 0.0;
-    double latestTemperatureReading = 0.0;
-    unsigned long countNumberOfReadings = 0;
+    double averageTemperature;
+    double latestTemperatureReading;
+    unsigned long countNumberOfReadings;
+    double minimumTemperatureReading;
+    double maximumTemperatureReading;
     
 public:
     TemperatureReadings(int numberOfReadingsUsedForAverage) {
         setNumberOfReadingsUsedForAverage(numberOfReadingsUsedForAverage);
+        clear();
     }
     void clear() {
         this->averageTemperature = 0.0;
         this->latestTemperatureReading = 0.0;
         this->countNumberOfReadings = 0;
+        this->minimumTemperatureReading = 1000.0;
+        this->maximumTemperatureReading = -1000.0;
     }
     int getNumberOfReadingsUsedForAverage() {
         return this->numberOfReadingsUsedForAverage;
@@ -46,6 +51,12 @@ public:
     unsigned long getCountOfTemperatureReadings() {
         return this->countNumberOfReadings;
     }
+    double getMinimumTemperature() {
+        return this->minimumTemperatureReading;
+    }
+    double getMaximumTemperature() {
+        return this->maximumTemperatureReading;
+    }
     
     /*
      * Calculate exponential moving average (EMA)
@@ -56,13 +67,19 @@ public:
         double newAverage = ( averageTemperature * (numberOfReadingsUsedForAverage-1) + newTemperatureReading ) / numberOfReadingsUsedForAverage;
         this->averageTemperature = newAverage;
         this->countNumberOfReadings++;
+        if( newTemperatureReading < this->minimumTemperatureReading ) {
+            this->minimumTemperatureReading = newTemperatureReading;
+        }
+        if( newTemperatureReading > this->maximumTemperatureReading ) {
+            this->maximumTemperatureReading = newTemperatureReading;
+        }
     }
     
     double generateRandomTemperature(int min, int max) {
         double temp = random( min, max ) + random( 0, 100 ) / 100.0;
-        Serial.print("random temp = ");
-        Serial.print(temp);
-        Serial.print("\n");
+//         Serial.print("random temp = ");
+//         Serial.print(temp);
+//         Serial.print("\n");
         return temp;
     }
     
@@ -79,7 +96,8 @@ class TemperatureReadingsTest: public aunit::TestOnce {
 
 
 protected:
-
+    
+    
     void setup() override {
         TestOnce::setup();
         
@@ -105,14 +123,15 @@ protected:
 
 testF(TemperatureReadingsTest, MinAndMaxTemperatures) {
     
-    assertEqual(0.0, temperatureReadings.getMinimumTemperature());
-    assertEqual(0.0, temperatureReadings.getMaxinumTemperature());
+    assertEqual(1000.0, temperatureReadings.getMinimumTemperature());
+    assertEqual(-1000.0, temperatureReadings.getMaximumTemperature());
 
-    randomSeed(1); randomSeed(0); 
+    randomSeed(1); randomSeed(0);
+    
     generateRandomReadings(10);
     
     assertEqual(15.12, temperatureReadings.getMinimumTemperature());
-    assertEqual(22.49, temperatureReadings.getMaxinumTemperature());
+    assertEqual(22.49, temperatureReadings.getMaximumTemperature());
     
 }
 
