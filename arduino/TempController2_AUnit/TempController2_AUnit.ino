@@ -105,11 +105,14 @@ protected:
 
 testF(TemperatureReadingsTest, MinAndMaxTemperatures) {
     
-    randomSeed(1);
-    randomSeed(0);
+    assertEqual(0.0, temperatureReadings.getMinimumTemperature());
+    assertEqual(0.0, temperatureReadings.getMaxinumTemperature());
+
+    randomSeed(1); randomSeed(0); 
     generateRandomReadings(10);
-    assertEqual((unsigned long)10, (unsigned long)(temperatureReadings.getCountOfTemperatureReadings()));
-    assertEqual(12.14163,  temperatureReadings.getCurrentAverageTemperature());
+    
+    assertEqual(15.12, temperatureReadings.getMinimumTemperature());
+    assertEqual(22.49, temperatureReadings.getMaxinumTemperature());
     
 }
 
@@ -131,22 +134,12 @@ test(RandomNextTemp) {
 */
 
 testF(TemperatureReadingsTest, EMA) {
-    randomSeed(1);
-    randomSeed(0);
-    //TemperatureReadings temperatureReadings(10);
-    temperatureReadings.clear();
-    //int numberOfReadingsUsedForAverage = temperatureReadings.getNumberOfReadingsUsedForAverage();
-    
-    // first 10 values are 22.49, 18.58, 15.72, 19.78, 18.09, 15.65, 17.42, 22.03, 22.29, 15.12, 
-    // true average is 18.717, exponential moving average is 12.14163 
-    
-    // average starts at 0.0
-    //assertEqual(0.0, temperatureReadings.getCurrentAverageTemperature());
-    
-    for( int i=0; i<10; i++ ) {
-        temperatureReadings.updateAverageTemperatureWithNewValue(temperatureReadings.generateRandomTemperature(15,25));
-    }
+   
+    randomSeed(1); randomSeed(0); 
+    generateRandomReadings(10);
+    assertEqual((unsigned long)10, (unsigned long)(temperatureReadings.getCountOfTemperatureReadings()));
     assertEqual(12.14163,  temperatureReadings.getCurrentAverageTemperature());
+    
 }   
 
 test(ExponentialMovingAverageOfTemperatureReadings) {
