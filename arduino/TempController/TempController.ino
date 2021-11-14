@@ -15,7 +15,6 @@ OneWire oneWire(ONE_WIRE_BUS);  // Setup a oneWire instance to communicate with 
 DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
 
 // define and initialise the temp data variables
-//const int NUM_READINGS = 60; // we're going to average the temp over 60 readings
 const int NUM_READINGS = 10; // we're going to average the temp over 10 readings
 double tempReadings[NUM_READINGS]; // array to hold temp readings
 int tempIndex = 0; // index of the current reading

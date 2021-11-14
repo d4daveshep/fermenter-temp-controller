@@ -20,10 +20,16 @@ private:
     int numberOfReadingsUsedForAverage;
     double averageTemperature = 0.0;
     double latestTemperatureReading = 0.0;
+    unsigned long countNumberOfReadings = 0;
     
 public:
     TemperatureReadings(int numberOfReadingsUsedForAverage) {
         setNumberOfReadingsUsedForAverage(numberOfReadingsUsedForAverage);
+    }
+    void clear() {
+        this->averageTemperature = 0.0;
+        this->latestTemperatureReading = 0.0;
+        this->countNumberOfReadings = 0;
     }
     int getNumberOfReadingsUsedForAverage() {
         return this->numberOfReadingsUsedForAverage;
@@ -37,6 +43,9 @@ public:
     double getLatestTemperatureReading() {
         return this->latestTemperatureReading;
     }
+    unsigned long getCountOfTemperatureReadings() {
+        return this->countNumberOfReadings;
+    }
     
     /*
      * Calculate exponential moving average (EMA)
@@ -46,10 +55,15 @@ public:
         this->latestTemperatureReading = newTemperatureReading;
         double newAverage = ( averageTemperature * (numberOfReadingsUsedForAverage-1) + newTemperatureReading ) / numberOfReadingsUsedForAverage;
         this->averageTemperature = newAverage;
+        this->countNumberOfReadings++;
     }
     
     double generateRandomTemperature(int min, int max) {
-        return random( min, max ) + random( 0, 100 ) / 100.0;
+        double temp = random( min, max ) + random( 0, 100 ) / 100.0;
+        Serial.print("random temp = ");
+        Serial.print(temp);
+        Serial.print("\n");
+        return temp;
     }
     
     double randomTempMovement() {
@@ -57,6 +71,48 @@ public:
     }
 
 };
+
+
+TemperatureReadings temperatureReadings(10);
+
+class TemperatureReadingsTest: public aunit::TestOnce {
+
+
+protected:
+
+    void setup() override {
+        TestOnce::setup();
+        
+        // set up stuff here
+        Serial.print("Running setup...\n");
+        temperatureReadings.clear(); // just to be safe, zero the averages
+    }
+    
+    void teardown() override {
+        // tear down stuff here
+        temperatureReadings.clear();
+        TestOnce::teardown();
+    }
+    
+    void generateRandomReadings(int numberToGenerate) {
+        for( int i=0; i<numberToGenerate; i++ ) {
+            temperatureReadings.updateAverageTemperatureWithNewValue(temperatureReadings.generateRandomTemperature(15,25));
+        }
+    }
+        
+    
+};
+
+testF(TemperatureReadingsTest, MinAndMaxTemperatures) {
+    
+    randomSeed(1);
+    randomSeed(0);
+    generateRandomReadings(10);
+    assertEqual((unsigned long)10, (unsigned long)(temperatureReadings.getCountOfTemperatureReadings()));
+    assertEqual(12.14163,  temperatureReadings.getCurrentAverageTemperature());
+    
+}
+
 /*
 test(RandomNextTemp) {
     randomSeed(0); // setup the random number generator to a predictable sequence
@@ -73,10 +129,31 @@ test(RandomNextTemp) {
     
 }
 */
+
+testF(TemperatureReadingsTest, EMA) {
+    randomSeed(1);
+    randomSeed(0);
+    //TemperatureReadings temperatureReadings(10);
+    temperatureReadings.clear();
+    //int numberOfReadingsUsedForAverage = temperatureReadings.getNumberOfReadingsUsedForAverage();
+    
+    // first 10 values are 22.49, 18.58, 15.72, 19.78, 18.09, 15.65, 17.42, 22.03, 22.29, 15.12, 
+    // true average is 18.717, exponential moving average is 12.14163 
+    
+    // average starts at 0.0
+    //assertEqual(0.0, temperatureReadings.getCurrentAverageTemperature());
+    
+    for( int i=0; i<10; i++ ) {
+        temperatureReadings.updateAverageTemperatureWithNewValue(temperatureReadings.generateRandomTemperature(15,25));
+    }
+    assertEqual(12.14163,  temperatureReadings.getCurrentAverageTemperature());
+}   
+
 test(ExponentialMovingAverageOfTemperatureReadings) {
     randomSeed(0); // setup the random number generator to a predictable sequence
-    TemperatureReadings temperatureReadings(10);
-    int numberOfReadingsUsedForAverage = temperatureReadings.getNumberOfReadingsUsedForAverage();
+    //TemperatureReadings temperatureReadings(10);
+    temperatureReadings.clear();
+    //int numberOfReadingsUsedForAverage = temperatureReadings.getNumberOfReadingsUsedForAverage();
     
     // first 10 values are 22.49, 18.58, 15.72, 19.78, 18.09, 15.65, 17.42, 22.03, 22.29, 15.12, 
     // true average is 18.717, exponential moving average is 12.14163 
