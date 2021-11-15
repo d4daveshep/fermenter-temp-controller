@@ -186,6 +186,10 @@ void printJSON() {
 	Serial.print(",\"avg\":");
 	Serial.print(averageTemp);
 
+    // new TemperatureReadings outoput
+	Serial.print(",\"new-avg\":");
+	Serial.print(fermenterTemperatureReadings.getCurrentAverageTemperature());
+
 	if (override) {
 		Serial.print(",\"override\":");
 		Serial.print("true");
@@ -216,6 +220,11 @@ void printJSON() {
 	Serial.print(controller.getTargetTemp());
 	Serial.print(",\"ambient\":");
 	Serial.print(ambientTemp);
+
+    // new TemperatureReadings outoput
+	Serial.print(",\"new-ambient\":");
+	Serial.print(ambientTemperatureReadings.getCurrentAverageTemperature());
+
 	Serial.print(",\"timestamp\":");
 	Serial.print(millis());
 
@@ -329,11 +338,18 @@ double getUpdatedTargetTemp() {
 Read the temperature sensors and calculate the averages, update the min and max
 */
 void doTempReadings() {
-	tempTotal -= tempReadings[tempIndex]; // subtract the last temp reading
-	sensors.requestTemperatures();  // read the sensors
+
+    sensors.requestTemperatures();  // read the sensors
 	currentTemp = sensors.getTempCByIndex(0); // read the temp
 	ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
-	tempReadings[tempIndex] = currentTemp; // store it in the index location
+
+    // new code to keep
+    fermenterTemperatureReadings.updateAverageTemperatureWithNewValue(currentTemp);
+    ambientTemperatureReadings.updateAverageTemperatureWithNewValue(ambientTemp);
+    
+    // TODO remove this old code to bottom of function
+	tempTotal -= tempReadings[tempIndex]; // subtract the last temp reading   
+    tempReadings[tempIndex] = currentTemp; // store it in the index location
 
 	tempTotal += tempReadings[tempIndex]; // add the new temp reading to the total
 	tempIndex++; // increment the temp index
