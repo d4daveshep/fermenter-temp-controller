@@ -19,6 +19,7 @@ public:
     int getNumberOfReadingsUsedForAverage();
     void setNumberOfReadingsUsedForAverage(int numberOfReadingsUsedForAverage);
     double getCurrentAverageTemperature();
+    void setInitialAverageTemperature(double initalAverageTemp);
     double getLatestTemperatureReading();
     unsigned long getCountOfTemperatureReadings();
     double getMinimumTemperature();

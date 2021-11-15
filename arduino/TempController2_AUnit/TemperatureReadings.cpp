@@ -42,6 +42,11 @@ double TemperatureReadings::getMaximumTemperature() {
     return this->maximumTemperatureReading;
 }
 
+void TemperatureReadings::setInitialAverageTemperature(double initalAverageTemp){
+
+    // do nothing yet
+}
+
 /*
 * Calculate exponential moving average (EMA)
 * new average = (old average * (n-1) + new value) / n
@@ -102,6 +107,25 @@ protected:
     }
     
 };
+
+testF(TemperatureReadingsTest, SetInitialAverageTemperature) {
+
+    // check initial average temp is 0.0
+    assertEqual(0.0, temperatureReadings.getCurrentAverageTemperature());
+    
+    // set initial avg temp
+    temperatureReadings.setInitialAverageTemperature(12.34);
+    
+    // check it got saved
+    assertEqual(12.34, temperatureReadings.getCurrentAverageTemperature());
+    
+    // try to set inital avg temp again - should fail silently
+    temperatureReadings.setInitialAverageTemperature(23.45);
+
+    // check avg temp not changed
+    assertEqual(12.34, temperatureReadings.getCurrentAverageTemperature());
+    
+}
 
 testF(TemperatureReadingsTest, MinAndMaxTemperatures) {
     
