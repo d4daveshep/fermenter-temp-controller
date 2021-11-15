@@ -43,8 +43,9 @@ double TemperatureReadings::getMaximumTemperature() {
 }
 
 void TemperatureReadings::setInitialAverageTemperature(double initalAverageTemp){
-
-    // do nothing yet
+    if( countNumberOfReadings < 1 ) {
+        this->averageTemperature = initalAverageTemp;
+    }
 }
 
 /*
@@ -119,11 +120,14 @@ testF(TemperatureReadingsTest, SetInitialAverageTemperature) {
     // check it got saved
     assertEqual(12.34, temperatureReadings.getCurrentAverageTemperature());
     
+    // update the average temp
+    temperatureReadings.updateAverageTemperatureWithNewValue(13.46);
+    
     // try to set inital avg temp again - should fail silently
     temperatureReadings.setInitialAverageTemperature(23.45);
 
     // check avg temp not changed
-    assertEqual(12.34, temperatureReadings.getCurrentAverageTemperature());
+    assertEqual((12.34*9+13.46)/10, temperatureReadings.getCurrentAverageTemperature());
     
 }
 
