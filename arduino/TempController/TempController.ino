@@ -166,6 +166,10 @@ void printJSON() {
 	Serial.print(fermenterTemperatureReadings.getLatestTemperatureReading());
 	Serial.print(",\"avg\":");
 	Serial.print(fermenterTemperatureReadings.getCurrentAverageTemperature());
+	Serial.print(",\"min\":");
+	Serial.print(fermenterTemperatureReadings.getMinimumTemperature());
+	Serial.print(",\"max\":");
+	Serial.print(fermenterTemperatureReadings.getMaximumTemperature());
 
 	if (override) {
 		Serial.print(",\"override\":");
