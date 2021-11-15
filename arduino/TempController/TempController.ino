@@ -7,6 +7,7 @@
 #include <DallasTemperature.h>
 
 #include "ControllerActionRules.h"
+#include "TemperatureReadings.h"
 
 
 // initialise the OneWire sensors
@@ -14,23 +15,8 @@ const int ONE_WIRE_BUS = 3;  // Data wire is plugged into pin 3 on the Arduino
 OneWire oneWire(ONE_WIRE_BUS);  // Setup a oneWire instance to communicate with any OneWire devices
 DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
 
-// define and initialise the temp data variables
-//const int NUM_READINGS = 60; // we're going to average the temp over 60 readings
-const int NUM_READINGS = 10; // we're going to average the temp over 10 readings
-double tempReadings[NUM_READINGS]; // array to hold temp readings
-int tempIndex = 0; // index of the current reading
-double tempTotal = 0; // total of all the temp readings
-double averageTemp = 0.0; // average temp reading
-double currentTemp = 0.0; // current temp reading
 long lastPrintTimestamp = 0.0; // timestamp of last serial print
 long lastDelayTimestamp = 0.0; // timestamp of last delay reading
-double ambientTemp = 0.0; // ambient temp hopefully won't need averaging as it shouldn't change quickly
-
-float heatStartLag = 0.026;  // calculated from external logging data 11/7/2021 with ambient temp 12-14C
-float heatStopLag = 0.037;
-
-float minTemp, cycleMinTemp = 1000.0; // min temperature set to a really high value initially
-float maxTemp, cycleMaxTemp = -1000.0; // max temperature set to a really low value initially
 
 // define variables for reading temperature from serial
 const byte serialBufSize = 12; // size of serial char buffer
@@ -66,6 +52,7 @@ Action currentAction = REST;
 * NEW GLOBAL VARIABLES
 * Create a global instance of our new controller class
 */
+TemperatureReadings fermenterTemperatureReadings(10), ambientTemperatureReadings(10);
 double defaultTargetTemp = 20.0;
 double defaultRange = 0.3; // i.e. +/- either side of target
 ControllerActionRules controller(defaultTargetTemp, defaultRange);
@@ -75,7 +62,8 @@ Decision decision;
 Setup runs once
 */
 void setup(void) {
-	Serial.begin(9600);
+	// TODO try higher number 115200??
+    Serial.begin(9600);
 
 	// set up the relay pins
 	pinMode(HEAT_RELAY, OUTPUT);
@@ -84,20 +72,16 @@ void setup(void) {
 	// set up the LCD as 16 x 2
 	lcd.begin(16, 2);
 
-	double firstReading = 0;
 	sensors.begin(); // set up the temp sensors
 	sensors.requestTemperatures();  // read the sensors
-	firstReading = sensors.getTempCByIndex(0); // read the temp into index location
-	ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
+    
+	double firstFermenterTemperatureReading = sensors.getTempCByIndex(0); // read the temp into index location
+	double firstAmbientTemp = sensors.getTempCByIndex(1); // read the ambient temp
 
-	// initialise the temp readings to the first reading just taken
-	for ( int thisReading = 0; thisReading < NUM_READINGS; thisReading++ ) {
-		tempReadings[thisReading] = firstReading;
-	}
-	averageTemp = firstReading;
-
-	tempTotal = averageTemp * NUM_READINGS;
-
+    // new code to keep - initialise the readings by setting averages to first readings
+    fermenterTemperatureReadings.setInitialAverageTemperature(firstFermenterTemperatureReading);
+    ambientTemperatureReadings.setInitialAverageTemperature(firstAmbientTemp);
+    
 	lastPrintTimestamp = millis();
 	lastDelayTimestamp = millis();
 
@@ -124,7 +108,10 @@ void loop(void) {
 	// do some debugging
 
 	// use our new ControllerActionRules class to determine the next action
-	decision = controller.getActionDecision( currentAction, ambientTemp, averageTemp );
+    double ambientTemp = ambientTemperatureReadings.getCurrentAverageTemperature();
+    double fermenterTemp = fermenterTemperatureReadings.getCurrentAverageTemperature();
+    
+	decision = controller.getActionDecision( currentAction, ambientTemp, fermenterTemp );
 	Action nextAction = decision.getNextAction();
 	
 	currentAction = nextAction; // TO-DO probably don't need to do this
@@ -176,9 +163,9 @@ Print JSON format to Serial port
 void printJSON() {
 
 	Serial.print("{\"now\":");
-	Serial.print(currentTemp);
+	Serial.print(fermenterTemperatureReadings.getLatestTemperatureReading());
 	Serial.print(",\"avg\":");
-	Serial.print(averageTemp);
+	Serial.print(fermenterTemperatureReadings.getCurrentAverageTemperature());
 
 	if (override) {
 		Serial.print(",\"override\":");
@@ -209,7 +196,8 @@ void printJSON() {
 	Serial.print(",\"target\":");
 	Serial.print(controller.getTargetTemp());
 	Serial.print(",\"ambient\":");
-	Serial.print(ambientTemp);
+	Serial.print(ambientTemperatureReadings.getCurrentAverageTemperature());
+
 	Serial.print(",\"timestamp\":");
 	Serial.print(millis());
 
@@ -223,7 +211,7 @@ void debug(Action nextAction) {
 	Serial.print(controller.getTargetTemp());
 
 	Serial.print(", actual=");
-	Serial.print(averageTemp);
+	Serial.print(fermenterTemperatureReadings.getCurrentAverageTemperature());
 
 	Serial.print(", currentAction=");
 	switch ( currentAction) {
@@ -256,7 +244,7 @@ void debug(Action nextAction) {
    }
 
 	Serial.print(", ambient=");
-	Serial.print(ambientTemp);
+	Serial.print(ambientTemperatureReadings.getCurrentAverageTemperature());
 
 	Serial.println();
 }
@@ -323,29 +311,15 @@ double getUpdatedTargetTemp() {
 Read the temperature sensors and calculate the averages, update the min and max
 */
 void doTempReadings() {
-	tempTotal -= tempReadings[tempIndex]; // subtract the last temp reading
-	sensors.requestTemperatures();  // read the sensors
-	currentTemp = sensors.getTempCByIndex(0); // read the temp
-	ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
-	tempReadings[tempIndex] = currentTemp; // store it in the index location
 
-	tempTotal += tempReadings[tempIndex]; // add the new temp reading to the total
-	tempIndex++; // increment the temp index
-	// reset the temp index if at the end of the array
-	if ( tempIndex >= NUM_READINGS ) {
-		tempIndex = 0;
-	}
+    sensors.requestTemperatures();  // read the sensors
+	double fermenterTemp = sensors.getTempCByIndex(0); // read the temp
+	double ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
 
-	averageTemp = tempTotal / NUM_READINGS; // calculate the average
-
-	// update the max and min values
-	if (averageTemp > maxTemp) {
-		maxTemp = averageTemp;
-	}
-	if (averageTemp < minTemp) {
-		minTemp = averageTemp;
-	}
-
+    // new code to keep
+    fermenterTemperatureReadings.updateAverageTemperatureWithNewValue(fermenterTemp);
+    ambientTemperatureReadings.updateAverageTemperatureWithNewValue(ambientTemp);
+    
 }
 
 /*
@@ -362,7 +336,7 @@ void updateLCD() {
 	lcd.setCursor(0, 0);
 	// current temp
 	lcd.print("N");
-	lcd.print( dtostrf(averageTemp, 4, 1, buf) );
+	lcd.print( dtostrf(fermenterTemperatureReadings.getCurrentAverageTemperature(), 4, 1, buf) );
 	lcd.print(" ");
 
 	// target temp
@@ -372,7 +346,7 @@ void updateLCD() {
 
 	// ambient temp
 	lcd.print("A");
-	lcd.print( dtostrf(ambientTemp, 4, 1, buf) );
+	lcd.print( dtostrf(ambientTemperatureReadings.getCurrentAverageTemperature(), 4, 1, buf) );
 	lcd.print(" ");
 
 	// print LINE 2
@@ -397,66 +371,10 @@ void updateLCD() {
 
 	// min & max
 	lcd.print(" ");
-	lcd.print( dtostrf(minTemp, 4, 1, buf) );
+	lcd.print( dtostrf(fermenterTemperatureReadings.getMinimumTemperature(), 4, 1, buf) );
 	lcd.print("-");
-	lcd.print( dtostrf(maxTemp, 4, 1, buf) );
+	lcd.print( dtostrf(fermenterTemperatureReadings.getMaximumTemperature(), 4, 1, buf) );
 
 }
-
-
-void setupSimulation() {
-
-}
-
-// double simCurrentTemp() {
-// 
-// 	float startTempOffset = 0;  // use -1, 0, 1
-// 
-// 	if ( currentTemp == 0.0 ) {
-// 		currentTemp = targetTemp + startTempOffset;
-// 	}
-// 	double tempDiff = currentTemp - ambientTemp;
-// 
-// 	switch ( currentAction ) {
-// 
-// 		case REST:
-// 		if we are resting then adjust sim temp based on ambient
-// 		Serial.print("currentTemp = ");
-// 		Serial.println(currentTemp);
-// 		
-// 		return currentTemp - (tempDiff / 5000.0);
-// 		break;
-// 
-// 		case HEAT:
-// 		if we're heating then raise the temp by a fixed amount
-// 		return currentTemp + 0.002;
-// 		break;
-// 		
-// 		case COOL:
-// 		if we're heating then raise the temp by a fixed amount
-// 		return currentTemp - 0.002;
-// 		break;
-// 		
-// 		default:
-// 		return currentTemp;
-// 		break;
-// 		
-// 	}
-// 
-// }
-// 
-// double simAmbientTemp() {
-// 	float startAmbientTemp = 20.0;  // use 15.0, 20.0 or 25.0
-// 	float ambientTempDiff = -0.01;  // use -0.1, 0.0, 0.1
-// 
-// 	if ( ambientTemp == 0.0 ) {
-// 		ambientTemp = startAmbientTemp;
-// 		return ambientTemp;
-// 	} else { 
-// 		ambientTemp = ambientTemp + ambientTempDiff;
-// 		return ambientTemp;
-// 	}
-// 
-//}
 
 

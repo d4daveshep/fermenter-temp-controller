@@ -1,4 +1,4 @@
-#define _DO_UNIT_TESTING
+//#define _DO_UNIT_TESTING
 
 #include <Arduino.h>
 #include <AUnit.h>
@@ -579,7 +579,7 @@ test(AdjustmentForCoolingOverrun) {
 	double range = 0.5;
 	ControllerActionRules controller(target, range);
 	
-	double expectedStopCoolingTemp = target - range + 0.3;
+	double expectedStopCoolingTemp = target - range + 0.2;
 	double actualStopCoolingTemp = controller.getStopCoolingTemp();
 	
 	assertEqual(expectedStopCoolingTemp, actualStopCoolingTemp); 
