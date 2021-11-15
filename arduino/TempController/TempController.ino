@@ -184,11 +184,12 @@ void printJSON() {
 	Serial.print("{\"now\":");
 	Serial.print(currentTemp);
 	Serial.print(",\"avg\":");
-	Serial.print(averageTemp);
-
-    // new TemperatureReadings outoput
-	Serial.print(",\"new-avg\":");
+//	Serial.print(averageTemp); TODO remove this
 	Serial.print(fermenterTemperatureReadings.getCurrentAverageTemperature());
+
+//     new TemperatureReadings output
+// 	Serial.print(",\"new-avg\":");
+// 	Serial.print(fermenterTemperatureReadings.getCurrentAverageTemperature());
 
 	if (override) {
 		Serial.print(",\"override\":");
@@ -219,11 +220,12 @@ void printJSON() {
 	Serial.print(",\"target\":");
 	Serial.print(controller.getTargetTemp());
 	Serial.print(",\"ambient\":");
-	Serial.print(ambientTemp);
-
-    // new TemperatureReadings outoput
-	Serial.print(",\"new-ambient\":");
+//	Serial.print(ambientTemp); TODO removde this
 	Serial.print(ambientTemperatureReadings.getCurrentAverageTemperature());
+
+//     new TemperatureReadings outoput
+// 	Serial.print(",\"new-ambient\":");
+// 	Serial.print(ambientTemperatureReadings.getCurrentAverageTemperature());
 
 	Serial.print(",\"timestamp\":");
 	Serial.print(millis());
