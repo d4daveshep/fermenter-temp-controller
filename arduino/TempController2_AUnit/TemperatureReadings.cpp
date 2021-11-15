@@ -108,8 +108,7 @@ testF(TemperatureReadingsTest, MinAndMaxTemperatures) {
     assertEqual(1000.0, temperatureReadings.getMinimumTemperature());
     assertEqual(-1000.0, temperatureReadings.getMaximumTemperature());
 
-    randomSeed(1); randomSeed(0);
-    
+    randomSeed(1); randomSeed(0); 
     generateRandomReadings(10);
     
     assertEqual(15.12, temperatureReadings.getMinimumTemperature());
@@ -144,8 +143,8 @@ testF(TemperatureReadingsTest, EMA) {
 }   
 
 test(ExponentialMovingAverageOfTemperatureReadings) {
-    randomSeed(0); // setup the random number generator to a predictable sequence
-    //TemperatureReadings temperatureReadings(10);
+    randomSeed(1); randomSeed(0);  // setup the random number generator to a predictable sequence
+    
     temperatureReadings.clear();
     //int numberOfReadingsUsedForAverage = temperatureReadings.getNumberOfReadingsUsedForAverage();
     
