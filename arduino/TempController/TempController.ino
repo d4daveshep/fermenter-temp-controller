@@ -22,12 +22,10 @@ int tempIndex = 0; // index of the current reading
 double tempTotal = 0; // total of all the temp readings
 double averageTemp = 0.0; // average temp reading
 double currentTemp = 0.0; // current temp reading
-long lastPrintTimestamp = 0.0; // timestamp of last serial print
-long lastDelayTimestamp = 0.0; // timestamp of last delay reading
 double ambientTemp = 0.0; // ambient temp hopefully won't need averaging as it shouldn't change quickly
 
-float heatStartLag = 0.026;  // calculated from external logging data 11/7/2021 with ambient temp 12-14C
-float heatStopLag = 0.037;
+long lastPrintTimestamp = 0.0; // timestamp of last serial print
+long lastDelayTimestamp = 0.0; // timestamp of last delay reading
 
 float minTemp, cycleMinTemp = 1000.0; // min temperature set to a really high value initially
 float maxTemp, cycleMaxTemp = -1000.0; // max temperature set to a really low value initially
@@ -76,7 +74,8 @@ Decision decision;
 Setup runs once
 */
 void setup(void) {
-	Serial.begin(9600);
+	// TODO try higher number 115200??
+    Serial.begin(9600);
 
 	// set up the relay pins
 	pinMode(HEAT_RELAY, OUTPUT);
@@ -85,20 +84,26 @@ void setup(void) {
 	// set up the LCD as 16 x 2
 	lcd.begin(16, 2);
 
-	double firstReading = 0;
 	sensors.begin(); // set up the temp sensors
 	sensors.requestTemperatures();  // read the sensors
-	firstReading = sensors.getTempCByIndex(0); // read the temp into index location
+    
+    // TODO refactor these 2 lines
+	double firstFermenterTemperatureReading = sensors.getTempCByIndex(0); // read the temp into index location
 	ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
 
+    // new code to keep - initialise the readings by setting averages to first readings
+    fermenterTemperatureReadings.setInitialAverageTemperature(firstFermenterTemperatureReading);
+    ambientTemperatureReadings.setInitialAverageTemperature(ambientTemp);
+    
+    // TODO old code to bin
 	// initialise the temp readings to the first reading just taken
 	for ( int thisReading = 0; thisReading < NUM_READINGS; thisReading++ ) {
-		tempReadings[thisReading] = firstReading;
+		tempReadings[thisReading] = firstFermenterTemperatureReading;
 	}
-	averageTemp = firstReading;
-
+	averageTemp = firstFermenterTemperatureReading;
 	tempTotal = averageTemp * NUM_READINGS;
 
+    
 	lastPrintTimestamp = millis();
 	lastDelayTimestamp = millis();
 
@@ -403,61 +408,5 @@ void updateLCD() {
 	lcd.print( dtostrf(maxTemp, 4, 1, buf) );
 
 }
-
-
-void setupSimulation() {
-
-}
-
-// double simCurrentTemp() {
-// 
-// 	float startTempOffset = 0;  // use -1, 0, 1
-// 
-// 	if ( currentTemp == 0.0 ) {
-// 		currentTemp = targetTemp + startTempOffset;
-// 	}
-// 	double tempDiff = currentTemp - ambientTemp;
-// 
-// 	switch ( currentAction ) {
-// 
-// 		case REST:
-// 		if we are resting then adjust sim temp based on ambient
-// 		Serial.print("currentTemp = ");
-// 		Serial.println(currentTemp);
-// 		
-// 		return currentTemp - (tempDiff / 5000.0);
-// 		break;
-// 
-// 		case HEAT:
-// 		if we're heating then raise the temp by a fixed amount
-// 		return currentTemp + 0.002;
-// 		break;
-// 		
-// 		case COOL:
-// 		if we're heating then raise the temp by a fixed amount
-// 		return currentTemp - 0.002;
-// 		break;
-// 		
-// 		default:
-// 		return currentTemp;
-// 		break;
-// 		
-// 	}
-// 
-// }
-// 
-// double simAmbientTemp() {
-// 	float startAmbientTemp = 20.0;  // use 15.0, 20.0 or 25.0
-// 	float ambientTempDiff = -0.01;  // use -0.1, 0.0, 0.1
-// 
-// 	if ( ambientTemp == 0.0 ) {
-// 		ambientTemp = startAmbientTemp;
-// 		return ambientTemp;
-// 	} else { 
-// 		ambientTemp = ambientTemp + ambientTempDiff;
-// 		return ambientTemp;
-// 	}
-// 
-//}
 
 
