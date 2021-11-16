@@ -12,7 +12,7 @@ class ControllerActionRules {
 	private:
 	double target = 20.0;
 	double range = 0.3;
-	double coolingOverrunAdjustment = 0.2; // adjust this by observing real life behaviour
+	double coolingOverrunAdjustment = 0.25; // this is the additional cooling we get after we've stopped forced cooling 
 // 	String lastReason = "";
 	
 	public:
