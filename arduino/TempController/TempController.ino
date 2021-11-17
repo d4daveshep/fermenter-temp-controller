@@ -57,7 +57,7 @@ double defaultTargetTemp = 20.0;
 double defaultRange = 0.3; // i.e. +/- either side of target
 ControllerActionRules controller(defaultTargetTemp, defaultRange);
 Decision decision;
-StaticJsonDocument<200> jsonDoc;
+StaticJsonDocument<100> jsonDoc;
 
 /*
 Setup runs once

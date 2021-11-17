@@ -95,7 +95,7 @@ def main(config_file):
             influxdb_data["time"] = stamp
             influxdb_data["fields"] = {"ambient_temp": fermenter_data["ambient"],
                                        "fermenter_temp": fermenter_data["avg"],
-                                       "target_temp": fermenter_data["target"],
+                                       "target_temp": float(fermenter_data["target"]),
                                        "controller_action": str(fermenter_data["action"]).upper()}
             if "change" in fermenter_data.keys():
                 influxdb_data["fields"]["change_action"] = str(fermenter_data["change"]).upper()
