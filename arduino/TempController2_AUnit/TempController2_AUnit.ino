@@ -13,12 +13,36 @@
 
 StaticJsonDocument<100> jsonDoc;
 
-test(WriteJSONString) {
+String getActionText(Action action) {
+    switch( action ) {
+        case NO_ACTION:
+            return "No Action";
+        case REST:
+            return "Rest";
+		case HEAT:
+            return "Heat";
+		case COOL:
+            return "Cool";
+        case ACTION_ERROR:
+            return "Error";
+		default:
+            return "Unknown Action";
+	}
+}
+
+test(ActionText) {
+    Action action = REST;
+    assertEqual("Rest", getActionText(action));
+    action = HEAT;
+    assertEqual("Heat", getActionText(action));
+}
+
+test(WriteJsonString) {
     jsonDoc["now"] = 12.34;
     jsonDoc["avg"] = 23.45;
     jsonDoc["override"] = true;
     serializeJson(jsonDoc, Serial);
-    Serial.println("\n");
+//     Serial.println("\n");
     
     String output = "";
     serializeJson(jsonDoc, output);
