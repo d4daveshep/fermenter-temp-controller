@@ -5,6 +5,8 @@
 #include <LiquidCrystal.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <ArduinoJson.h>
+
 
 #include "ControllerActionRules.h"
 #include "TemperatureReadings.h"
@@ -22,8 +24,6 @@ long lastDelayTimestamp = 0.0; // timestamp of last delay reading
 const byte serialBufSize = 12; // size of serial char buffer
 char receivedChars[serialBufSize]; // array to hold characters received
 boolean newSerialDataReceived = false; // let us know when new serial data received
-
-boolean override = false;
 
 // initialize the LCD library with the numbers of the interface pins
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);  // select the pins used on the LCD panel
@@ -57,13 +57,14 @@ double defaultTargetTemp = 20.0;
 double defaultRange = 0.3; // i.e. +/- either side of target
 ControllerActionRules controller(defaultTargetTemp, defaultRange);
 Decision decision;
+StaticJsonDocument<100> jsonDoc;
 
 /*
 Setup runs once
 */
 void setup(void) {
 	// TODO try higher number 115200??
-    Serial.begin(9600);
+	Serial.begin(9600);
 
 	// set up the relay pins
 	pinMode(HEAT_RELAY, OUTPUT);
@@ -74,14 +75,14 @@ void setup(void) {
 
 	sensors.begin(); // set up the temp sensors
 	sensors.requestTemperatures();  // read the sensors
-    
+	
 	double firstFermenterTemperatureReading = sensors.getTempCByIndex(0); // read the temp into index location
 	double firstAmbientTemp = sensors.getTempCByIndex(1); // read the ambient temp
 
-    // new code to keep - initialise the readings by setting averages to first readings
-    fermenterTemperatureReadings.setInitialAverageTemperature(firstFermenterTemperatureReading);
-    ambientTemperatureReadings.setInitialAverageTemperature(firstAmbientTemp);
-    
+	// new code to keep - initialise the readings by setting averages to first readings
+	fermenterTemperatureReadings.setInitialAverageTemperature(firstFermenterTemperatureReading);
+	ambientTemperatureReadings.setInitialAverageTemperature(firstAmbientTemp);
+	
 	lastPrintTimestamp = millis();
 	lastDelayTimestamp = millis();
 
@@ -89,7 +90,7 @@ void setup(void) {
 }
 
 /*
- * Main loop
+* Main loop
 */
 void loop(void) {
 
@@ -108,9 +109,9 @@ void loop(void) {
 	// do some debugging
 
 	// use our new ControllerActionRules class to determine the next action
-    double ambientTemp = ambientTemperatureReadings.getCurrentAverageTemperature();
-    double fermenterTemp = fermenterTemperatureReadings.getCurrentAverageTemperature();
-    
+	double ambientTemp = ambientTemperatureReadings.getCurrentAverageTemperature();
+	double fermenterTemp = fermenterTemperatureReadings.getCurrentAverageTemperature();
+	
 	decision = controller.getActionDecision( currentAction, ambientTemp, fermenterTemp );
 	Action nextAction = decision.getNextAction();
 	
@@ -161,103 +162,37 @@ void loop(void) {
 Print JSON format to Serial port
 */
 void printJSON() {
-
-	Serial.print("{\"now\":");
-	Serial.print(fermenterTemperatureReadings.getLatestTemperatureReading());
-	Serial.print(",\"avg\":");
-	Serial.print(fermenterTemperatureReadings.getCurrentAverageTemperature());
-	Serial.print(",\"min\":");
-	Serial.print(fermenterTemperatureReadings.getMinimumTemperature());
-	Serial.print(",\"max\":");
-	Serial.print(fermenterTemperatureReadings.getMaximumTemperature());
-
-	if (override) {
-		Serial.print(",\"override\":");
-		Serial.print("true");
-	}
-
-	switch ( currentAction) {
+	
+	jsonDoc.clear();
+	jsonDoc["now"] = fermenterTemperatureReadings.getLatestTemperatureReading();
+	jsonDoc["avg"] = fermenterTemperatureReadings.getCurrentAverageTemperature();
+	jsonDoc["min"] = fermenterTemperatureReadings.getMinimumTemperature();
+	jsonDoc["max"] = fermenterTemperatureReadings.getMaximumTemperature();
+	
+	jsonDoc["action"] = decision.getActionText();
+	switch ( decision.getNextAction() ) {
 		case REST:
-		Serial.print(",\"action\":\"Rest\"");
-		Serial.print(",\"rest\":true");
-		break;
+			jsonDoc["rest"] = true;
+			break;
 		case HEAT:
-		Serial.print(",\"action\":\"Heat\"");
-		Serial.print(",\"heat\":true");
-		break;
+			jsonDoc["heat"] = true;
+			break;
 		case COOL:
-		Serial.print(",\"action\":\"Cool\"");
-		Serial.print(",\"cool\":true");
-		break;
+			jsonDoc["cool"] = true;
+			break;
 		default:
-		Serial.print(",\"action\":\"ERROR\"");
+			break;
 	}
+	jsonDoc["reason-code"] = decision.getReasonCode();
 
-	Serial.print(",\"reason-code\":\"");
-	Serial.print(decision.getReasonCode());
-	Serial.print("\"");
-
-	Serial.print(",\"target\":");
-	Serial.print(controller.getTargetTemp());
-	Serial.print(",\"ambient\":");
-	Serial.print(ambientTemperatureReadings.getCurrentAverageTemperature());
-
-	Serial.print(",\"timestamp\":");
-	Serial.print(millis());
-
-	Serial.print("}");
+	jsonDoc["target"] = controller.getTargetTemp();
+	jsonDoc["ambient"] = ambientTemperatureReadings.getCurrentAverageTemperature();
+	
+	jsonDoc["timestamp"] = millis();
+	
+	jsonDoc["json-size"] = jsonDoc.memoryUsage();
+	serializeJson(jsonDoc, Serial);
 	Serial.println();
-}
-
-void debug(Action nextAction) {
-	Serial.print("DEBUG: ");
-	Serial.print("target=");
-	Serial.print(controller.getTargetTemp());
-
-	Serial.print(", actual=");
-	Serial.print(fermenterTemperatureReadings.getCurrentAverageTemperature());
-
-	Serial.print(", currentAction=");
-	switch ( currentAction) {
-	 case REST:
-	 Serial.print("REST");
-	  break;
-	 case HEAT:
-	 Serial.print("HEAT");
-	  break;
-	 case COOL:
-	 Serial.print("COOL");
-	  break;
-	 default:
-	 Serial.print("ERROR");
-   }
-
-	Serial.print(", nextAction=");
-	switch ( nextAction) {
-	 case REST:
-	 Serial.print("REST");
-	  break;
-	 case HEAT:
-	 Serial.print("HEAT");
-	  break;
-	 case COOL:
-	 Serial.print("COOL");
-	  break;
-	 default:
-	 Serial.print("ERROR");
-   }
-
-	Serial.print(", ambient=");
-	Serial.print(ambientTemperatureReadings.getCurrentAverageTemperature());
-
-	Serial.println();
-}
-
-/*
- * Produce a random temperature reading between 15 and 25 degrees
- */
-double randomTemp() {
-	return random( 15, 25 ) + random( 0, 100 ) / 100.0;
 }
 
 /*
@@ -297,8 +232,8 @@ void readSerialWithStartEndMarkers() {
 }
 
 /*
- * Get the updated target temp or -1 if no updated target temp
- */
+* Get the updated target temp or -1 if no updated target temp
+*/
 double getUpdatedTargetTemp() {
 	if (newSerialDataReceived == true) {
 		float newTarget = atof(receivedChars);
@@ -316,14 +251,14 @@ Read the temperature sensors and calculate the averages, update the min and max
 */
 void doTempReadings() {
 
-    sensors.requestTemperatures();  // read the sensors
+	sensors.requestTemperatures();  // read the sensors
 	double fermenterTemp = sensors.getTempCByIndex(0); // read the temp
 	double ambientTemp = sensors.getTempCByIndex(1); // read the ambient temp
 
-    // new code to keep
-    fermenterTemperatureReadings.updateAverageTemperatureWithNewValue(fermenterTemp);
-    ambientTemperatureReadings.updateAverageTemperatureWithNewValue(ambientTemp);
-    
+	// new code to keep
+	fermenterTemperatureReadings.updateAverageTemperatureWithNewValue(fermenterTemp);
+	ambientTemperatureReadings.updateAverageTemperatureWithNewValue(ambientTemp);
+	
 }
 
 /*

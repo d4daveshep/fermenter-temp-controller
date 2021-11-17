@@ -32,8 +32,8 @@ class ControllerActionRules {
 	NaturalDrift getNaturalDrift(double ambient, double actual);
 	Decision getActionDecision( Action currentAction, double ambient, double actual );
 	/*
-	 * Get the reason for the last decision according to the rules
-	 */
+	* Get the reason for the last decision according to the rules
+	*/
 // 	String getReason();
 
 };
