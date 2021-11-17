@@ -16,12 +16,13 @@ StaticJsonDocument<100> jsonDoc;
 test(WriteJSONString) {
     jsonDoc["now"] = 12.34;
     jsonDoc["avg"] = 23.45;
+    jsonDoc["override"] = true;
     serializeJson(jsonDoc, Serial);
     Serial.println("\n");
     
     String output = "";
     serializeJson(jsonDoc, output);
-    assertEqual("{\"now\":12.34,\"avg\":23.45}",output);
+    assertEqual("{\"now\":12.34,\"avg\":23.45,\"override\":true}",output);
 }
 
 test(UpdatedTargetTempIsSaved) {
