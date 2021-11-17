@@ -31,22 +31,32 @@ String getActionText(Action action) {
 }
 
 test(ActionText) {
-    Action action = REST;
+    Action action = NO_ACTION;
+    assertEqual("No Action", getActionText(action));
+    action = REST;
     assertEqual("Rest", getActionText(action));
     action = HEAT;
     assertEqual("Heat", getActionText(action));
+    action = COOL;
+    assertEqual("Cool", getActionText(action));
+    action = ACTION_ERROR;
+    assertEqual("Error", getActionText(action));
 }
 
 test(WriteJsonString) {
     jsonDoc["now"] = 12.34;
     jsonDoc["avg"] = 23.45;
     jsonDoc["override"] = true;
+    jsonDoc["action"] = getActionText(REST);
+    jsonDoc["rest"] = true;
+    
+    Serial.println(jsonDoc.memoryUsage());
     serializeJson(jsonDoc, Serial);
 //     Serial.println("\n");
     
     String output = "";
     serializeJson(jsonDoc, output);
-    assertEqual("{\"now\":12.34,\"avg\":23.45,\"override\":true}",output);
+    assertEqual("{\"now\":12.34,\"avg\":23.45,\"override\":true,\"action\":\"Rest\",\"rest\":true}",output);
 }
 
 test(UpdatedTargetTempIsSaved) {
