@@ -14,29 +14,29 @@
 StaticJsonDocument<100> jsonDoc;
 
 test(WriteJsonString) {
-    jsonDoc["now"] = 12.34;
-    jsonDoc["avg"] = 23.45;
-    jsonDoc["override"] = true;
-    Decision decision;
-    decision.setNextAction(REST);
-    decision.setReasonCode("RC3.1");
-    jsonDoc["action"] = decision.getActionText();
-    jsonDoc["rest"] = true;
-    jsonDoc["reason-code"] = decision.getReasonCode();
-    
-    Serial.println(jsonDoc.memoryUsage());
-    serializeJson(jsonDoc, Serial);
+	jsonDoc["now"] = 12.34;
+	jsonDoc["avg"] = 23.45;
+	jsonDoc["override"] = true;
+	Decision decision;
+	decision.setNextAction(REST);
+	decision.setReasonCode("RC3.1");
+	jsonDoc["action"] = decision.getActionText();
+	jsonDoc["rest"] = true;
+	jsonDoc["reason-code"] = decision.getReasonCode();
+	
+	Serial.println(jsonDoc.memoryUsage());
+	serializeJson(jsonDoc, Serial);
 //     Serial.println("\n");
-    
-    String output = "";
-    serializeJson(jsonDoc, output);
-    assertEqual("{\"now\":12.34,\"avg\":23.45,\"override\":true,\"action\":\"Rest\",\"rest\":true,\"reason-code\":\"RC3.1\"}",output);
+	
+	String output = "";
+	serializeJson(jsonDoc, output);
+	assertEqual("{\"now\":12.34,\"avg\":23.45,\"override\":true,\"action\":\"Rest\",\"rest\":true,\"reason-code\":\"RC3.1\"}",output);
 }
 
 test(UpdatedTargetTempIsSaved) {
-    double defaultTargetTemp = 6.0;
-    double defaultRange = 0.3; // i.e. +/- either side of target
-    ControllerActionRules controller(defaultTargetTemp, defaultRange);
+	double defaultTargetTemp = 6.0;
+	double defaultRange = 0.3; // i.e. +/- either side of target
+	ControllerActionRules controller(defaultTargetTemp, defaultRange);
 
 	double newTargetTemp = 7.0;
 	controller.setTargetTemp(newTargetTemp);
@@ -58,8 +58,8 @@ void setup() {
 	while(!Serial); // for the Arduino Leonardo/Micro only
 
 	Serial.print("\n");
-    
-    
+	
+	
 
 }
 

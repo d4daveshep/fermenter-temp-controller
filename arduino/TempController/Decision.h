@@ -15,6 +15,8 @@ public:
 	Action getNextAction();
 	void setNextAction(Action nextAction);
 	
+	String getActionText();
+	
 	String getReasonCode();
 	void setReasonCode(String reasonCode);
 	
