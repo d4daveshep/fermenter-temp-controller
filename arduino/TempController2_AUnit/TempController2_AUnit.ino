@@ -6,10 +6,23 @@
 #include <AUnit.h>
 #endif
 
+#include <ArduinoJson.h>
+
 #include "ControllerActionRules.h"
 #include "TemperatureReadings.h"
 
+StaticJsonDocument<100> jsonDoc;
 
+test(WriteJSONString) {
+    jsonDoc["now"] = 12.34;
+    jsonDoc["avg"] = 23.45;
+    serializeJson(jsonDoc, Serial);
+    Serial.println("\n");
+    
+    String output = "";
+    serializeJson(jsonDoc, output);
+    assertEqual("{\"now\":12.34,\"avg\":23.45}",output);
+}
 
 test(UpdatedTargetTempIsSaved) {
     double defaultTargetTemp = 6.0;
