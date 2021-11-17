@@ -192,6 +192,7 @@ void printJSON() {
 	
 	jsonDoc["json-size"] = jsonDoc.memoryUsage();
 	serializeJson(jsonDoc, Serial);
+	Serial.println();
 /*
 	Serial.print("{\"now\":");
 	Serial.print(fermenterTemperatureReadings.getLatestTemperatureReading());
