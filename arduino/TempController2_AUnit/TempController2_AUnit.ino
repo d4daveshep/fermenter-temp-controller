@@ -13,41 +13,43 @@
 
 StaticJsonDocument<100> jsonDoc;
 
-String getActionText(Action action) {
-    switch( action ) {
-        case NO_ACTION:
-            return "No Action";
-        case REST:
-            return "Rest";
-		case HEAT:
-            return "Heat";
-		case COOL:
-            return "Cool";
-        case ACTION_ERROR:
-            return "Error";
-		default:
-            return "Unknown Action";
-	}
-}
-
-test(ActionText) {
-    Action action = NO_ACTION;
-    assertEqual("No Action", getActionText(action));
-    action = REST;
-    assertEqual("Rest", getActionText(action));
-    action = HEAT;
-    assertEqual("Heat", getActionText(action));
-    action = COOL;
-    assertEqual("Cool", getActionText(action));
-    action = ACTION_ERROR;
-    assertEqual("Error", getActionText(action));
-}
+//String getActionText(Action action) {
+//     switch( action ) {
+//         case NO_ACTION:
+//             return "No Action";
+//         case REST:
+//             return "Rest";
+// 		case HEAT:
+//             return "Heat";
+// 		case COOL:
+//             return "Cool";
+//         case ACTION_ERROR:
+//             return "Error";
+// 		default:
+//             return "Unknown Action";
+// 	}
+// }
+// 
+// test(ActionText) {
+//     Action action = NO_ACTION;
+//     assertEqual("No Action", getActionText(action));
+//     action = REST;
+//     assertEqual("Rest", getActionText(action));
+//     action = HEAT;
+//     assertEqual("Heat", getActionText(action));
+//     action = COOL;
+//     assertEqual("Cool", getActionText(action));
+//     action = ACTION_ERROR;
+//     assertEqual("Error", getActionText(action));
+// }
 
 test(WriteJsonString) {
     jsonDoc["now"] = 12.34;
     jsonDoc["avg"] = 23.45;
     jsonDoc["override"] = true;
-    jsonDoc["action"] = getActionText(REST);
+    Decision decision;
+    decision.setNextAction(REST);
+    jsonDoc["action"] = decision.getActionText();
     jsonDoc["rest"] = true;
     
     Serial.println(jsonDoc.memoryUsage());
