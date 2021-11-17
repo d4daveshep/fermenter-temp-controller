@@ -13,44 +13,16 @@
 
 StaticJsonDocument<100> jsonDoc;
 
-//String getActionText(Action action) {
-//     switch( action ) {
-//         case NO_ACTION:
-//             return "No Action";
-//         case REST:
-//             return "Rest";
-// 		case HEAT:
-//             return "Heat";
-// 		case COOL:
-//             return "Cool";
-//         case ACTION_ERROR:
-//             return "Error";
-// 		default:
-//             return "Unknown Action";
-// 	}
-// }
-// 
-// test(ActionText) {
-//     Action action = NO_ACTION;
-//     assertEqual("No Action", getActionText(action));
-//     action = REST;
-//     assertEqual("Rest", getActionText(action));
-//     action = HEAT;
-//     assertEqual("Heat", getActionText(action));
-//     action = COOL;
-//     assertEqual("Cool", getActionText(action));
-//     action = ACTION_ERROR;
-//     assertEqual("Error", getActionText(action));
-// }
-
 test(WriteJsonString) {
     jsonDoc["now"] = 12.34;
     jsonDoc["avg"] = 23.45;
     jsonDoc["override"] = true;
     Decision decision;
     decision.setNextAction(REST);
+    decision.setReasonCode("RC3.1");
     jsonDoc["action"] = decision.getActionText();
     jsonDoc["rest"] = true;
+    jsonDoc["reason-code"] = decision.getReasonCode();
     
     Serial.println(jsonDoc.memoryUsage());
     serializeJson(jsonDoc, Serial);
@@ -58,7 +30,7 @@ test(WriteJsonString) {
     
     String output = "";
     serializeJson(jsonDoc, output);
-    assertEqual("{\"now\":12.34,\"avg\":23.45,\"override\":true,\"action\":\"Rest\",\"rest\":true}",output);
+    assertEqual("{\"now\":12.34,\"avg\":23.45,\"override\":true,\"action\":\"Rest\",\"rest\":true,\"reason-code\":\"RC3.1\"}",output);
 }
 
 test(UpdatedTargetTempIsSaved) {

@@ -23,8 +23,6 @@ const byte serialBufSize = 12; // size of serial char buffer
 char receivedChars[serialBufSize]; // array to hold characters received
 boolean newSerialDataReceived = false; // let us know when new serial data received
 
-boolean override = false;
-
 // initialize the LCD library with the numbers of the interface pins
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);  // select the pins used on the LCD panel
 const int LIGHT_PIN = 10; // pin 10 controls the backlight
@@ -170,11 +168,6 @@ void printJSON() {
 	Serial.print(fermenterTemperatureReadings.getMinimumTemperature());
 	Serial.print(",\"max\":");
 	Serial.print(fermenterTemperatureReadings.getMaximumTemperature());
-
-	if (override) {
-		Serial.print(",\"override\":");
-		Serial.print("true");
-	}
 
 	switch ( currentAction) {
 		case REST:
