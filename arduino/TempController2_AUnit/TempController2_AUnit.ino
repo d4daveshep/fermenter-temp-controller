@@ -11,9 +11,10 @@
 #include "ControllerActionRules.h"
 #include "TemperatureReadings.h"
 
-StaticJsonDocument<100> jsonDoc;
 
 test(WriteJsonString) {
+	StaticJsonDocument<100> jsonDoc;
+
 	jsonDoc["now"] = 12.34;
 	jsonDoc["avg"] = 23.45;
 	jsonDoc["override"] = true;
@@ -25,8 +26,8 @@ test(WriteJsonString) {
 	jsonDoc["reason-code"] = decision.getReasonCode();
 	
 	Serial.println(jsonDoc.memoryUsage());
-	serializeJson(jsonDoc, Serial);
-//     Serial.println("\n");
+// 	serializeJson(jsonDoc, Serial);
+// 	Serial.println();
 	
 	String output = "";
 	serializeJson(jsonDoc, output);
@@ -42,7 +43,6 @@ test(UpdatedTargetTempIsSaved) {
 	controller.setTargetTemp(newTargetTemp);
 	
 	assertEqual(controller.getTargetTemp(), newTargetTemp );
-	
 }
 
 //----------------------------------------------------------------------------
