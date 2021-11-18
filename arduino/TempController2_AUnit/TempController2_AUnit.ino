@@ -10,6 +10,7 @@
 
 #include "ControllerActionRules.h"
 #include "TemperatureReadings.h"
+#include "RelayPins.h"
 
 
 test(WriteJsonString) {
@@ -44,6 +45,7 @@ test(UpdatedTargetTempIsSaved) {
 	
 	assertEqual(controller.getTargetTemp(), newTargetTemp );
 }
+
 
 //----------------------------------------------------------------------------
 // setup() and loop()

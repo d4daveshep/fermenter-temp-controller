@@ -29,7 +29,7 @@ boolean newSerialDataReceived = false; // let us know when new serial data recei
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);  // select the pins used on the LCD panel
 char buf[6]; // char buffer used to convert numbers to strings to write to lcd
 
-// define the pins used by the heating and coolingrelays
+// define the pins used by the heating and cooling relays
 const int HEAT_RELAY = 11; //  Heating relay pin
 const int COOL_RELAY = 12; // Cooling relay pin
 
