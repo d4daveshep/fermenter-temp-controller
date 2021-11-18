@@ -51,13 +51,24 @@ typedef void (*GeneralFunction) ();
 class SmartDelay {
 private:
 	long unsigned delayInMSec;
+	long unsigned startingTimestamp;
 	GeneralFunction doThis;
+
 public:
-	SmartDelay(long unsigned msec, GeneralFunction ref) {
+	SmartDelay(long unsigned msec) {
 		this->delayInMSec = msec;
+	}
+	SmartDelay(long unsigned msec, GeneralFunction ref) {
+		SmartDelay(msec);
 		this->doThis = ref;
 	}
+	
 	void start() {
+		this->startingTimestamp = millis();
+	}
+	
+	long delay() {
+		
 		this->doThis();
 		delay(this->delayInMSec);
 	}
@@ -78,6 +89,8 @@ test(SmartDelay) {
 	
 	long unsigned start = millis();
 	smartDelay.start();
+	doSomeSlowThing();
+	smartDelay.delay();
 	long unsigned end = millis();
 	assertNear(start, end, (long unsigned)(1000+1));
 	
