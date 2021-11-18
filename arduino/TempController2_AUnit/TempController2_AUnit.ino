@@ -46,13 +46,36 @@ test(UpdatedTargetTempIsSaved) {
 	assertEqual(controller.getTargetTemp(), newTargetTemp );
 }
 
+class SmartDelay {
+private:
+	long unsigned delayInMSec;
+public:
+	SmartDelay(long unsigned msec) {
+		this->delayInMSec = msec;
+	}
+	void start() {
+		delay(this->delayInMSec);
+	}
+};
+
+test(SmartDelay) {
+
+// 	SmartDelay smartDelay(1000);
+// 	smartDelay.start();
+	SmartDelay smartDelay(1000);
+	
+	long unsigned start = millis();
+	smartDelay.start();
+	long unsigned end = millis();
+	assertNear(start, end, (long unsigned)1001);
+	
+// 	assertNear(smartDelay.startedAt(), smartDelay.endedAt(), 1000);
+}
+
 
 //----------------------------------------------------------------------------
 // setup() and loop()
 //----------------------------------------------------------------------------
-
-
-
 
 void setup() {
 	delay(1000); // wait for stability on some boards to prevent garbage Serial
