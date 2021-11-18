@@ -33,8 +33,6 @@ char buf[6]; // char buffer used to convert numbers to strings to write to lcd
 const int HEAT_RELAY = 11; //  Heating relay pin
 const int COOL_RELAY = 12; // Cooling relay pin
 
-Action currentAction = REST;
-
 /*
 * NEW GLOBAL VARIABLES
 * Create a global instance of our new controller class
@@ -44,6 +42,7 @@ double defaultTargetTemp = 20.0;
 double defaultRange = 0.3; // i.e. +/- either side of target
 ControllerActionRules controller(defaultTargetTemp, defaultRange);
 Decision decision;
+Action currentAction = REST;
 StaticJsonDocument<100> jsonDoc;
 
 /*
