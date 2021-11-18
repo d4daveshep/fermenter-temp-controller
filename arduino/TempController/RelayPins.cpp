@@ -1,4 +1,4 @@
-#define _DO_UNIT_TESTING
+// #define _DO_UNIT_TESTING
 
 #include <Arduino.h>
 #include <AUnit.h>
