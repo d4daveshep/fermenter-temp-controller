@@ -46,28 +46,40 @@ test(UpdatedTargetTempIsSaved) {
 	assertEqual(controller.getTargetTemp(), newTargetTemp );
 }
 
+typedef void (*GeneralFunction) ();
+
 class SmartDelay {
 private:
 	long unsigned delayInMSec;
+	GeneralFunction doThis;
 public:
-	SmartDelay(long unsigned msec) {
+	SmartDelay(long unsigned msec, GeneralFunction ref) {
 		this->delayInMSec = msec;
+		this->doThis = ref;
 	}
 	void start() {
+		this->doThis();
 		delay(this->delayInMSec);
 	}
 };
+
+void doSomeSlowThing() {
+	delay(123);
+}
 
 test(SmartDelay) {
 
 // 	SmartDelay smartDelay(1000);
 // 	smartDelay.start();
-	SmartDelay smartDelay(1000);
+	
+	GeneralFunction fRef = doSomeSlowThing;
+	
+	SmartDelay smartDelay(1000, fRef);
 	
 	long unsigned start = millis();
 	smartDelay.start();
 	long unsigned end = millis();
-	assertNear(start, end, (long unsigned)1001);
+	assertNear(start, end, (long unsigned)(1000+1));
 	
 // 	assertNear(smartDelay.startedAt(), smartDelay.endedAt(), 1000);
 }
