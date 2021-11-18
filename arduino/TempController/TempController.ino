@@ -10,7 +10,7 @@
 
 #include "ControllerActionRules.h"
 #include "TemperatureReadings.h"
-
+#include "RelayPins.h"
 
 // initialise the OneWire sensors
 const int ONE_WIRE_BUS = 3;  // Data wire is plugged into pin 3 on the Arduino
@@ -27,26 +27,11 @@ boolean newSerialDataReceived = false; // let us know when new serial data recei
 
 // initialize the LCD library with the numbers of the interface pins
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);  // select the pins used on the LCD panel
-const int LIGHT_PIN = 10; // pin 10 controls the backlight
-
-// define some values used by the LCD panel and buttons
-int lcd_key     = 0;
-int adc_key_in  = 0;
-boolean lightOn = true;  // keep track of whether the LCD light is on or off
-const int btnRIGHT =  0;
-const int btnUP =     1;
-const int btnDOWN =   2;
-const int btnLEFT =   3;
-const int btnSELECT = 4;
-const int btnNONE =   5;
 char buf[6]; // char buffer used to convert numbers to strings to write to lcd
 
-
-// define the pins used by the heating and coolingrelays
-const int HEAT_RELAY = 11; //  Heating relay pin
-const int COOL_RELAY = 12; // Cooling relay pin
-
-Action currentAction = REST;
+// define the pins used by the heating and cooling relays
+// const int HEAT_RELAY = 11; //  Heating relay pin
+// const int COOL_RELAY = 12; // Cooling relay pin
 
 /*
 * NEW GLOBAL VARIABLES
@@ -57,6 +42,7 @@ double defaultTargetTemp = 20.0;
 double defaultRange = 0.3; // i.e. +/- either side of target
 ControllerActionRules controller(defaultTargetTemp, defaultRange);
 Decision decision;
+Action currentAction = REST;
 StaticJsonDocument<100> jsonDoc;
 
 /*
@@ -66,9 +52,7 @@ void setup(void) {
 	// TODO try higher number 115200??
 	Serial.begin(9600);
 
-	// set up the relay pins
-	pinMode(HEAT_RELAY, OUTPUT);
-	pinMode(COOL_RELAY, OUTPUT);
+	RelayPins::setup();
 
 	// set up the LCD as 16 x 2
 	lcd.begin(16, 2);
@@ -117,26 +101,8 @@ void loop(void) {
 	
 	currentAction = nextAction; // TO-DO probably don't need to do this
 
-	// do the action
-	switch ( currentAction) {
-
-		case REST:
-		digitalWrite(HEAT_RELAY, LOW); // turn the Heat off
-		digitalWrite(COOL_RELAY, LOW); // turn the Cool off
-		break;
-
-		case HEAT:
-		digitalWrite(HEAT_RELAY, HIGH); // turn the Heat on
-		digitalWrite(COOL_RELAY, LOW); // turn the Cool off
-		break;
-
-		case COOL:
-		digitalWrite(HEAT_RELAY, LOW); // turn the Heat off
-		digitalWrite(COOL_RELAY, HIGH); // turn the Cool on
-		break;
-
-		//  default:
-	}
+	// set the relay pins to do the action
+	RelayPins::setToAction( currentAction );
 
 	// update the display
 	updateLCD();
