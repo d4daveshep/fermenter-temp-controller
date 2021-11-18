@@ -27,20 +27,7 @@ boolean newSerialDataReceived = false; // let us know when new serial data recei
 
 // initialize the LCD library with the numbers of the interface pins
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);  // select the pins used on the LCD panel
-const int LIGHT_PIN = 10; // pin 10 controls the backlight
-
-// define some values used by the LCD panel and buttons
-int lcd_key     = 0;
-int adc_key_in  = 0;
-boolean lightOn = true;  // keep track of whether the LCD light is on or off
-const int btnRIGHT =  0;
-const int btnUP =     1;
-const int btnDOWN =   2;
-const int btnLEFT =   3;
-const int btnSELECT = 4;
-const int btnNONE =   5;
 char buf[6]; // char buffer used to convert numbers to strings to write to lcd
-
 
 // define the pins used by the heating and coolingrelays
 const int HEAT_RELAY = 11; //  Heating relay pin
