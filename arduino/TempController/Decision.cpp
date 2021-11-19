@@ -14,7 +14,7 @@ void Decision::setNextAction(Action nextAction) {
 String Decision::getActionText() {
 	switch( action ) {
 		case NO_ACTION:
-			return "No Action";
+			return "None";
 		case REST:
 			return "Rest";
 		case HEAT:

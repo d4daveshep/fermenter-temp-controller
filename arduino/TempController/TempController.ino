@@ -127,8 +127,12 @@ void printJson() {
 	jsonDoc["avg"] = fermenterTemperatureReadings.getCurrentAverageTemperature();
 	jsonDoc["min"] = fermenterTemperatureReadings.getMinimumTemperature();
 	jsonDoc["max"] = fermenterTemperatureReadings.getMaximumTemperature();
+	jsonDoc["target"] = controller.getTargetTemp();
+	jsonDoc["ambient"] = ambientTemperatureReadings.getCurrentAverageTemperature();
 	
 	jsonDoc["action"] = decision.getActionText();
+
+	// add booleans for Grafana to use
 	switch ( decision.getNextAction() ) {
 		case REST:
 			jsonDoc["rest"] = true;
@@ -142,14 +146,11 @@ void printJson() {
 		default:
 			break;
 	}
-	jsonDoc["reason-code"] = decision.getReasonCode();
 
-	jsonDoc["target"] = controller.getTargetTemp();
-	jsonDoc["ambient"] = ambientTemperatureReadings.getCurrentAverageTemperature();
-	
+	jsonDoc["reason-code"] = decision.getReasonCode();
 	jsonDoc["timestamp"] = millis();
-	
-	jsonDoc["Json-size"] = jsonDoc.memoryUsage();
+	jsonDoc["json-size"] = jsonDoc.memoryUsage();
+
 	serializeJson(jsonDoc, Serial);
 	Serial.println();
 }
@@ -232,7 +233,7 @@ void updateLCD() {
 
 	// print LINE 1
 	lcd.setCursor(0, 0);
-	// current temp
+	// current fermenter temp
 	lcd.print("N");
 	lcd.print( dtostrf(fermenterTemperatureReadings.getCurrentAverageTemperature(), 4, 1, buf) );
 	lcd.print(" ");
@@ -242,7 +243,7 @@ void updateLCD() {
 	lcd.print( dtostrf(controller.getTargetTemp(), 2, 0, buf) );
 	lcd.print(" ");
 
-	// ambient temp
+	// current ambient temp
 	lcd.print("A");
 	lcd.print( dtostrf(ambientTemperatureReadings.getCurrentAverageTemperature(), 4, 1, buf) );
 	lcd.print(" ");
@@ -251,21 +252,8 @@ void updateLCD() {
 	lcd.setCursor(0, 1);
 
 	// current action
-	switch ( currentAction) {
-
-		case REST:
-		lcd.print("Rest");
-		break;
-		case HEAT:
-		lcd.print("Heat");
-		break;
-		case COOL:
-		lcd.print("Cool");
-		break;
-		default:
-		lcd.print("ERROR");
-
-	}
+	Action action = decision.getNextAction();
+	lcd.print(decision.getActionText());
 
 	// min & max
 	lcd.print(" ");
