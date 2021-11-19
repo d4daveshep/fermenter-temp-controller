@@ -18,8 +18,7 @@ const int ONE_WIRE_BUS = 3;  // Data wire is plugged into pin 3 on the Arduino
 OneWire oneWire(ONE_WIRE_BUS);  // Setup a oneWire instance to communicate with any OneWire devices
 DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
 
-long lastPrintTimestamp = 0.0; // timestamp of last serial print
-long lastDelayTimestamp = 0.0; // timestamp of last delay reading
+unsigned long lastPrintTimestamp = 0.0; // timestamp of last serial print
 
 // define variables for reading temperature from serial
 const byte serialBufSize = 12; // size of serial char buffer
@@ -70,7 +69,6 @@ void setup(void) {
 	ambientTemperatureReadings.setInitialAverageTemperature(firstAmbientTemp);
 	
 	lastPrintTimestamp = millis();
-	lastDelayTimestamp = millis();
 
 	delay(1000);
 }
@@ -93,16 +91,13 @@ void loop(void) {
 	// do the temp readings and average calculation
 	doTempReadings();
 
-	// do some debugging
-
 	// use our new ControllerActionRules class to determine the next action
 	double ambientTemp = ambientTemperatureReadings.getCurrentAverageTemperature();
 	double fermenterTemp = fermenterTemperatureReadings.getCurrentAverageTemperature();
 	
 	decision = controller.getActionDecision( currentAction, ambientTemp, fermenterTemp );
 	Action nextAction = decision.getNextAction();
-	
-	currentAction = nextAction; // TO-DO probably don't need to do this
+	currentAction = nextAction;
 
 	// set the relay pins to do the action
 	RelayPins::setToAction( currentAction );
@@ -110,18 +105,20 @@ void loop(void) {
 	// update the display
 	updateLCD();
 
-	// print JSON to serial port
-	long newPrintTimestamp = millis();
-	//  if ( ( millis() - lastPrintTimestamp ) > 59600 ) { // every minute
-	if ( ( millis() - lastPrintTimestamp ) > 9900 ) { // every 10 secs
-		lastPrintTimestamp = millis();
-		printJSON();
-// 		debug(nextAction);
-	}
+	// print JSON to serial port every 10 secs
+	printJsonEvery10Secs();
 
 	// complete the 1 sec smart delay
 	smartDelay.doDelay();
 
+}
+
+void printJsonEvery10Secs() {
+	unsigned long now = millis();
+	if ( ( now - lastPrintTimestamp ) > 9900 ) { // every 10 secs
+		printJSON();
+		lastPrintTimestamp = now;
+	}
 }
 
 /*
