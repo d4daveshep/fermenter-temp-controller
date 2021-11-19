@@ -78,8 +78,9 @@ void setup(void) {
 */
 void loop(void) {
 
-	// read the lcd button state and adjust the temperature accordingly
-
+	// start the 1 sec smart delay timer
+	
+	
 	// read any data from the serial port
 	readSerialWithStartEndMarkers();
 	double newTargetTemp = getUpdatedTargetTemp();
@@ -116,7 +117,7 @@ void loop(void) {
 // 		debug(nextAction);
 	}
 
-	// smart delay of 1000 msec
+	// complete the 1 sec smart delay
 	do {
 		// nothing
 	} while ((millis() - lastDelayTimestamp) < 1000);

@@ -59,7 +59,7 @@ public:
 		this->delayInMSec = msec;
 	}
 	SmartDelay(long unsigned msec, GeneralFunction ref) {
-		SmartDelay(msec);
+		this->delayInMSec = msec;
 		this->doThis = ref;
 	}
 	
@@ -67,10 +67,11 @@ public:
 		this->startingTimestamp = millis();
 	}
 	
-	long delay() {
-		
-		this->doThis();
-		delay(this->delayInMSec);
+	long doDelay() {
+		do {
+			// nothing
+		} while ((millis() - this->startingTimestamp) < this->delayInMSec);
+		return (millis() - this->startingTimestamp);
 	}
 };
 
@@ -85,13 +86,15 @@ test(SmartDelay) {
 	
 	GeneralFunction fRef = doSomeSlowThing;
 	
-	SmartDelay smartDelay(1000, fRef);
+// 	SmartDelay smartDelay(1000, fRef);
+	SmartDelay smartDelay(1000);
 	
 	long unsigned start = millis();
 	smartDelay.start();
 	doSomeSlowThing();
-	smartDelay.delay();
+	long timeTaken = smartDelay.doDelay();
 	long unsigned end = millis();
+	assertNear((long unsigned)123,(long unsigned)timeTaken,(long unsigned)1);
 	assertNear(start, end, (long unsigned)(1000+1));
 	
 // 	assertNear(smartDelay.startedAt(), smartDelay.endedAt(), 1000);
