@@ -11,6 +11,7 @@
 #include "ControllerActionRules.h"
 #include "TemperatureReadings.h"
 #include "RelayPins.h"
+#include "SmartDelay.h"
 
 
 test(WriteJsonString) {
@@ -47,46 +48,8 @@ test(UpdatedTargetTempIsSaved) {
 }
 
 
-class SmartDelay {
-private:
-	long unsigned delayInMSec;
-	long unsigned startingTimestamp;
 
-public:
-	SmartDelay(long unsigned msec) {
-		this->delayInMSec = msec;
-	}
 
-	void start() {
-		this->startingTimestamp = millis();
-	}
-	
-	long doDelay() {
-		do {
-			// nothing
-		} while ((millis() - this->startingTimestamp) < this->delayInMSec);
-		return (millis() - this->startingTimestamp);
-	}
-};
-
-void doSomeSlowThing() {
-	delay(123);
-}
-
-test(SmartDelay) {
-
-	SmartDelay smartDelay(1000);
-	
-	long unsigned start = millis();
-	smartDelay.start();
-	doSomeSlowThing();
-	long timeTaken = smartDelay.doDelay();
-	long unsigned end = millis();
-
-	assertNear( (unsigned long)1000, (long unsigned)timeTaken, (unsigned long)1 );
-	assertNear(start, end, (long unsigned)(1000+1));
-	
-}
 
 
 //----------------------------------------------------------------------------

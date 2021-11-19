@@ -44,6 +44,7 @@ ControllerActionRules controller(defaultTargetTemp, defaultRange);
 Decision decision;
 Action currentAction = REST;
 StaticJsonDocument<100> jsonDoc;
+SmartDelay smartDelay(1000);
 
 /*
 Setup runs once
@@ -79,7 +80,7 @@ void setup(void) {
 void loop(void) {
 
 	// start the 1 sec smart delay timer
-	
+	smartDelay.start();
 	
 	// read any data from the serial port
 	readSerialWithStartEndMarkers();
@@ -118,10 +119,7 @@ void loop(void) {
 	}
 
 	// complete the 1 sec smart delay
-	do {
-		// nothing
-	} while ((millis() - lastDelayTimestamp) < 1000);
-	lastDelayTimestamp = millis();
+	smartDelay.doDelay();
 
 }
 
