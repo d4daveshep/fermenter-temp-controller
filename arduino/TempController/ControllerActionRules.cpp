@@ -1,7 +1,6 @@
 //#define _DO_UNIT_TESTING
 
 #include <Arduino.h>
-#include <AUnit.h>
 
 #include "ControllerActionRules.h"
 #include "Decision.h"
@@ -255,6 +254,7 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 
 
 #ifdef _DO_UNIT_TESTING
+#include <AUnit.h>
 /*
 * AUnit Tests
 */
