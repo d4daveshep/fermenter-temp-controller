@@ -11,6 +11,7 @@
 #include "ControllerActionRules.h"
 #include "TemperatureReadings.h"
 #include "RelayPins.h"
+#include "SmartDelay.h"
 
 // initialise the OneWire sensors
 const int ONE_WIRE_BUS = 3;  // Data wire is plugged into pin 3 on the Arduino
@@ -44,6 +45,7 @@ ControllerActionRules controller(defaultTargetTemp, defaultRange);
 Decision decision;
 Action currentAction = REST;
 StaticJsonDocument<100> jsonDoc;
+SmartDelay smartDelay(1000);
 
 /*
 Setup runs once
@@ -78,8 +80,9 @@ void setup(void) {
 */
 void loop(void) {
 
-	// read the lcd button state and adjust the temperature accordingly
-
+	// start the 1 sec smart delay timer
+	smartDelay.start();
+	
 	// read any data from the serial port
 	readSerialWithStartEndMarkers();
 	double newTargetTemp = getUpdatedTargetTemp();
@@ -116,11 +119,8 @@ void loop(void) {
 // 		debug(nextAction);
 	}
 
-	// smart delay of 1000 msec
-	do {
-		// nothing
-	} while ((millis() - lastDelayTimestamp) < 1000);
-	lastDelayTimestamp = millis();
+	// complete the 1 sec smart delay
+	smartDelay.doDelay();
 
 }
 
