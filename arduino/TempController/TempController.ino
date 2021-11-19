@@ -176,23 +176,23 @@ void readSerialWithStartEndMarkers() {
 		rc = Serial.read();
 
 		if (recvInProgress == true) {
-		if (rc != endMarker) {
-			receivedChars[ndx] = rc;
-			ndx++;
-			if (ndx >= serialBufSize) {
-			ndx = serialBufSize - 1;
+			if (rc != endMarker) {
+				receivedChars[ndx] = rc;
+				ndx++;
+				if (ndx >= serialBufSize) {
+				ndx = serialBufSize - 1;
+				}
 			}
-		}
-		else {
-			receivedChars[ndx] = '\0'; // terminate the string
-			recvInProgress = false;
-			ndx = 0;
-			newSerialDataReceived = true;
-		}
+			else {
+				receivedChars[ndx] = '\0'; // terminate the string
+				recvInProgress = false;
+				ndx = 0;
+				newSerialDataReceived = true;
+			}
 		}
 
 		else if (rc == startMarker) {
-		recvInProgress = true;
+			recvInProgress = true;
 		}
 	}
 }
