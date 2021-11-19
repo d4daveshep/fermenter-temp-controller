@@ -11,6 +11,7 @@
 #include "ControllerActionRules.h"
 #include "TemperatureReadings.h"
 #include "RelayPins.h"
+#include "SmartDelay.h"
 
 // initialise the OneWire sensors
 const int ONE_WIRE_BUS = 3;  // Data wire is plugged into pin 3 on the Arduino
