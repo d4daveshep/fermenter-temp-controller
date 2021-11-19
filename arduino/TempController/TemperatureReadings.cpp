@@ -1,7 +1,6 @@
 //#define _DO_UNIT_TESTING
 
 #include <Arduino.h>
-#include <AUnit.h>
 
 #include "TemperatureReadings.h"
 
@@ -77,6 +76,7 @@ double TemperatureReadings::generateRandomTemperatureMovement() {
 //=======================================================================================
 
 #ifdef _DO_UNIT_TESTING
+#include <AUnit.h>
 /*
 * AUnit Tests
 */

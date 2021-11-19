@@ -1,7 +1,6 @@
 //#define _DO_UNIT_TESTING
 
 #include <Arduino.h>
-#include <AUnit.h>
 
 #include "Decision.h"
 
@@ -39,6 +38,7 @@ void Decision::setReasonCode(String reasonCode) {
 
 
 #ifdef _DO_UNIT_TESTING
+#include <AUnit.h>
 /*
 * AUnit Tests
 */

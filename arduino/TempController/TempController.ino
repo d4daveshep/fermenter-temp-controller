@@ -7,7 +7,6 @@
 #include <DallasTemperature.h>
 #include <ArduinoJson.h>
 
-
 #include "ControllerActionRules.h"
 #include "TemperatureReadings.h"
 #include "RelayPins.h"
@@ -18,7 +17,7 @@ const int ONE_WIRE_BUS = 3;  // Data wire is plugged into pin 3 on the Arduino
 OneWire oneWire(ONE_WIRE_BUS);  // Setup a oneWire instance to communicate with any OneWire devices
 DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
 
-unsigned long lastPrintTimestamp = 0.0; // timestamp of last serial print
+unsigned long lastJsonPrintTimestamp = 0.0; // timestamp of last serial print
 
 // define variables for reading temperature from serial
 const byte serialBufSize = 12; // size of serial char buffer
@@ -28,10 +27,6 @@ boolean newSerialDataReceived = false; // let us know when new serial data recei
 // initialize the LCD library with the numbers of the interface pins
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);  // select the pins used on the LCD panel
 char buf[6]; // char buffer used to convert numbers to strings to write to lcd
-
-// define the pins used by the heating and cooling relays
-// const int HEAT_RELAY = 11; //  Heating relay pin
-// const int COOL_RELAY = 12; // Cooling relay pin
 
 /*
 * NEW GLOBAL VARIABLES
@@ -59,18 +54,19 @@ void setup(void) {
 	lcd.begin(16, 2);
 
 	sensors.begin(); // set up the temp sensors
-	sensors.requestTemperatures();  // read the sensors
+	sensors.requestTemperatures();  // read the temp sensors
 	
-	double firstFermenterTemperatureReading = sensors.getTempCByIndex(0); // read the temp into index location
-	double firstAmbientTemp = sensors.getTempCByIndex(1); // read the ambient temp
-
-	// new code to keep - initialise the readings by setting averages to first readings
+	// take the first fermenter reading and initialise the average
+	double firstFermenterTemperatureReading = sensors.getTempCByIndex(0);
 	fermenterTemperatureReadings.setInitialAverageTemperature(firstFermenterTemperatureReading);
+
+	// take the first ambient reading and initialise the average
+	double firstAmbientTemp = sensors.getTempCByIndex(1);
 	ambientTemperatureReadings.setInitialAverageTemperature(firstAmbientTemp);
 	
-	lastPrintTimestamp = millis();
+	lastJsonPrintTimestamp = millis(); // initialise the Json printing timer
 
-	delay(1000);
+	delay(1000); // wait 1 sec before proceeding
 }
 
 /*
@@ -105,7 +101,7 @@ void loop(void) {
 	// update the display
 	updateLCD();
 
-	// print JSON to serial port every 10 secs
+	// print Json to serial port every 10 secs
 	printJsonEvery10Secs();
 
 	// complete the 1 sec smart delay
@@ -115,16 +111,16 @@ void loop(void) {
 
 void printJsonEvery10Secs() {
 	unsigned long now = millis();
-	if ( ( now - lastPrintTimestamp ) > 9900 ) { // every 10 secs
-		printJSON();
-		lastPrintTimestamp = now;
+	if ( ( now - lastJsonPrintTimestamp ) > 9900 ) { // every 10 secs
+		printJson();
+		lastJsonPrintTimestamp = now;
 	}
 }
 
 /*
-Print JSON format to Serial port
+Print Json format to Serial port
 */
-void printJSON() {
+void printJson() {
 	
 	jsonDoc.clear();
 	jsonDoc["now"] = fermenterTemperatureReadings.getLatestTemperatureReading();
@@ -153,7 +149,7 @@ void printJSON() {
 	
 	jsonDoc["timestamp"] = millis();
 	
-	jsonDoc["json-size"] = jsonDoc.memoryUsage();
+	jsonDoc["Json-size"] = jsonDoc.memoryUsage();
 	serializeJson(jsonDoc, Serial);
 	Serial.println();
 }

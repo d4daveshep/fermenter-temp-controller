@@ -1,7 +1,6 @@
 // #define _DO_UNIT_TESTING
 
 #include <Arduino.h>
-#include <AUnit.h>
 
 #include "RelayPins.h"
 
@@ -35,6 +34,7 @@ void RelayPins::setToAction(Action action) {
 }
 
 #ifdef _DO_UNIT_TESTING
+#include <AUnit.h>
 test(SetRelayAction) {
 	
 	RelayPins::setup();
