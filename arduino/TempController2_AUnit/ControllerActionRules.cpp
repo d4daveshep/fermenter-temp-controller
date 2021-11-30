@@ -85,6 +85,11 @@ NaturalDrift ControllerActionRules::getNaturalDrift(double ambient, double actua
 Decision ControllerActionRules::getActionDecision( Action now, double ambient, double actual ) {
 	
 	Decision decision;
+
+// 	decision = checkFailsafeMin(actual);
+// 	if( decision.isMade() ) {
+// 		return decision;
+// 	}
 	
 	// Test 1,6. if we've tripped failsafe then disregard ambient and current action
 	if( actual < getFailsafeMin() ) {
@@ -251,6 +256,24 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 	
 }
 
+// Test 1 & 6. if we've tripped failsafe then disregard ambient and current action
+// Decision ControllerActionRules::checkFailsafeMin(double actual) {
+// 	if( actual < getFailsafeMin() ) {
+// 		decision.setNextAction(HEAT);
+// 		decision.setReasonCode("RC1");
+// 		return decision;
+// 	}
+// }
+// 
+// if( decision.isMade() ) {
+// 	return decision;
+// }
+// 
+// if( actual < getFailsafeMin() ) {
+// 	decision.setNextAction(HEAT);
+// 	decision.setReasonCode("RC1");
+// 	return decision;
+// }
 
 
 

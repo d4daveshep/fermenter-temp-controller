@@ -20,6 +20,7 @@ public:
 	String getReasonCode();
 	void setReasonCode(String reasonCode);
 	
+	boolean isMade();
 };
 
 // class ControllerActionRules {

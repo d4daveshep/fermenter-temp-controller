@@ -37,6 +37,9 @@ void Decision::setReasonCode(String reasonCode) {
 	this->reasonCode = reasonCode;
 }
 
+boolean Decision::isMade() {
+	return this->action != NO_ACTION;
+}
 
 #ifdef _DO_UNIT_TESTING
 /*
@@ -70,6 +73,15 @@ test(ActionText) {
 
     decision.setNextAction(ACTION_ERROR);
     assertEqual("Error", decision.getActionText());
+}
+
+test(DecisionIsMade) {
+	Decision decision;
+	decision.setNextAction(NO_ACTION);
+	assertFalse(decision.isMade());
+	
+	decision.setNextAction(REST);
+	assertTrue(decision.isMade());
 }
 
 #endif
