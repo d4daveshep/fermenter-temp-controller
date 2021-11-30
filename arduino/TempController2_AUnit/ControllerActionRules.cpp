@@ -103,7 +103,7 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 	// Rules for when there is NATURAL_HEATING
 	if( getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
 		/*
-		 *	| RC2.1 | REST->HEAT because even though there is natural heating, the temperature is below the target range |
+		 *	| RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
 		 *	| RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
 		 *	| RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
 		 */
@@ -115,7 +115,7 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 
 		if( actual < getTargetRangeMin() ) {
 			if( now == REST) {
-				decision.setNextAction(HEAT);
+				decision.setNextAction(REST);
 				decision.setReasonCode("RC2.1");
 			} else if(now == HEAT) {
 				decision.setNextAction(REST);
@@ -348,7 +348,7 @@ test(WhatToDoNext) {
 	
 	/*
 	 * Test 2. 
-	 * | RC2.1 | REST->HEAT because even though there is natural heating, the temperature is below the target range |
+	 * | RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
 	 * | RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
 	 * | RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
 	 */
@@ -356,7 +356,7 @@ test(WhatToDoNext) {
 	currentAction = REST;
 	decision = controller.getActionDecision(currentAction, ambientHigh, belowTargetRange);
 	assertEqual(decision.getReasonCode(), "RC2.1");
-	assertEqual(decision.getNextAction(), HEAT);
+	assertEqual(decision.getNextAction(), REST);
 
 	// Test 2.2 we are cooling and ambient is high but temp is below target range so REST and use natural heating
 	currentAction = COOL;

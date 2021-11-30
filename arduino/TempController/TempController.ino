@@ -32,7 +32,7 @@ char buf[6]; // char buffer used to convert numbers to strings to write to lcd
 * NEW GLOBAL VARIABLES
 * Create a global instance of our new controller class
 */
-TemperatureReadings fermenterTemperatureReadings(10), ambientTemperatureReadings(10);
+TemperatureReadings fermenterTemperatureReadings(60), ambientTemperatureReadings(10);
 double defaultTargetTemp = 20.0;
 double defaultRange = 0.3; // i.e. +/- either side of target
 ControllerActionRules controller(defaultTargetTemp, defaultRange);
