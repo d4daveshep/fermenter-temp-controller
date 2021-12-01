@@ -30,8 +30,10 @@ class ControllerActionRules {
 	bool isTempBelowFailsafe(double temp);
 	bool isTempAboveFailsafe(double temp);
 	NaturalDrift getNaturalDrift(double ambient, double actual);
+	boolean isNaturalHeating(double ambient, double actual);
 	Decision getActionDecision( Action currentAction, double ambient, double actual );
 	Decision checkFailsafeMin(double actualTemp);
+	Decision checkFailsafeMax(double actualTemp);
 	/*
 	 * Get the reason for the last decision according to the rules
 	 */

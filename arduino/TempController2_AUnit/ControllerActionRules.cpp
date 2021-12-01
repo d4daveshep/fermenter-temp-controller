@@ -88,19 +88,17 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 
 	// Test 1 & 6. if we've tripped failsafe then disregard ambient and current action
 	decision = checkFailsafeMin(actual);
+
+	// Test 5 & 10. if we've tripped failsafe then disregard ambient and current action
+	decision = checkFailsafeMax(actual);
+	
 	if( decision.isMade() ) {
 		return decision;
 	}
 
-	// Test 5,10. if we've tripped failsafe then disregard ambient and current action
-	if( actual > getFailsafeMax() ) {
-		decision.setNextAction(COOL);
-		decision.setReasonCode("RC5");
-		return decision;
-	}
-
-	// Rules for when there is NATURAL_HEATING
-	if( getNaturalDrift(ambient, actual) == NATURAL_HEATING ) {
+	if( isNaturalHeating(ambient, actual)) {
+		
+		TODO refactor from here
 		/*
 		 *	| RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
 		 *	| RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
@@ -111,7 +109,7 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 			decision.setReasonCode("RC2.2");
 			return decision;
 		}
-
+		
 		if( actual < getTargetRangeMin() ) {
 			if( now == REST) {
 				decision.setNextAction(REST);
@@ -125,7 +123,7 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 			}
 			return decision;
 		}
-
+		
 		/*
 		 *	| RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
 		 *	| RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
@@ -147,7 +145,7 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 			}
 			return decision;
 		}
-			
+		
 		/*
 		 *	| RC4.1 | REST->COOL because the temperature is above the target range and we have natural heating |
 		 *	| RC4.2 | COOL->COOL becuase the temperature is above the target range and we have natural heating |
@@ -171,6 +169,12 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 		}
 		
 	}
+
+	if( decision.isMade() ) {
+		return decision;
+	}
+
+	
 
 	// Rules for when there is NATURAL_COOLING
 	if( getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
@@ -258,22 +262,17 @@ Decision ControllerActionRules::checkFailsafeMin(double actualTemp) {
 	return decision;
 }
 
-// Test 1 & 6. if we've tripped failsafe then disregard ambient and current action
-// Decision ControllerActionRules::checkFailsafeMin(double actual) {
-// 	
-// }
-// 
-// if( decision.isMade() ) {
-// 	return decision;
-// }
-// 
-// if( actual < getFailsafeMin() ) {
-// 	decision.setNextAction(HEAT);
-// 	decision.setReasonCode("RC1");
-// 	return decision;
-// }
+Decision ControllerActionRules::checkFailsafeMax(double actualTemp) {
+	if( actualTemp > getFailsafeMax() ) {
+		decision.setNextAction(COOL);
+		decision.setReasonCode("RC5");
+	}
+	return decision;
+}
 
-
+boolean ControllerActionRules::isNaturalHeating(double ambient, double actual) {
+	return getNaturalDrift(ambient, actual) == NATURAL_HEATING;
+}
 
 #ifdef _DO_UNIT_TESTING
 /*
@@ -331,8 +330,8 @@ test(WhatToDoNext) {
 	// Test 1.1 we are resting and ambient is high but temp is below failsafe so HEAT
 	currentAction = REST;
 	decision = controller.getActionDecision(currentAction, ambientHigh, belowFailsafe);
-	assertEqual(decision.getReasonCode(), "RC1");
-	assertEqual(decision.getNextAction(), HEAT);
+	assertEqual("RC1", decision.getReasonCode());
+	assertEqual(HEAT, decision.getNextAction());
 	
 	// Test 1.2 we are cooling and ambient is high but temp is below failsafe so HEAT
 	currentAction = COOL;
@@ -606,7 +605,23 @@ test(AdjustmentForCoolingOverrun) {
 	assertEqual(expectedStopCoolingTemp, actualStopCoolingTemp); 
 }
 
+test(IsNaturalHeatingOrCooling) {
 
+	double target = 18.0;
+	double range = 0.5;
+	ControllerActionRules controller(target, range);
+
+	// Test natural cooling
+	double ambient = 18.0;
+	double actual = 20.0;
+// 	assertTrue( controller.getNaturalDrift( ambient, actual ), NATURAL_COOLING );
+	
+	// Test natural heating
+	ambient = 18.0;
+	actual = 16.0;
+	assertTrue( controller.isNaturalHeating( ambient, actual ));
+	
+}
 
 #endif
 
