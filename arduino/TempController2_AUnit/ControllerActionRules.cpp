@@ -98,6 +98,8 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 
 	if( isNaturalHeating(ambient, actual)) {
 		
+		decision = checkForCoolingOverrun(now, actual);
+		
 		TODO refactor from here
 		/*
 		 *	| RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
