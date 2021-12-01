@@ -13,7 +13,7 @@ class ControllerActionRules {
 	double target = 20.0;
 	double range = 0.3;
 	double coolingOverrunAdjustment = 0.2; // adjust this by observing real life behaviour
-// 	String lastReason = "";
+	Decision decision;
 	
 	public:
 	ControllerActionRules(double targetTemp, double targetRange);
@@ -31,6 +31,7 @@ class ControllerActionRules {
 	bool isTempAboveFailsafe(double temp);
 	NaturalDrift getNaturalDrift(double ambient, double actual);
 	Decision getActionDecision( Action currentAction, double ambient, double actual );
+	Decision checkFailsafeMin(double actualTemp);
 	/*
 	 * Get the reason for the last decision according to the rules
 	 */

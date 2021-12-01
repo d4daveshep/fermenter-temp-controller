@@ -41,6 +41,10 @@ boolean Decision::isMade() {
 	return this->action != NO_ACTION;
 }
 
+void Decision::clear() {
+	this->action = NO_ACTION;
+}
+
 #ifdef _DO_UNIT_TESTING
 /*
  * AUnit Tests
@@ -82,6 +86,13 @@ test(DecisionIsMade) {
 	
 	decision.setNextAction(REST);
 	assertTrue(decision.isMade());
+}
+
+test(Clear) {
+	Decision decision;
+	decision.setNextAction(HEAT);
+	decision.clear();
+	assertEqual(NO_ACTION, decision.getNextAction());
 }
 
 #endif
