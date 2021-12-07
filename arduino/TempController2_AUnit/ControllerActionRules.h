@@ -32,8 +32,9 @@ class ControllerActionRules {
 	NaturalDrift getNaturalDrift(double ambient, double actual);
 	boolean isNaturalHeating(double ambient, double actual);
 	Decision getActionDecision( Action currentAction, double ambient, double actual );
-	Decision checkFailsafeMin(double actualTemp);
-	Decision checkFailsafeMax(double actualTemp);
+	Decision checkFailsafeMinAndDecideAction(double actualTemp); // RC1
+	Decision checkFailsafeMaxAndDecideAction(double actualTemp); // RC5
+	Decision checkForCoolingOverrunWithNaturalHeatingAndDecideAction(Action currentAction, double actualTemp); // RC2.2
 	/*
 	 * Get the reason for the last decision according to the rules
 	 */

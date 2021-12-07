@@ -84,36 +84,41 @@ NaturalDrift ControllerActionRules::getNaturalDrift(double ambient, double actua
 
 Decision ControllerActionRules::getActionDecision( Action now, double ambient, double actual ) {
 	
-	decision.clear();
+	Decision decision;
 
 	// Test 1 & 6. if we've tripped failsafe then disregard ambient and current action
-	decision = checkFailsafeMin(actual);
-
-	// Test 5 & 10. if we've tripped failsafe then disregard ambient and current action
-	decision = checkFailsafeMax(actual);
+	decision.clear();
+	TODO think i need to pass the decision object into the check function
+	decision = checkFailsafeMinAndDecideAction(actual);
+	if( decision.isMade() ) {
+		return decision;
+	}
 	
+	// Test 5 & 10. if we've tripped failsafe then disregard ambient and current action
+	decision.clear();
+	decision = checkFailsafeMaxAndDecideAction(actual);
 	if( decision.isMade() ) {
 		return decision;
 	}
 
+	/*
+	 *	| RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
+	 *	| RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
+	 *	| RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
+	 */
 	if( isNaturalHeating(ambient, actual)) {
 		
-		decision = checkForCoolingOverrun(now, actual);
-		
-		TODO refactor from here
-		/*
-		 *	| RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
-		 *	| RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
-		 *	| RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
-		 */
-		if(now == COOL && actual < getStopCoolingTemp() ) { // adjust for cooling overrun
-			decision.setNextAction(REST);
-			decision.setReasonCode("RC2.2");
+		decision = checkForCoolingOverrunWithNaturalHeatingAndDecideAction(now, actual); // RC2.2
+		if( decision.isMade() ) {
 			return decision;
 		}
 		
+		Serial.println("got here 1");
+		
 		if( actual < getTargetRangeMin() ) {
+			Serial.println("got here 2");		
 			if( now == REST) {
+				Serial.println("got here 3");		
 				decision.setNextAction(REST);
 				decision.setReasonCode("RC2.1");
 			} else if(now == HEAT) {
@@ -125,7 +130,6 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 			}
 			return decision;
 		}
-		
 		/*
 		 *	| RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
 		 *	| RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
@@ -256,7 +260,7 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 	
 }
 
-Decision ControllerActionRules::checkFailsafeMin(double actualTemp) {
+Decision ControllerActionRules::checkFailsafeMinAndDecideAction(double actualTemp) {
 	if( actualTemp < getFailsafeMin() ) {
 		decision.setNextAction(HEAT);
 		decision.setReasonCode("RC1");
@@ -264,12 +268,20 @@ Decision ControllerActionRules::checkFailsafeMin(double actualTemp) {
 	return decision;
 }
 
-Decision ControllerActionRules::checkFailsafeMax(double actualTemp) {
+Decision ControllerActionRules::checkFailsafeMaxAndDecideAction(double actualTemp) {
 	if( actualTemp > getFailsafeMax() ) {
 		decision.setNextAction(COOL);
 		decision.setReasonCode("RC5");
 	}
 	return decision;
+}
+
+Decision ControllerActionRules::checkForCoolingOverrunWithNaturalHeatingAndDecideAction(Action now, double actual) {
+	if(now == COOL && actual < getStopCoolingTemp() ) { // adjust for cooling overrun
+		decision.setNextAction(REST);
+		decision.setReasonCode("RC2.2");
+		return decision;
+	}
 }
 
 boolean ControllerActionRules::isNaturalHeating(double ambient, double actual) {
@@ -286,6 +298,28 @@ testF(ControllerTestOnce, BelowFailsafe) {
 	assertEqual(name, "David");
 }
 */
+
+test(CheckFailsafeMin) {
+	double target = 18.0;
+	double range = 0.5; 
+	ControllerActionRules controller(target, range);
+	double ambientLow = 14.0;
+	Decision decision = controller.checkFailsafeMinAndDecideAction(ambientLow);
+	
+	assertEqual(HEAT, decision.getNextAction());
+	assertEqual("RC1", decision.getReasonCode());
+}
+
+test(CheckFailsafeMax) {
+	double target = 18.0;
+	double range = 0.5; 
+	ControllerActionRules controller(target, range);
+	double ambientHigh = 22.0;
+	Decision decision = controller.checkFailsafeMaxAndDecideAction(ambientHigh);
+	
+	assertEqual(COOL, decision.getNextAction());
+	assertEqual("RC5", decision.getReasonCode());
+}
 
 // Test the decision making logic
 
@@ -314,8 +348,9 @@ test(WhatToDoNext) {
 	* 10. ambient is low, we are resting | cooling | heating but temp is above failsafe. COOL, COOL, COOL
 	* 
 	*/
-	double ambientHigh = 22.0;
+
 	double ambientLow = 14.0;
+	double ambientHigh = 22.0;
 	//double ambientNeutral = target;
 	double belowFailsafe = 16.5;
 	double belowTargetRange = 17.4;
@@ -338,14 +373,14 @@ test(WhatToDoNext) {
 	// Test 1.2 we are cooling and ambient is high but temp is below failsafe so HEAT
 	currentAction = COOL;
 	decision = controller.getActionDecision(currentAction, ambientHigh, belowFailsafe);
-	assertEqual(decision.getReasonCode(), "RC1");
-	assertEqual(decision.getNextAction(), HEAT);
+	assertEqual("RC1", decision.getReasonCode());
+	assertEqual(HEAT, decision.getNextAction());
 	
 	// Test 1.3 we are heating and ambient is high but temp is below failsafe so HEAT
 	currentAction = HEAT;
 	decision = controller.getActionDecision(currentAction, ambientHigh, belowFailsafe);
-	assertEqual(decision.getReasonCode(), "RC1");
-	assertEqual(decision.getNextAction(), HEAT);
+	assertEqual("RC1", decision.getReasonCode());
+	assertEqual(HEAT, decision.getNextAction());
 	
 	/*
 	 * Test 5. ambient is high, we are resting | cooling | heating but temp is above failsafe. COOL, COOL, COOL
@@ -353,20 +388,20 @@ test(WhatToDoNext) {
 	// Test 5.1 we are resting and ambient is high but temp is above failsafe so COOL
 	currentAction = REST;
 	decision = controller.getActionDecision(currentAction, ambientHigh, aboveFailsafe);
-	assertEqual(decision.getReasonCode(), "RC5");
-	assertEqual(decision.getNextAction(), COOL);
+	assertEqual("RC5", decision.getReasonCode());
+	assertEqual(COOL, decision.getNextAction());
 	
 	// Test 5.2 we are cooling and ambient is high but temp is above failsafe so COOL
 	currentAction = COOL;
 	decision = controller.getActionDecision(currentAction, ambientHigh, aboveFailsafe);
-	assertEqual(decision.getReasonCode(), "RC5");
-	assertEqual(decision.getNextAction(), COOL);
+	assertEqual("RC5", decision.getReasonCode());
+	assertEqual(COOL, decision.getNextAction());
 	
 	// Test 5.3 we are heating and ambient is high but temp is above failsafe so COOL
 	currentAction = HEAT;
 	decision = controller.getActionDecision(currentAction, ambientHigh, aboveFailsafe);
-	assertEqual(decision.getReasonCode(), "RC5");
-	assertEqual(decision.getNextAction(), COOL);
+	assertEqual("RC5", decision.getReasonCode());
+	assertEqual(COOL, decision.getNextAction());
 	
 	/*
 	 * Test 2. 
@@ -374,11 +409,11 @@ test(WhatToDoNext) {
 	 * | RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
 	 * | RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
 	 */
-	// Test 2.1 we are resting and ambient is high and temp is below target range so HEAT and use natural heating
+	// Test 2.1 we are resting and ambient is high and temp is below target range so REST and use natural heating
 	currentAction = REST;
 	decision = controller.getActionDecision(currentAction, ambientHigh, belowTargetRange);
-	assertEqual(decision.getReasonCode(), "RC2.1");
-	assertEqual(decision.getNextAction(), REST);
+	assertEqual("RC2.1", decision.getReasonCode());
+	assertEqual(REST, decision.getNextAction());
 
 	// Test 2.2 we are cooling and ambient is high but temp is below target range so REST and use natural heating
 	currentAction = COOL;
