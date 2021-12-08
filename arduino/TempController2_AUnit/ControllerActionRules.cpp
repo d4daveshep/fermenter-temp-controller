@@ -84,8 +84,6 @@ NaturalDrift ControllerActionRules::getNaturalDrift(double ambient, double actua
 
 Decision ControllerActionRules::getActionDecision( Action now, double ambient, double actual ) {
 	
-	Decision decision;
-
 	// Test 1 & 6. if we've tripped failsafe then disregard ambient and current action
 	decision.clear();
 	//TODO think i need to pass the decision object into the check function
@@ -107,18 +105,13 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 	 *	| RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
 	 */
 	if( isNaturalHeating(ambient, actual)) {
-		
 		decision = checkForCoolingOverrunWithNaturalHeatingAndDecideAction(now, actual); // RC2.2
 		if( decision.isMade() ) {
 			return decision;
 		}
 		
-		Serial.println("got here 1");
-		
 		if( actual < getTargetRangeMin() ) {
-			Serial.println("got here 2");		
 			if( now == REST) {
-				Serial.println("got here 3");		
 				decision.setNextAction(REST);
 				decision.setReasonCode("RC2.1");
 			} else if(now == HEAT) {
@@ -128,7 +121,9 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 				decision.setNextAction(ACTION_ERROR);
 				decision.setReasonCode("RC_ERR");
 			}
-			return decision;
+			if( decision.isMade() ) {
+				return decision;
+			}
 		}
 		/*
 		 *	| RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
@@ -277,6 +272,7 @@ Decision ControllerActionRules::checkFailsafeMaxAndDecideAction(double actualTem
 }
 
 Decision ControllerActionRules::checkForCoolingOverrunWithNaturalHeatingAndDecideAction(Action now, double actual) {
+	Decision decision;  //TODO figure out why this is needed here
 	if(now == COOL && actual < getStopCoolingTemp() ) { // adjust for cooling overrun
 		decision.setNextAction(REST);
 		decision.setReasonCode("RC2.2");
