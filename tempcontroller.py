@@ -100,13 +100,13 @@ def main(config_file):
             if "change" in fermenter_data.keys():
                 influxdb_data["fields"]["change_action"] = str(fermenter_data["change"]).upper()
 
-            target = fermenter_data["target"]
+            target = float(fermenter_data["target"])
 
             # check if we need to update the target temp
             if round(float(target), 1) != round(float(new_target), 1):
                 new_target_str = '<' + str(new_target) + '>'
                 serial_port.write(new_target_str.encode())
-                influxdb_data["fields"]["target_temp"] = new_target
+                influxdb_data["fields"]["target_temp"] = float(new_target)
                 logging.info("Updated target temp to %s", str(new_target))
 
             # check if fermenter_temp value is an outlier
