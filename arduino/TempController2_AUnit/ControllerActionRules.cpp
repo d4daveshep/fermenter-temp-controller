@@ -99,9 +99,12 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 	// RC5 & RC10 | HEAT because we've tripped failsafe (disregard ambient and current action)
 	checkFailsafeMaxAndDecideAction(actual);
 
-	// RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
 	if( isNaturalHeating(ambient, actual)) {
+		// RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
 		checkForCoolingOverrunWithNaturalHeatingAndDecideAction(now, actual); // RC2.2
+		if( actual < getTargetRangeMin() ) {
+			decideActionWhenBelowTargetRange(now); // RC2.1, RC2.3
+		}
 	}
 	
 	if( newDecision.isMade() ) {
@@ -290,6 +293,21 @@ void ControllerActionRules::checkForCoolingOverrunWithNaturalHeatingAndDecideAct
 		if(now == COOL && actual < getStopCoolingTemp() ) { // adjust for cooling overrun
 			newDecision.setNextAction(REST);
 			newDecision.setReasonCode("RC2.2");
+		}
+	}
+}
+
+void ControllerActionRules::decideActionWhenBelowTargetRange(Action now) {
+	if (!newDecision.isMade() ) {
+		if( now == REST) {
+			newDecision.setNextAction(REST);
+			newDecision.setReasonCode("RC2.1");
+		} else if(now == HEAT) {
+			newDecision.setNextAction(REST);
+			newDecision.setReasonCode("RC2.3");
+		} else {
+			newDecision.setNextAction(ACTION_ERROR);
+			newDecision.setReasonCode("RC_ERR");
 		}
 	}
 }
