@@ -38,6 +38,7 @@ class ControllerActionRules {
 	void checkFailsafeMaxAndDecideAction(double actualTemp); // RC5
 	void checkForCoolingOverrunWithNaturalHeatingAndDecideAction(Action currentAction, double actualTemp); // RC2.2
 	void decideActionWhenBelowTargetRange(Action now); // RC2.1, RC2.3
+	void decideActionWhenInTargetRange(Action now); // RC3.1, RC3.2, RC3.3
 	/*
 	 * Get the reason for the last decision according to the rules
 	 */

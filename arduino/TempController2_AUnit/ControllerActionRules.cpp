@@ -102,9 +102,21 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 	if( isNaturalHeating(ambient, actual)) {
 		// RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
 		checkForCoolingOverrunWithNaturalHeatingAndDecideAction(now, actual); // RC2.2
+		
+		// RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
+ 		// RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
+		// RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
 		if( actual < getTargetRangeMin() ) {
-			decideActionWhenBelowTargetRange(now); // RC2.1, RC2.3
+			decideActionWhenBelowTargetRange(now); // RC2.1, RC2.2.1, RC2.3
 		}
+		
+		// RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
+		// RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
+		// RC3.3 | HEAT->REST because we are in the target range.  There is natural heating so expect temperature to rise |
+		if( isTempInTargetRange(actual) ) {
+			decideActionWhenInTargetRange(now); // RC3.1, RC3.2, RC3.3
+		}
+			
 	}
 	
 	if( newDecision.isMade() ) {
@@ -117,26 +129,6 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 	 *	| RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
 	 */
 // 	if( isNaturalHeating(ambient, actual)) {
-// 		newDecision = checkForCoolingOverrunWithNaturalHeatingAndDecideAction(now, actual); // RC2.2
-// 		if( newDecision.isMade() ) {
-// 			return newDecision;
-// 		}
-// 		
-// 		if( actual < getTargetRangeMin() ) {
-// 			if( now == REST) {
-// 				decision.setNextAction(REST);
-// 				decision.setReasonCode("RC2.1");
-// 			} else if(now == HEAT) {
-// 				decision.setNextAction(REST);
-// 				decision.setReasonCode("RC2.3");
-// 			} else {
-// 				decision.setNextAction(ACTION_ERROR);
-// 				decision.setReasonCode("RC_ERR");
-// 			}
-// 			if( decision.isMade() ) {
-// 				return decision;
-// 			}
-// 		}
 // 		/*
 // 		 *	| RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
 // 		 *	| RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
@@ -309,6 +301,24 @@ void ControllerActionRules::decideActionWhenBelowTargetRange(Action now) {
 			newDecision.setNextAction(ACTION_ERROR);
 			newDecision.setReasonCode("RC_ERR");
 		}
+	}
+}
+
+void ControllerActionRules::decideActionWhenInTargetRange(Action now) {
+	if(!newDecision.isMade()) {
+		if( now == REST) {
+			newDecision.setNextAction(REST);
+			newDecision.setReasonCode("RC3.1");
+		} else if(now == COOL) {
+			newDecision.setNextAction(COOL);
+			newDecision.setReasonCode("RC3.2");
+		} else if(now == HEAT) {
+			newDecision.setNextAction(REST);
+			newDecision.setReasonCode("RC3.3");
+		} else {
+			newDecision.setNextAction(ACTION_ERROR);
+			newDecision.setReasonCode("RC_ERR");
+		}		
 	}
 }
 
