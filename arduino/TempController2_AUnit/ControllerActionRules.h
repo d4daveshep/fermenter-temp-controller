@@ -33,9 +33,10 @@ class ControllerActionRules {
 	boolean isNaturalHeating(double ambient, double actual);
 	Decision getActionDecision( Action currentAction, double ambient, double actual );
 	Decision getDecision();
+	void resetDecision();
 	void checkFailsafeMinAndDecideAction(double actualTemp); // RC1
 	void checkFailsafeMaxAndDecideAction(double actualTemp); // RC5
-	Decision checkForCoolingOverrunWithNaturalHeatingAndDecideAction(Action currentAction, double actualTemp); // RC2.2
+	void checkForCoolingOverrunWithNaturalHeatingAndDecideAction(Action currentAction, double actualTemp); // RC2.2
 	/*
 	 * Get the reason for the last decision according to the rules
 	 */

@@ -64,6 +64,10 @@ Decision ControllerActionRules::getDecision() {
 	return this->newDecision;
 }
 
+void ControllerActionRules::resetDecision() {
+	this->newDecision.clear();
+}
+
 /*
 * Natural Drift hapens is when ambient temp is different to actual fermenter temp.
 * When ambient > actual we have natural heating
@@ -95,28 +99,26 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 	// RC5 & RC10 | HEAT because we've tripped failsafe (disregard ambient and current action)
 	checkFailsafeMaxAndDecideAction(actual);
 
+	// RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
+	if( isNaturalHeating(ambient, actual)) {
+		checkForCoolingOverrunWithNaturalHeatingAndDecideAction(now, actual); // RC2.2
+	}
+	
 	if( newDecision.isMade() ) {
 		return newDecision;
 	}
 	
-	// Test 5 & 10. if we've tripped failsafe then disregard ambient and current action
-	//newDecision.clear();
-// 	newDecision = checkFailsafeMaxAndDecideAction(actual);
-// 	if( newDecision.isMade() ) {
-// 		return newDecision;
-// 	}
-// 
 	/*
 	 *	| RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
 	 *	| RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
 	 *	| RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
 	 */
-	if( isNaturalHeating(ambient, actual)) {
-		newDecision = checkForCoolingOverrunWithNaturalHeatingAndDecideAction(now, actual); // RC2.2
-		if( newDecision.isMade() ) {
-			return newDecision;
-		}
-		
+// 	if( isNaturalHeating(ambient, actual)) {
+// 		newDecision = checkForCoolingOverrunWithNaturalHeatingAndDecideAction(now, actual); // RC2.2
+// 		if( newDecision.isMade() ) {
+// 			return newDecision;
+// 		}
+// 		
 // 		if( actual < getTargetRangeMin() ) {
 // 			if( now == REST) {
 // 				decision.setNextAction(REST);
@@ -260,31 +262,35 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 // 	decision.setReasonCode("ERROR");
 // 	return decision;
 	
-}
+//}
 
 void ControllerActionRules::checkFailsafeMinAndDecideAction(double actualTemp) {
 	// remember newDecision is a global class variable
-	if( actualTemp < getFailsafeMin() ) {
-		newDecision.setNextAction(HEAT);
-		newDecision.setReasonCode("RC1");
-	}
-	
+	if( !newDecision.isMade() ) {
+		if( actualTemp < getFailsafeMin() ) {
+			newDecision.setNextAction(HEAT);
+			newDecision.setReasonCode("RC1");
+		}
+	}	
 }
 
 void ControllerActionRules::checkFailsafeMaxAndDecideAction(double actualTemp) {
 	// remember newDecision is a global class variable
-	if( actualTemp > getFailsafeMax() ) {
-		newDecision.setNextAction(COOL);
-		newDecision.setReasonCode("RC5");
+	if( !newDecision.isMade() ) {
+		if( actualTemp > getFailsafeMax() ) {
+			newDecision.setNextAction(COOL);
+			newDecision.setReasonCode("RC5");
+		}
 	}
 }
 
-Decision ControllerActionRules::checkForCoolingOverrunWithNaturalHeatingAndDecideAction(Action now, double actual) {
-	Decision decision;
-	if(now == COOL && actual < getStopCoolingTemp() ) { // adjust for cooling overrun
-		decision.setNextAction(REST);
-		decision.setReasonCode("RC2.2");
-		return decision;
+void ControllerActionRules::checkForCoolingOverrunWithNaturalHeatingAndDecideAction(Action now, double actual) {
+	// remember newDecision is a global class variable
+	if( !newDecision.isMade() ) {
+		if(now == COOL && actual < getStopCoolingTemp() ) { // adjust for cooling overrun
+			newDecision.setNextAction(REST);
+			newDecision.setReasonCode("RC2.2");
+		}
 	}
 }
 
