@@ -60,6 +60,9 @@ bool ControllerActionRules::isTempAboveFailsafe(double temp) {
 	return temp > getFailsafeMax();
 }
 
+Decision ControllerActionRules::getDecision() {
+	return this->newDecision;
+}
 
 /*
 * Natural Drift hapens is when ambient temp is different to actual fermenter temp.
@@ -84,195 +87,200 @@ NaturalDrift ControllerActionRules::getNaturalDrift(double ambient, double actua
 
 Decision ControllerActionRules::getActionDecision( Action now, double ambient, double actual ) {
 	
-	// Test 1 & 6. if we've tripped failsafe then disregard ambient and current action
-	decision.clear();
-	//TODO think i need to pass the decision object into the check function
-	decision = checkFailsafeMinAndDecideAction(actual);
-	if( decision.isMade() ) {
-		return decision;
+	// remember newDecision is a global class variable
+	newDecision.clear();
+
+	// RC1 & RC6 | COOL because we've tripped failsafe (disregard ambient and current action)
+	checkFailsafeMinAndDecideAction(actual);
+	// RC5 & RC10 | HEAT because we've tripped failsafe (disregard ambient and current action)
+	checkFailsafeMaxAndDecideAction(actual);
+
+	if( newDecision.isMade() ) {
+		return newDecision;
 	}
 	
 	// Test 5 & 10. if we've tripped failsafe then disregard ambient and current action
-	decision.clear();
-	decision = checkFailsafeMaxAndDecideAction(actual);
-	if( decision.isMade() ) {
-		return decision;
-	}
-
+	//newDecision.clear();
+// 	newDecision = checkFailsafeMaxAndDecideAction(actual);
+// 	if( newDecision.isMade() ) {
+// 		return newDecision;
+// 	}
+// 
 	/*
 	 *	| RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
 	 *	| RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
 	 *	| RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
 	 */
 	if( isNaturalHeating(ambient, actual)) {
-		decision = checkForCoolingOverrunWithNaturalHeatingAndDecideAction(now, actual); // RC2.2
-		if( decision.isMade() ) {
-			return decision;
+		newDecision = checkForCoolingOverrunWithNaturalHeatingAndDecideAction(now, actual); // RC2.2
+		if( newDecision.isMade() ) {
+			return newDecision;
 		}
 		
-		if( actual < getTargetRangeMin() ) {
-			if( now == REST) {
-				decision.setNextAction(REST);
-				decision.setReasonCode("RC2.1");
-			} else if(now == HEAT) {
-				decision.setNextAction(REST);
-				decision.setReasonCode("RC2.3");
-			} else {
-				decision.setNextAction(ACTION_ERROR);
-				decision.setReasonCode("RC_ERR");
-			}
-			if( decision.isMade() ) {
-				return decision;
-			}
-		}
-		/*
-		 *	| RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
-		 *	| RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
-		 *	| RC3.3 | HEAT->REST because we are in the target range.  There is natural heating so expect temperature to rise |
-		 */
-		if( isTempInTargetRange(actual) ) {
-			if( now == REST) {
-				decision.setNextAction(REST);
-				decision.setReasonCode("RC3.1");
-			} else if(now == COOL) {
-				decision.setNextAction(COOL);
-				decision.setReasonCode("RC3.2");
-			} else if(now == HEAT) {
-				decision.setNextAction(REST);
-				decision.setReasonCode("RC3.3");
-			} else {
-				decision.setNextAction(ACTION_ERROR);
-				decision.setReasonCode("RC_ERR");
-			}
-			return decision;
-		}
-		
-		/*
-		 *	| RC4.1 | REST->COOL because the temperature is above the target range and we have natural heating |
-		 *	| RC4.2 | COOL->COOL becuase the temperature is above the target range and we have natural heating |
-		 *	| RC4.3 | HEAT->COOL because the temperature is above target range and we have natural heating.  (adjust heating lag?) |
-		 */
-		if( actual > getTargetRangeMax() ) {
-			if( now == REST) {
-				decision.setNextAction(COOL);
-				decision.setReasonCode("RC4.1");
-			} else if(now == COOL) {
-				decision.setNextAction(COOL);
-				decision.setReasonCode("RC4.2");
-			} else if(now == HEAT) {
-				decision.setNextAction(COOL);
-				decision.setReasonCode("RC4.3");
-			} else {
-				decision.setNextAction(ACTION_ERROR);
-				decision.setReasonCode("RC_ERR");
-			}
-			return decision;
-		}
+// 		if( actual < getTargetRangeMin() ) {
+// 			if( now == REST) {
+// 				decision.setNextAction(REST);
+// 				decision.setReasonCode("RC2.1");
+// 			} else if(now == HEAT) {
+// 				decision.setNextAction(REST);
+// 				decision.setReasonCode("RC2.3");
+// 			} else {
+// 				decision.setNextAction(ACTION_ERROR);
+// 				decision.setReasonCode("RC_ERR");
+// 			}
+// 			if( decision.isMade() ) {
+// 				return decision;
+// 			}
+// 		}
+// 		/*
+// 		 *	| RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
+// 		 *	| RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
+// 		 *	| RC3.3 | HEAT->REST because we are in the target range.  There is natural heating so expect temperature to rise |
+// 		 */
+// 		if( isTempInTargetRange(actual) ) {
+// 			if( now == REST) {
+// 				decision.setNextAction(REST);
+// 				decision.setReasonCode("RC3.1");
+// 			} else if(now == COOL) {
+// 				decision.setNextAction(COOL);
+// 				decision.setReasonCode("RC3.2");
+// 			} else if(now == HEAT) {
+// 				decision.setNextAction(REST);
+// 				decision.setReasonCode("RC3.3");
+// 			} else {
+// 				decision.setNextAction(ACTION_ERROR);
+// 				decision.setReasonCode("RC_ERR");
+// 			}
+// 			return decision;
+// 		}
+// 		
+// 		/*
+// 		 *	| RC4.1 | REST->COOL because the temperature is above the target range and we have natural heating |
+// 		 *	| RC4.2 | COOL->COOL becuase the temperature is above the target range and we have natural heating |
+// 		 *	| RC4.3 | HEAT->COOL because the temperature is above target range and we have natural heating.  (adjust heating lag?) |
+// 		 */
+// 		if( actual > getTargetRangeMax() ) {
+// 			if( now == REST) {
+// 				decision.setNextAction(COOL);
+// 				decision.setReasonCode("RC4.1");
+// 			} else if(now == COOL) {
+// 				decision.setNextAction(COOL);
+// 				decision.setReasonCode("RC4.2");
+// 			} else if(now == HEAT) {
+// 				decision.setNextAction(COOL);
+// 				decision.setReasonCode("RC4.3");
+// 			} else {
+// 				decision.setNextAction(ACTION_ERROR);
+// 				decision.setReasonCode("RC_ERR");
+// 			}
+// 			return decision;
+// 		}
 		
 	}
 
-	if( decision.isMade() ) {
-		return decision;
-	}
+// 	if( decision.isMade() ) {
+// 		return decision;
+// 	}
 
 	
 
 	// Rules for when there is NATURAL_COOLING
-	if( getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
-		/*
-		 * | RC7.1 | REST->HEAT because the temperature is below target range and there is natural cooling |
-		 * | RC7.2 | COOL->HEAT because the temperature is below the target range and there is natural cooli*ng (adjust cooling lag?) |
-		 * | RC7.3 | HEAT->HEAT because the temperature is below target range and there is natural cooling |
-		 */
-		if(now == COOL && actual < getStopCoolingTemp() ) {
-			decision.setNextAction(HEAT);
-			decision.setReasonCode("RC7.2");
-			return decision;
-		}
-		if( actual < getTargetRangeMin() ) {
-			if( now == REST) {
-				decision.setNextAction(HEAT);
-				decision.setReasonCode("RC7.1");
-			} else if(now == HEAT) {
-				decision.setNextAction(HEAT);
-				decision.setReasonCode("RC7.3");
-			} else {
-				decision.setNextAction(ACTION_ERROR);
-				decision.setReasonCode("RC_ERR");
-			}
-			return decision;
-		}
-	}
-
-	/*
-	 * | RC8.1 | REST->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
-	 * | RC8.2 | COOL->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
-	 * | RC8.3 | HEAT->HEAT because the temperature is still within target range and there is natural cooling |
-	 */
-	if( isTempInTargetRange(actual) ) {
-		if( now == REST) {
-			decision.setNextAction(REST);
-			decision.setReasonCode("RC8.1");
-		} else if(now == COOL) {
-			decision.setNextAction(REST);
-			decision.setReasonCode("RC8.2");
-		} else if(now == HEAT) {
-			decision.setNextAction(HEAT);
-			decision.setReasonCode("RC8.3");
-		} else {
-			decision.setNextAction(ACTION_ERROR);
-			decision.setReasonCode("RC_ERR");
-		}
-		return decision;
-	}
-	
-	/*
-	 * | RC9.1 | REST->COOL because even though there is natural cooling the temperature is above target range | 
-	 * | RC9.2 | COOL->REST because the temperature is above target range and there is natural cooling |
-	 * | RC9.3 | HEAT->REST because the temperature is above target range and there is natural cooling |
-	 */
-	if( actual > getTargetRangeMax() ) {
-		if( now == REST) {
-			decision.setNextAction(COOL);
-			decision.setReasonCode("RC9.1");
-		} else if(now == COOL) {
-			decision.setNextAction(REST);
-			decision.setReasonCode("RC9.2");
-		} else if(now == HEAT) {
-			decision.setNextAction(REST);
-			decision.setReasonCode("RC9.3");
-		} else {
-			decision.setNextAction(ACTION_ERROR);
-			decision.setReasonCode("RC_ERR");
-		}
-		return decision;
-	}
-		
-
-	decision.setNextAction(ACTION_ERROR);
-	decision.setReasonCode("ERROR");
-	return decision;
+// 	if( getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
+// 		/*
+// 		 * | RC7.1 | REST->HEAT because the temperature is below target range and there is natural cooling |
+// 		 * | RC7.2 | COOL->HEAT because the temperature is below the target range and there is natural cooli*ng (adjust cooling lag?) |
+// 		 * | RC7.3 | HEAT->HEAT because the temperature is below target range and there is natural cooling |
+// 		 */
+// 		if(now == COOL && actual < getStopCoolingTemp() ) {
+// 			decision.setNextAction(HEAT);
+// 			decision.setReasonCode("RC7.2");
+// 			return decision;
+// 		}
+// 		if( actual < getTargetRangeMin() ) {
+// 			if( now == REST) {
+// 				decision.setNextAction(HEAT);
+// 				decision.setReasonCode("RC7.1");
+// 			} else if(now == HEAT) {
+// 				decision.setNextAction(HEAT);
+// 				decision.setReasonCode("RC7.3");
+// 			} else {
+// 				decision.setNextAction(ACTION_ERROR);
+// 				decision.setReasonCode("RC_ERR");
+// 			}
+// 			return decision;
+// 		}
+// 	}
+// 
+// 	/*
+// 	 * | RC8.1 | REST->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
+// 	 * | RC8.2 | COOL->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
+// 	 * | RC8.3 | HEAT->HEAT because the temperature is still within target range and there is natural cooling |
+// 	 */
+// 	if( isTempInTargetRange(actual) ) {
+// 		if( now == REST) {
+// 			decision.setNextAction(REST);
+// 			decision.setReasonCode("RC8.1");
+// 		} else if(now == COOL) {
+// 			decision.setNextAction(REST);
+// 			decision.setReasonCode("RC8.2");
+// 		} else if(now == HEAT) {
+// 			decision.setNextAction(HEAT);
+// 			decision.setReasonCode("RC8.3");
+// 		} else {
+// 			decision.setNextAction(ACTION_ERROR);
+// 			decision.setReasonCode("RC_ERR");
+// 		}
+// 		return decision;
+// 	}
+// 	
+// 	/*
+// 	 * | RC9.1 | REST->COOL because even though there is natural cooling the temperature is above target range | 
+// 	 * | RC9.2 | COOL->REST because the temperature is above target range and there is natural cooling |
+// 	 * | RC9.3 | HEAT->REST because the temperature is above target range and there is natural cooling |
+// 	 */
+// 	if( actual > getTargetRangeMax() ) {
+// 		if( now == REST) {
+// 			decision.setNextAction(COOL);
+// 			decision.setReasonCode("RC9.1");
+// 		} else if(now == COOL) {
+// 			decision.setNextAction(REST);
+// 			decision.setReasonCode("RC9.2");
+// 		} else if(now == HEAT) {
+// 			decision.setNextAction(REST);
+// 			decision.setReasonCode("RC9.3");
+// 		} else {
+// 			decision.setNextAction(ACTION_ERROR);
+// 			decision.setReasonCode("RC_ERR");
+// 		}
+// 		return decision;
+// 	}
+// 		
+// 
+// 	decision.setNextAction(ACTION_ERROR);
+// 	decision.setReasonCode("ERROR");
+// 	return decision;
 	
 }
 
-Decision ControllerActionRules::checkFailsafeMinAndDecideAction(double actualTemp) {
+void ControllerActionRules::checkFailsafeMinAndDecideAction(double actualTemp) {
+	// remember newDecision is a global class variable
 	if( actualTemp < getFailsafeMin() ) {
-		decision.setNextAction(HEAT);
-		decision.setReasonCode("RC1");
+		newDecision.setNextAction(HEAT);
+		newDecision.setReasonCode("RC1");
 	}
-	return decision;
+	
 }
 
-Decision ControllerActionRules::checkFailsafeMaxAndDecideAction(double actualTemp) {
+void ControllerActionRules::checkFailsafeMaxAndDecideAction(double actualTemp) {
+	// remember newDecision is a global class variable
 	if( actualTemp > getFailsafeMax() ) {
-		decision.setNextAction(COOL);
-		decision.setReasonCode("RC5");
+		newDecision.setNextAction(COOL);
+		newDecision.setReasonCode("RC5");
 	}
-	return decision;
 }
 
 Decision ControllerActionRules::checkForCoolingOverrunWithNaturalHeatingAndDecideAction(Action now, double actual) {
-	Decision decision;  //TODO figure out why this is needed here
+	Decision decision;
 	if(now == COOL && actual < getStopCoolingTemp() ) { // adjust for cooling overrun
 		decision.setNextAction(REST);
 		decision.setReasonCode("RC2.2");

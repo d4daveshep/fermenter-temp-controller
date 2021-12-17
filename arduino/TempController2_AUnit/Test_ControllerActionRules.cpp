@@ -22,7 +22,8 @@ test(CheckFailsafeMin) {
 	double range = 0.5; 
 	ControllerActionRules controller(target, range);
 	double ambientLow = 14.0;
-	Decision decision = controller.checkFailsafeMinAndDecideAction(ambientLow);
+	controller.checkFailsafeMinAndDecideAction(ambientLow);
+	Decision decision = controller.getDecision();
 	
 	assertEqual(HEAT, decision.getNextAction());
 	assertEqual("RC1", decision.getReasonCode());
@@ -33,7 +34,8 @@ test(CheckFailsafeMax) {
 	double range = 0.5; 
 	ControllerActionRules controller(target, range);
 	double ambientHigh = 22.0;
-	Decision decision = controller.checkFailsafeMaxAndDecideAction(ambientHigh);
+	controller.checkFailsafeMaxAndDecideAction(ambientHigh);
+	Decision decision = controller.getDecision();
 	
 	assertEqual(COOL, decision.getNextAction());
 	assertEqual("RC5", decision.getReasonCode());
@@ -80,8 +82,8 @@ test(WhatToDoNext) {
 	Decision decision;
 
 	/*
-	* Test 1. ambient is high, we are resting | cooling | heating but temp is below failsafe.  HEAT, HEAT, HEAT
-	*/
+	 * Test 1. ambient is high, we are resting | cooling | heating but temp is below failsafe.  HEAT, HEAT, HEAT
+	 */
 	// Test 1.1 we are resting and ambient is high but temp is below failsafe so HEAT
 	currentAction = REST;
 	decision = controller.getActionDecision(currentAction, ambientHigh, belowFailsafe);
