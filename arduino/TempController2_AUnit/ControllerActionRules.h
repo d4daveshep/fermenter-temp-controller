@@ -36,10 +36,10 @@ class ControllerActionRules {
 	void resetDecision();
 	void checkFailsafeMinAndDecideAction(double actualTemp); // RC1
 	void checkFailsafeMaxAndDecideAction(double actualTemp); // RC5
-	void checkForCoolingOverrunWithNaturalHeatingAndDecideAction(Action currentAction, double actualTemp); // RC2.2
-	void decideActionWhenBelowTargetRange(Action now); // RC2.1, RC2.3
-	void decideActionWhenInTargetRange(Action now); // RC3.1, RC3.2, RC3.3
-	void decideActionWhenAboveTargetRange(Action now); // RC4.1, RC4.2, RC4.3
+	void checkForCoolingOverrunAndDecideAction(Action currentAction, double actual, NaturalDrift drift); // RC2.2, RC7.2
+	void decideActionWhenBelowTargetRange(Action currentAction, NaturalDrift drift); // RC2.1, RC2.3, RC7.1, RC7.3
+	void decideActionWhenInTargetRange(Action currentAction, NaturalDrift drift); // RC3.1, RC3.2, RC3.3
+	void decideActionWhenAboveTargetRange(Action currentAction, NaturalDrift drift); // RC4.1, RC4.2, RC4.3
 	/*
 	 * Get the reason for the last decision according to the rules
 	 */

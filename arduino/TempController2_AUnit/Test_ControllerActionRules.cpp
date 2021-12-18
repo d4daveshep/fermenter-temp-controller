@@ -250,36 +250,40 @@ test(WhatToDoNext) {
 	assertEqual("RC1", decision.getReasonCode());
 	assertEqual(HEAT, decision.getNextAction());
 	
-// 	/*
-// 	 * | RC7.1 | REST->HEAT because the temperature is below target range and there is natural cooling |
-// 	 * | RC7.2 | COOL->HEAT because the temperature is below the target range and there is natural cooling (adjust cooling lag?) |
-// 	 * | RC7.3 | HEAT->HEAT because the temperature is below target range and there is natural cooling |
-// 	 * Test 7. ambient is low, we are resting | cooling | heating but temp is below target range. HEAT, HEAT, HEAT 
-// 	 */
-// 	Test 7.1 we are resting and ambient is low and temp is below target range so HEAT to counteract natural cooling
-// 	currentAction = REST;
-// 	decision = controller.getActionDecision(currentAction, ambientLow, belowTargetRange);
-// 	assertEqual(decision.getReasonCode(), "RC7.1");
-// 	assertEqual(decision.getNextAction(), HEAT);
-// 
-// 	Test 7.2 we are cooling and ambient is low but temp is below target range so HEAT to counteract natural cooling
-// 	currentAction = COOL;
-// 	decision = controller.getActionDecision(currentAction, ambientLow, belowTargetRange);
-// 	assertEqual(decision.getReasonCode(), "RC7.2");
-// 	assertEqual(decision.getNextAction(), HEAT);
-// 	
-// 	Test 7.2.1 we are cooling and ambient is low but temp is below below the adjusted stop cooling temp so HEAT to counteract natural cooling
-// 	currentAction = COOL;
-// 	decision = controller.getActionDecision(currentAction, ambientLow, adjustedStopCoolingTemp);
-// 	assertEqual(decision.getReasonCode(), "RC7.2");
-// 	assertEqual(decision.getNextAction(), HEAT);
-// 	
-// 	Test 7.3 we are heating and ambient is low but temp is below target range so HEAT to counteract natural cooling
-// 	currentAction = HEAT;
-// 	decision = controller.getActionDecision(currentAction, ambientLow, belowTargetRange);
-// 	assertEqual(decision.getReasonCode(), "RC7.3");
-// 	assertEqual(decision.getNextAction(), HEAT);
-// 	
+	/*
+	 * | RC7.1 | REST->HEAT because the temperature is below target range and there is natural cooling |
+	 * | RC7.2 | COOL->HEAT because the temperature is below the target range and there is natural cooling (adjust cooling lag?) |
+	 * | RC7.3 | HEAT->HEAT because the temperature is below target range and there is natural cooling |
+	 * Test 7. ambient is low, we are resting | cooling | heating but temp is below target range. HEAT, HEAT, HEAT 
+	 */
+	controller.resetDecision();
+	// Test 7.1 we are resting and ambient is low and temp is below target range so HEAT to counteract natural cooling
+	currentAction = REST;
+	decision = controller.getActionDecision(currentAction, ambientLow, belowTargetRange);
+	assertEqual("RC7.1", decision.getReasonCode());
+	assertEqual(HEAT, decision.getNextAction());
+	
+	controller.resetDecision();
+	// Test 7.2 we are cooling and ambient is low but temp is below target range so HEAT to counteract natural cooling
+	currentAction = COOL;
+	decision = controller.getActionDecision(currentAction, ambientLow, belowTargetRange);
+	assertEqual("RC7.2", decision.getReasonCode());
+	assertEqual(HEAT, decision.getNextAction());
+	
+	controller.resetDecision();
+	// Test 7.2.1 we are cooling and ambient is low but temp is below below the adjusted stop cooling temp so HEAT to counteract natural cooling
+	currentAction = COOL;
+	decision = controller.getActionDecision(currentAction, ambientLow, adjustedStopCoolingTemp);
+	assertEqual("RC7.2", decision.getReasonCode());
+	assertEqual(HEAT, decision.getNextAction());
+	
+	controller.resetDecision();
+	// Test 7.3 we are heating and ambient is low but temp is below target range so HEAT to counteract natural cooling
+	currentAction = HEAT;
+	decision = controller.getActionDecision(currentAction, ambientLow, belowTargetRange);
+	assertEqual("RC7.3", decision.getReasonCode());
+	assertEqual(HEAT, decision.getNextAction());
+	
 // 	/*
 // 	 * | RC8.1 | REST->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
 // 	 * | RC8.2 | COOL->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |

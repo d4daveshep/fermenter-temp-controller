@@ -89,7 +89,7 @@ NaturalDrift ControllerActionRules::getNaturalDrift(double ambient, double actua
 	return DRIFT_ERROR;
 }
 
-Decision ControllerActionRules::getActionDecision( Action now, double ambient, double actual ) {
+Decision ControllerActionRules::getActionDecision( Action currentAction, double ambient, double actual ) {
 	
 	// remember newDecision is a global class variable
 	newDecision.clear();
@@ -99,33 +99,37 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 	// RC5 & RC10 | HEAT because we've tripped failsafe (disregard ambient and current action)
 	checkFailsafeMaxAndDecideAction(actual);
 
-	if( isNaturalHeating(ambient, actual)) {
-		// RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
-		checkForCoolingOverrunWithNaturalHeatingAndDecideAction(now, actual); // RC2.2
-		
-		// RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
- 		// RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
-		// RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
-		if( actual < getTargetRangeMin() ) {
-			decideActionWhenBelowTargetRange(now); // RC2.1, RC2.2.1, RC2.3
-		}
-		
-		// RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
-		// RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
-		// RC3.3 | HEAT->REST because we are in the target range.  There is natural heating so expect temperature to rise |
-		if( isTempInTargetRange(actual) ) {
-			decideActionWhenInTargetRange(now); // RC3.1, RC3.2, RC3.3
-		}
+	NaturalDrift drift = getNaturalDrift(ambient, actual);
+	
+	// RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
+	// RC7.2 | COOL->HEAT because the temperature is below the target range and there is natural cooli*ng (adjust cooling lag?) |
+	checkForCoolingOverrunAndDecideAction(currentAction, actual, drift); // RC2.2, RC7.2
+	
 
-		// RC4.1 | REST->COOL because the temperature is above the target range and we have natural heating |
-		// RC4.2 | COOL->COOL becuase the temperature is above the target range and we have natural heating |
-		// RC4.3 | HEAT->COOL because the temperature is above target range and we have natural heating.  (adjust heating lag?) |
-		if( actual > getTargetRangeMax() ) {
-			decideActionWhenAboveTargetRange(now); // RC4.1, RC4.2, RC4.3
-		}
-
+	// RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
+	// RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
+	// RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
+	// RC7.1 | REST->HEAT because the temperature is below target range and there is natural cooling |
+	// RC7.3 | HEAT->HEAT because the temperature is below target range and there is natural cooling |
+	if( actual < getTargetRangeMin() ) {
+		decideActionWhenBelowTargetRange(currentAction, drift); // RC2.1, RC2.2.1, RC2.3
 	}
 	
+	// RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
+	// RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
+	// RC3.3 | HEAT->REST because we are in the target range.  There is natural heating so expect temperature to rise |
+	if( isTempInTargetRange(actual) ) {
+		decideActionWhenInTargetRange(currentAction, drift); // RC3.1, RC3.2, RC3.3
+	}
+
+	// RC4.1 | REST->COOL because the temperature is above the target range and we have natural heating |
+	// RC4.2 | COOL->COOL becuase the temperature is above the target range and we have natural heating |
+	// RC4.3 | HEAT->COOL because the temperature is above target range and we have natural heating.  (adjust heating lag?) |
+	if( actual > getTargetRangeMax() ) {
+		decideActionWhenAboveTargetRange(currentAction, drift); // RC4.1, RC4.2, RC4.3
+	}
+
+		
 	if( newDecision.isMade() ) {
 		return newDecision;
 	}
@@ -137,28 +141,14 @@ Decision ControllerActionRules::getActionDecision( Action now, double ambient, d
 	// Rules for when there is NATURAL_COOLING
 // 	if( getNaturalDrift(ambient, actual) == NATURAL_COOLING ) {
 // 		/*
-// 		 * | RC7.1 | REST->HEAT because the temperature is below target range and there is natural cooling |
-// 		 * | RC7.2 | COOL->HEAT because the temperature is below the target range and there is natural cooli*ng (adjust cooling lag?) |
-// 		 * | RC7.3 | HEAT->HEAT because the temperature is below target range and there is natural cooling |
+
 // 		 */
 // 		if(now == COOL && actual < getStopCoolingTemp() ) {
 // 			decision.setNextAction(HEAT);
 // 			decision.setReasonCode("RC7.2");
 // 			return decision;
 // 		}
-// 		if( actual < getTargetRangeMin() ) {
-// 			if( now == REST) {
-// 				decision.setNextAction(HEAT);
-// 				decision.setReasonCode("RC7.1");
-// 			} else if(now == HEAT) {
-// 				decision.setNextAction(HEAT);
-// 				decision.setReasonCode("RC7.3");
-// 			} else {
-// 				decision.setNextAction(ACTION_ERROR);
-// 				decision.setReasonCode("RC_ERR");
-// 			}
-// 			return decision;
-// 		}
+
 // 	}
 // 
 // 	/*
@@ -232,32 +222,71 @@ void ControllerActionRules::checkFailsafeMaxAndDecideAction(double actualTemp) {
 	}
 }
 
-void ControllerActionRules::checkForCoolingOverrunWithNaturalHeatingAndDecideAction(Action now, double actual) {
+void ControllerActionRules::checkForCoolingOverrunAndDecideAction(Action currentAction, double actual, NaturalDrift drift) {
 	// remember newDecision is a global class variable
 	if( !newDecision.isMade() ) {
-		if(now == COOL && actual < getStopCoolingTemp() ) { // adjust for cooling overrun
-			newDecision.setNextAction(REST);
-			newDecision.setReasonCode("RC2.2");
+
+		if( currentAction == COOL && actual < getStopCoolingTemp() ) { // adjust for cooling overrun
+			
+			switch( drift) {
+
+				case NATURAL_HEATING:
+					newDecision.setNextAction(REST);
+					newDecision.setReasonCode("RC2.2");
+					break;
+				
+				case NATURAL_COOLING:
+					newDecision.setNextAction(HEAT);
+					newDecision.setReasonCode("RC7.2");
+					break;
+				
+				default:
+					newDecision.setNextAction(ACTION_ERROR);
+					newDecision.setReasonCode("RC_ERR");
+					break;
+			}				
 		}
 	}
 }
 
-void ControllerActionRules::decideActionWhenBelowTargetRange(Action now) {
+void ControllerActionRules::decideActionWhenBelowTargetRange(Action currentAction, NaturalDrift drift) {
 	if (!newDecision.isMade() ) {
-		if( now == REST) {
-			newDecision.setNextAction(REST);
-			newDecision.setReasonCode("RC2.1");
-		} else if(now == HEAT) {
-			newDecision.setNextAction(REST);
-			newDecision.setReasonCode("RC2.3");
-		} else {
-			newDecision.setNextAction(ACTION_ERROR);
-			newDecision.setReasonCode("RC_ERR");
+		switch( drift ) {
+			case NATURAL_HEATING:
+				if( currentAction == REST) {
+					newDecision.setNextAction(REST);
+					newDecision.setReasonCode("RC2.1");
+				} else if(currentAction == HEAT) {
+					newDecision.setNextAction(REST);
+					newDecision.setReasonCode("RC2.3");
+				} else {
+					newDecision.setNextAction(ACTION_ERROR);
+					newDecision.setReasonCode("RC_ERR");
+				}
+				break;
+
+			case NATURAL_COOLING:
+				if( currentAction == REST) {
+					newDecision.setNextAction(HEAT);
+					newDecision.setReasonCode("RC7.1");
+				} else if(currentAction == HEAT) {
+					newDecision.setNextAction(HEAT);
+					newDecision.setReasonCode("RC7.3");
+				} else {
+					newDecision.setNextAction(ACTION_ERROR);
+					newDecision.setReasonCode("RC_ERR");
+				}
+				break;
+			
+			default:
+				newDecision.setNextAction(ACTION_ERROR);
+				newDecision.setReasonCode("RC_ERR");
+				break;
 		}
 	}
 }
 
-void ControllerActionRules::decideActionWhenInTargetRange(Action now) {
+void ControllerActionRules::decideActionWhenInTargetRange(Action now, NaturalDrift drift) {
 	if(!newDecision.isMade()) {
 		if( now == REST) {
 			newDecision.setNextAction(REST);
@@ -274,7 +303,7 @@ void ControllerActionRules::decideActionWhenInTargetRange(Action now) {
 		}		
 	}
 }
-void ControllerActionRules::decideActionWhenAboveTargetRange(Action now) {
+void ControllerActionRules::decideActionWhenAboveTargetRange(Action now, NaturalDrift drift) {
 	if(!newDecision.isMade()) {
 		if( now == REST) {
 			newDecision.setNextAction(COOL);
