@@ -1,13 +1,19 @@
+//#line 2 "TempController.ino"
+
 /*
 	Fermenter Temp Controller
 */
+
+//#define _DO_UNIT_TESTING
+
+#ifdef _DO_UNIT_TESTING
+#include <AUnit.h>
+#endif
 
 #include <LiquidCrystal.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <ArduinoJson.h>
-
-//#include <AUnit.h>
 
 #include "ControllerActionRules.h"
 #include "TemperatureReadings.h"
@@ -75,7 +81,10 @@ void setup(void) {
 * Main loop
 */
 void loop(void) {
-	//aunit::TestRunner::run();
+
+#ifdef _DO_UNIT_TESTING
+	aunit::TestRunner::run();
+#endif
 	
 	// start the 1 sec smart delay timer
 	smartDelay.start();
