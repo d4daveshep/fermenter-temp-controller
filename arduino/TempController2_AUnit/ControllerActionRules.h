@@ -30,7 +30,6 @@ class ControllerActionRules {
 	bool isTempBelowFailsafe(double temp);
 	bool isTempAboveFailsafe(double temp);
 	NaturalDrift getNaturalDrift(double ambient, double actual);
-	boolean isNaturalHeating(double ambient, double actual);
 	Decision getActionDecision( Action currentAction, double ambient, double actual );
 	Decision getDecision();
 	void resetDecision();
