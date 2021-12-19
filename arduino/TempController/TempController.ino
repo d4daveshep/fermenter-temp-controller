@@ -91,7 +91,7 @@ void loop(void) {
 	double ambientTemp = ambientTemperatureReadings.getCurrentAverageTemperature();
 	double fermenterTemp = fermenterTemperatureReadings.getCurrentAverageTemperature();
 	
-	decision = controller.getActionDecision( currentAction, ambientTemp, fermenterTemp );
+	decision = controller.makeActionDecision( currentAction, ambientTemp, fermenterTemp );
 	Action nextAction = decision.getNextAction();
 	currentAction = nextAction;
 
