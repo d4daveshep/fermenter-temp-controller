@@ -7,6 +7,8 @@
 #include <DallasTemperature.h>
 #include <ArduinoJson.h>
 
+//#include <AUnit.h>
+
 #include "ControllerActionRules.h"
 #include "TemperatureReadings.h"
 #include "RelayPins.h"
@@ -73,7 +75,8 @@ void setup(void) {
 * Main loop
 */
 void loop(void) {
-
+	//aunit::TestRunner::run();
+	
 	// start the 1 sec smart delay timer
 	smartDelay.start();
 	
