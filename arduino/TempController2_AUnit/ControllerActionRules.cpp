@@ -111,7 +111,7 @@ Decision ControllerActionRules::getActionDecision( Action currentAction, double 
 	// RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
 	// RC7.1 | REST->HEAT because the temperature is below target range and there is natural cooling |
 	// RC7.3 | HEAT->HEAT because the temperature is below target range and there is natural cooling |
-	if( actual < getTargetRangeMin() ) {
+	if( isTempBelowTargetRange(actual) ) {
 		decideActionWhenBelowTargetRange(currentAction, drift);
 	}
 	
@@ -131,17 +131,16 @@ Decision ControllerActionRules::getActionDecision( Action currentAction, double 
 	// RC9.1 | REST->COOL because even though there is natural cooling the temperature is above target range | 
 	// RC9.2 | COOL->REST because the temperature is above target range and there is natural cooling |
 	// RC9.3 | HEAT->REST because the temperature is above target range and there is natural cooling |
-	if( actual > getTargetRangeMax() ) {
+	if( isTempAboveTargetRange(actual) ) {
 		decideActionWhenAboveTargetRange(currentAction, drift);
 	}
 
-		
 	if( newDecision.isMade() ) {
 		return newDecision;
 	}
-	
+
 }
-	
+
 
 
 void ControllerActionRules::checkFailsafeMinAndDecideAction(double actualTemp) {
