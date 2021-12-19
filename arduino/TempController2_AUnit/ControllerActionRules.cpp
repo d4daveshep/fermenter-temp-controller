@@ -89,48 +89,25 @@ NaturalDrift ControllerActionRules::getNaturalDrift(double ambient, double actua
 	return DRIFT_ERROR;
 }
 
-Decision ControllerActionRules::getActionDecision( Action currentAction, double ambient, double actual ) {
+Decision ControllerActionRules::makeActionDecision( Action currentAction, double ambient, double actual ) {
 	
-	// remember newDecision is a global class variable
-	newDecision.clear();
+	newDecision.clear(); // remember newDecision is a global class variable
 
-	// RC1 & RC6 | COOL because we've tripped failsafe (disregard ambient and current action)
 	checkFailsafeMinAndDecideAction(actual);
-	// RC5 & RC10 | HEAT because we've tripped failsafe (disregard ambient and current action)
 	checkFailsafeMaxAndDecideAction(actual);
 
 	NaturalDrift drift = getNaturalDrift(ambient, actual);
 	
-	// RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
-	// RC7.2 | COOL->HEAT because the temperature is below the target range and there is natural cooli*ng (adjust cooling lag?) |
 	checkForCoolingOverrunAndDecideAction(currentAction, actual, drift);
 	
-
-	// RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
-	// RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
-	// RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
-	// RC7.1 | REST->HEAT because the temperature is below target range and there is natural cooling |
-	// RC7.3 | HEAT->HEAT because the temperature is below target range and there is natural cooling |
 	if( isTempBelowTargetRange(actual) ) {
 		decideActionWhenBelowTargetRange(currentAction, drift);
 	}
 	
-	// RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
-	// RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
-	// RC3.3 | HEAT->REST because we are in the target range.  There is natural heating so expect temperature to rise |
-	// RC8.1 | REST->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
-	// RC8.2 | COOL->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
-	// RC8.3 | HEAT->HEAT because the temperature is still within target range and there is natural cooling |
 	if( isTempInTargetRange(actual) ) {
 		decideActionWhenInTargetRange(currentAction, drift);
 	}
 
-	// RC4.1 | REST->COOL because the temperature is above the target range and we have natural heating |
-	// RC4.2 | COOL->COOL becuase the temperature is above the target range and we have natural heating |
-	// RC4.3 | HEAT->COOL because the temperature is above target range and we have natural heating.  (adjust heating lag?) |
-	// RC9.1 | REST->COOL because even though there is natural cooling the temperature is above target range | 
-	// RC9.2 | COOL->REST because the temperature is above target range and there is natural cooling |
-	// RC9.3 | HEAT->REST because the temperature is above target range and there is natural cooling |
 	if( isTempAboveTargetRange(actual) ) {
 		decideActionWhenAboveTargetRange(currentAction, drift);
 	}
@@ -142,9 +119,8 @@ Decision ControllerActionRules::getActionDecision( Action currentAction, double 
 }
 
 
-
+// RC1 & RC6 | COOL because we've tripped failsafe (disregard ambient and current action)
 void ControllerActionRules::checkFailsafeMinAndDecideAction(double actualTemp) {
-	// remember newDecision is a global class variable
 	if( !newDecision.isMade() ) {
 		if( actualTemp < getFailsafeMin() ) {
 			newDecision.setNextAction(HEAT);
@@ -153,8 +129,8 @@ void ControllerActionRules::checkFailsafeMinAndDecideAction(double actualTemp) {
 	}	
 }
 
+// RC5 & RC10 | HEAT because we've tripped failsafe (disregard ambient and current action)
 void ControllerActionRules::checkFailsafeMaxAndDecideAction(double actualTemp) {
-	// remember newDecision is a global class variable
 	if( !newDecision.isMade() ) {
 		if( actualTemp > getFailsafeMax() ) {
 			newDecision.setNextAction(COOL);
@@ -163,8 +139,9 @@ void ControllerActionRules::checkFailsafeMaxAndDecideAction(double actualTemp) {
 	}
 }
 
+// RC2.2 | COOL->REST because temperature is below target range and there is natural heating |
+// RC7.2 | COOL->HEAT because the temperature is below the target range and there is natural cooli*ng (adjust cooling lag?) |
 void ControllerActionRules::checkForCoolingOverrunAndDecideAction(Action currentAction, double actual, NaturalDrift drift) {
-	// remember newDecision is a global class variable
 	if( !newDecision.isMade() ) {
 
 		if( currentAction == COOL && actual < getStopCoolingTemp() ) { // adjust for cooling overrun
@@ -190,6 +167,10 @@ void ControllerActionRules::checkForCoolingOverrunAndDecideAction(Action current
 	}
 }
 
+// RC2.1 | REST->REST because even though there is natural heating, the temperature is below the target range |
+// RC2.3 | HEAT->REST because temperature is below target range and there is natural heating |
+// RC7.1 | REST->HEAT because the temperature is below target range and there is natural cooling |
+// RC7.3 | HEAT->HEAT because the temperature is below target range and there is natural cooling |
 void ControllerActionRules::decideActionWhenBelowTargetRange(Action currentAction, NaturalDrift drift) {
 	if (!newDecision.isMade() ) {
 		switch( drift ) {
@@ -227,6 +208,12 @@ void ControllerActionRules::decideActionWhenBelowTargetRange(Action currentActio
 	}
 }
 
+// RC3.1 | REST->REST because we are in the target range.  There is natural heating so expect temperature to rise |
+// RC3.2 | COOL->COOL because we are still within target range and we have natural heating |
+// RC3.3 | HEAT->REST because we are in the target range.  There is natural heating so expect temperature to rise |
+// RC8.1 | REST->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
+// RC8.2 | COOL->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
+// RC8.3 | HEAT->HEAT because the temperature is still within target range and there is natural cooling |
 void ControllerActionRules::decideActionWhenInTargetRange(Action currentAction, NaturalDrift drift) {
 	if(!newDecision.isMade()) {
 		switch( drift ) {
@@ -269,6 +256,13 @@ void ControllerActionRules::decideActionWhenInTargetRange(Action currentAction, 
 		}
 	}
 }
+
+// RC4.1 | REST->COOL because the temperature is above the target range and we have natural heating |
+// RC4.2 | COOL->COOL becuase the temperature is above the target range and we have natural heating |
+// RC4.3 | HEAT->COOL because the temperature is above target range and we have natural heating.  (adjust heating lag?) |
+// RC9.1 | REST->COOL because even though there is natural cooling the temperature is above target range | 
+// RC9.2 | COOL->REST because the temperature is above target range and there is natural cooling |
+// RC9.3 | HEAT->REST because the temperature is above target range and there is natural cooling |
 void ControllerActionRules::decideActionWhenAboveTargetRange(Action currentAction, NaturalDrift drift) {
 	if(!newDecision.isMade()) {
 		switch( drift ) {
