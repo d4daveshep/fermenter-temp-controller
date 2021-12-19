@@ -284,29 +284,32 @@ test(WhatToDoNext) {
 	assertEqual("RC7.3", decision.getReasonCode());
 	assertEqual(HEAT, decision.getNextAction());
 	
-// 	/*
-// 	 * | RC8.1 | REST->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
-// 	 * | RC8.2 | COOL->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
-// 	 * | RC8.3 | HEAT->HEAT because the temperature is still within target range and there is natural cooling |
-// 	 */	
-// 	Test 8.1 we are resting and ambient is low but temp is within target range so keep RESTing
-// 	currentAction = REST;
-// 	decision = controller.getActionDecision(currentAction, ambientLow, withinTargetRange);
-// 	assertEqual(decision.getReasonCode(), "RC8.1");
-// 	assertEqual(decision.getNextAction(), REST);
-// 
-// 	Test 8.2 we are cooling and ambient is low but temp is within target range so REST
-// 	currentAction = COOL;
-// 	decision = controller.getActionDecision(currentAction, ambientLow, withinTargetRange);
-// 	assertEqual(decision.getReasonCode(), "RC8.2");
-// 	assertEqual(decision.getNextAction(), REST);
-// 	
-// 	Test 8.3 we are heating and ambient is low but temp is within target range so keep HEATing
-// 	currentAction = HEAT;
-// 	decision = controller.getActionDecision(currentAction, ambientLow, withinTargetRange);
-// 	assertEqual(decision.getReasonCode(), "RC8.3");
-// 	assertEqual(decision.getNextAction(), HEAT);
-// 	
+	/*
+	 * | RC8.1 | REST->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
+	 * | RC8.2 | COOL->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
+	 * | RC8.3 | HEAT->HEAT because the temperature is still within target range and there is natural cooling |
+	 */	
+	controller.resetDecision();
+	// Test 8.1 we are resting and ambient is low but temp is within target range so keep RESTing
+	currentAction = REST;
+	decision = controller.getActionDecision(currentAction, ambientLow, withinTargetRange);
+	assertEqual("RC8.1", decision.getReasonCode());
+	assertEqual(REST, decision.getNextAction());
+
+	controller.resetDecision();
+	// Test 8.2 we are cooling and ambient is low but temp is within target range so REST
+	currentAction = COOL;
+	decision = controller.getActionDecision(currentAction, ambientLow, withinTargetRange);
+	assertEqual("RC8.2", decision.getReasonCode());
+	assertEqual(REST, decision.getNextAction());
+	
+	controller.resetDecision();
+	// Test 8.3 we are heating and ambient is low but temp is within target range so keep HEATing
+	currentAction = HEAT;
+	decision = controller.getActionDecision(currentAction, ambientLow, withinTargetRange);
+	assertEqual("RC8.3", decision.getReasonCode());
+	assertEqual(HEAT, decision.getNextAction());
+	
 // 	/*
 // 	 * | RC9.1 | REST->COOL because even though there is natural cooling the temperature is above target range | 
 // 	 * | RC9.2 | COOL->REST because the temperature is above target range and there is natural cooling |
