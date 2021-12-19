@@ -1,6 +1,7 @@
 //#define _DO_UNIT_TESTING
 
 #include <Arduino.h>
+#include <AUnit.h>
 
 #include "Decision.h"
 
@@ -12,19 +13,19 @@ void Decision::setNextAction(Action nextAction) {
 }
 
 String Decision::getActionText() {
-	switch( action ) {
-		case NO_ACTION:
-			return "None";
-		case REST:
-			return "Rest";
+    switch( action ) {
+        case NO_ACTION:
+            return "No Action";
+        case REST:
+            return "Rest";
 		case HEAT:
-			return "Heat";
+            return "Heat";
 		case COOL:
-			return "Cool";
-		case ACTION_ERROR:
-			return "Error";
+            return "Cool";
+        case ACTION_ERROR:
+            return "Error";
 		default:
-			return "Unknown Action";
+            return "Unknown Action";
 	}
 }
 
@@ -36,14 +37,20 @@ void Decision::setReasonCode(String reasonCode) {
 	this->reasonCode = reasonCode;
 }
 
+boolean Decision::isMade() {
+	return this->action != NO_ACTION;
+}
+
+void Decision::clear() {
+	this->action = NO_ACTION;
+}
 
 #ifdef _DO_UNIT_TESTING
-#include <AUnit.h>
 /*
-* AUnit Tests
-*/
+ * AUnit Tests
+ */
 test(StoresActionAndReason) {
-	Action action = HEAT;
+    Action action = HEAT;
 	String code = "RC_TEST";
 	Decision decision;
 	decision.setNextAction(action);
@@ -55,21 +62,37 @@ test(StoresActionAndReason) {
 
 test(ActionText) {
 	Decision decision;
-	
+    
+    decision.setNextAction(NO_ACTION);
+    assertEqual("No Action", decision.getActionText());
+
+    decision.setNextAction(REST);
+    assertEqual("Rest", decision.getActionText());
+
+    decision.setNextAction(HEAT);
+    assertEqual("Heat", decision.getActionText());
+    
+    decision.setNextAction(COOL);
+    assertEqual("Cool", decision.getActionText());
+
+    decision.setNextAction(ACTION_ERROR);
+    assertEqual("Error", decision.getActionText());
+}
+
+test(DecisionIsMade) {
+	Decision decision;
 	decision.setNextAction(NO_ACTION);
-	assertEqual("No Action", decision.getActionText());
-
-	decision.setNextAction(REST);
-	assertEqual("Rest", decision.getActionText());
-
-	decision.setNextAction(HEAT);
-	assertEqual("Heat", decision.getActionText());
+	assertFalse(decision.isMade());
 	
-	decision.setNextAction(COOL);
-	assertEqual("Cool", decision.getActionText());
+	decision.setNextAction(REST);
+	assertTrue(decision.isMade());
+}
 
-	decision.setNextAction(ACTION_ERROR);
-	assertEqual("Error", decision.getActionText());
+test(Clear) {
+	Decision decision;
+	decision.setNextAction(HEAT);
+	decision.clear();
+	assertEqual(NO_ACTION, decision.getNextAction());
 }
 
 #endif
