@@ -20,31 +20,8 @@ public:
 	String getReasonCode();
 	void setReasonCode(String reasonCode);
 	
+	boolean isMade();
+	void clear();
 };
-
-// class ControllerActionRules {
-// 
-// 	private:
-// 	double target = 20.0;
-// 	double range = 0.3;
-// 	String lastReason = "";
-// 	
-// 	public:
-// 	ControllerActionRules(double targetTemp, double targetRange);
-// 	double getFailsafeMin();
-// 	double getFailsafeMax();
-// 	double getTargetTemp();
-// 	void   setTargetTemp(double newTargetTemp);
-// 	double getTargetRangeMin();
-// 	double getTargetRangeMax();
-// 	bool inTargetRange(double temp);
-// 	NaturalDrift getNaturalDrift(double ambient, double actual);
-// 	Action getNextAction( Action currentAction, double ambient, double actual );
-// 	/*
-// 	 * Get the reason for the last decision according to the rules
-// 	 */
-// 	String getReason();
-// 
-// };
 
 #endif
