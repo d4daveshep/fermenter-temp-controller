@@ -1,4 +1,4 @@
-#line 2 "TempController.ino"
+// #line 2 "TempController.ino"
 
 /*
 	Fermenter Temp Controller
@@ -7,6 +7,7 @@
 #define _DO_UNIT_TESTING
 
 #ifdef _DO_UNIT_TESTING
+#warning "Doing Unit Testing Only"
 #include <AUnit.h>
 #include <ArduinoJson.h>
 #include "Decision.h"
@@ -52,6 +53,7 @@ StaticJsonDocument<100> jsonDoc;
 SmartDelay smartDelay(1000);
 
 #endif
+
 /*
 Setup runs once
 */
@@ -148,8 +150,6 @@ test(WriteJsonString) {
 	jsonDoc["reason-code"] = decision.getReasonCode();
 	
 	Serial.println(jsonDoc.memoryUsage());
-	// 	serializeJson(jsonDoc, Serial);
-	// 	Serial.println();
 	
 	String output = "";
 	serializeJson(jsonDoc, output);
