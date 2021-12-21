@@ -1,5 +1,5 @@
 #!/bin/bash
 #set start = $SECONDS
-arduino --verify ./TempController/TempController.ino
+arduino --verify TempController.ino
 #set duration=$(( SECONDS - start ))
 #$duration

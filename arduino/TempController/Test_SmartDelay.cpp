@@ -5,21 +5,6 @@
 
 #include "SmartDelay.h"
 
-SmartDelay::SmartDelay(long unsigned msec) {
-	this->delayInMSec = msec;
-}
-
-void SmartDelay::start() {
-	this->startingTimestamp = millis();
-}
-
-long SmartDelay::doDelay() {
-	do {
-		// nothing
-	} while ((millis() - this->startingTimestamp) < this->delayInMSec);
-	return (millis() - this->startingTimestamp);
-}
-
 #ifdef _DO_UNIT_TESTING
 void doSomeSlowThing() {
 	delay(123);

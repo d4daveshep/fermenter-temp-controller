@@ -74,7 +74,7 @@ def get_serial_port():
 
     # open the serial port
     try:
-        port = serial.Serial(tty, 9600)
+        port = serial.Serial(tty, 115200)
     except SerialException:
         logging.error("Couldn't open serial port at %s", tty)
         raise SystemExit("*** ERROR *** Couldn't open serial port")
