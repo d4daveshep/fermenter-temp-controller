@@ -17,6 +17,17 @@ testF(ControllerTestOnce, BelowFailsafe) {
 }
 */
 
+test(UpdatedTargetTempIsSaved) {
+	double defaultTargetTemp = 6.0;
+	double defaultRange = 0.3; // i.e. +/- either side of target
+	ControllerActionRules controller(defaultTargetTemp, defaultRange);
+	
+	double newTargetTemp = 7.0;
+	controller.setTargetTemp(newTargetTemp);
+	
+	assertEqual(controller.getTargetTemp(), newTargetTemp );
+}
+
 test(CheckFailsafeMinAndResetDecision) {
 	double target = 18.0;
 	double range = 0.5; 

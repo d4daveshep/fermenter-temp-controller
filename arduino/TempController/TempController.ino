@@ -1,14 +1,16 @@
-//#line 2 "TempController.ino"
+#line 2 "TempController.ino"
 
 /*
 	Fermenter Temp Controller
 */
 
-//#define _DO_UNIT_TESTING
+#define _DO_UNIT_TESTING
 
 #ifdef _DO_UNIT_TESTING
 #include <AUnit.h>
-#endif
+#include <ArduinoJson.h>
+#include "Decision.h"
+#else
 
 #include <LiquidCrystal.h>
 #include <OneWire.h>
@@ -49,12 +51,19 @@ Action currentAction = REST;
 StaticJsonDocument<100> jsonDoc;
 SmartDelay smartDelay(1000);
 
+#endif
 /*
 Setup runs once
 */
 void setup(void) {
+	delay(1000); // wait for stability on some boards to prevent garbage Serial
+	Serial.begin(115200); // ESP8266 default of 74880 not supported on Linux
+	
+#ifdef _DO_UNIT_TESTING
+	Serial.println();
+#else
 	// TODO try higher number 115200??
-	Serial.begin(9600);
+	Serial.begin(115200);
 
 	RelayPins::setup();
 
@@ -75,6 +84,7 @@ void setup(void) {
 	lastJsonPrintTimestamp = millis(); // initialise the Json printing timer
 
 	delay(1000); // wait 1 sec before proceeding
+#endif
 }
 
 /*
@@ -84,7 +94,7 @@ void loop(void) {
 
 #ifdef _DO_UNIT_TESTING
 	aunit::TestRunner::run();
-#endif
+#else
 	
 	// start the 1 sec smart delay timer
 	smartDelay.start();
@@ -118,8 +128,34 @@ void loop(void) {
 
 	// complete the 1 sec smart delay
 	smartDelay.doDelay();
+	
+#endif
 
 }
+
+#ifdef _DO_UNIT_TESTING
+test(WriteJsonString) {
+	StaticJsonDocument<100> jsonDoc;
+	
+	jsonDoc["now"] = 12.34;
+	jsonDoc["avg"] = 23.45;
+	jsonDoc["override"] = true;
+	Decision decision;
+	decision.setNextAction(REST);
+	decision.setReasonCode("RC3.1");
+	jsonDoc["action"] = decision.getActionText();
+	jsonDoc["rest"] = true;
+	jsonDoc["reason-code"] = decision.getReasonCode();
+	
+	Serial.println(jsonDoc.memoryUsage());
+	// 	serializeJson(jsonDoc, Serial);
+	// 	Serial.println();
+	
+	String output = "";
+	serializeJson(jsonDoc, output);
+	assertEqual("{\"now\":12.34,\"avg\":23.45,\"override\":true,\"action\":\"Rest\",\"rest\":true,\"reason-code\":\"RC3.1\"}",output);
+}
+#else
 
 void printJsonEvery10Secs() {
 	unsigned long now = millis();
@@ -275,4 +311,4 @@ void updateLCD() {
 
 }
 
-
+#endif
