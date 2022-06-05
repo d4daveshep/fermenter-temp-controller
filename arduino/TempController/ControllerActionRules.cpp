@@ -258,7 +258,7 @@ void ControllerActionRules::decideActionWhenInTargetRange(Action currentAction, 
 // RC4.1 | REST->COOL because the temperature is above the target range and we have natural heating |
 // RC4.2 | COOL->COOL becuase the temperature is above the target range and we have natural heating |
 // RC4.3 | HEAT->COOL because the temperature is above target range and we have natural heating.  (adjust heating lag?) |
-// RC9.1 | REST->COOL because even though there is natural cooling the temperature is above target range | 
+// RC9.1 | REST->REST because the temperature is above target range and there is natural cooling |
 // RC9.2 | COOL->REST because the temperature is above target range and there is natural cooling |
 // RC9.3 | HEAT->REST because the temperature is above target range and there is natural cooling |
 void ControllerActionRules::decideActionWhenAboveTargetRange(Action currentAction, NaturalDrift drift) {
@@ -282,7 +282,7 @@ void ControllerActionRules::decideActionWhenAboveTargetRange(Action currentActio
 				
 			case NATURAL_COOLING:
 				if( currentAction == REST) {
-					newDecision.setNextAction(COOL);
+					newDecision.setNextAction(REST);
 					newDecision.setReasonCode("RC9.1");
 				} else if(currentAction == COOL) {
 					newDecision.setNextAction(REST);
