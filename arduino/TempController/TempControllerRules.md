@@ -18,7 +18,7 @@ Notes:
 6. Ambient is low, we are resting | cooling | heating but temp is **below failsafe.** -> *HEAT, HEAT, HEAT*
 7. Ambient is low, we are resting | cooling | heating but temp is **below target range.** -> *HEAT, HEAT, HEAT*
 8. Ambient is low, we are resting | cooling | heating but temp is **within target range.** -> *REST, REST, **HEAT***
-9. Ambient is low, we are resting | cooling | heating but temp is **above target range.** -> ***COOL**, REST, REST*
+9. Ambient is low, we are resting | cooling | heating but temp is **above target range.** -> *REST, REST, REST*
 10. Ambient is low, we are resting | cooling | heating but temp is **above failsafe.** -> *COOL, COOL, COOL*
 
 Notes:
@@ -53,7 +53,7 @@ Notes:
 | RC8.1 | REST->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
 | RC8.2 | COOL->REST because the temperature is in the target range.  There is natural cooling so expect temperature to fall |
 | RC8.3 | HEAT->HEAT because the temperature is still within target range and there is natural cooling |
-| RC9.1 | REST->COOL because even though there is natural cooling the temperature is above target range | 
+| RC9.1 | REST->REST because the temperature is above target range and there is natural cooling |
 | RC9.2 | COOL->REST because the temperature is above target range and there is natural cooling |
 | RC9.3 | HEAT->REST because the temperature is above target range and there is natural cooling |
 
