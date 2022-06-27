@@ -200,7 +200,7 @@ if __name__ == '__main__':
     logging.basicConfig(
         filename=dirname + "/tempcontroller.log",
         level=logging.INFO,
-#        level=logging.DEBUG,
+        #        level=logging.DEBUG,
         format="%(levelname)s: %(asctime)s: %(message)s")
 
     logging.info("")
