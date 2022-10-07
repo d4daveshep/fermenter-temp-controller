@@ -24,9 +24,8 @@ def test_example(mock_serial):
     assert serial.read(3) == b'456'
     serial.write(b'123')
     assert serial.read(3) == b'456'
-
     assert stub.called
-    assert stub.calls == 1
+    assert stub.calls == 2
 
     serial.close()
 
