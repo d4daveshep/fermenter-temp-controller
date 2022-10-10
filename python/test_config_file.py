@@ -101,6 +101,17 @@ def test_get_config_file_fails_if_no_brew_id_in_fermenter_section():
 
     assert err_info.value.args[0] == "brew_id not found"
 
+def test_get_brew_id_from_config_file():
+    filename = "./test_config_file.txt"
+    assert exists(filename)
+
+    config = new_main.get_config(filename)
+    brew_id = new_main.get_brew_id_from_config(config)
+    assert brew_id == "00-TEST-v00"
+
+
+
+
 # def test_get_target_temp_from_config(config_filename_location):
 #     config = new_main.get_config(config_filename_location)
 #     target_temp = new_main.get_target_temp_from_config(config)

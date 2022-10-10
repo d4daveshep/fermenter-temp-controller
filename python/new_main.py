@@ -34,5 +34,6 @@ def get_brew_id_from_config(config: configparser.ConfigParser) -> str:
     try:
         fermenter_section = config["fermenter"]
         brew_id = fermenter_section["brew_id"]
+        return brew_id
     except KeyError:
         raise ConfigError("brew_id not found")
