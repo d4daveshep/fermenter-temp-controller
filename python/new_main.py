@@ -1,6 +1,7 @@
 import configparser
-# from os.path import exists
 
+
+# from os.path import exists
 
 
 class ConfigError(Exception):
@@ -17,6 +18,7 @@ def get_config(config_filename_location):
         raise ConfigError("'fermenter' section does not exist")
     # except Exception as err:
     #     raise ConfigError(err)
+
 
 def get_target_temp_from_config(config: configparser.ConfigParser) -> float:
     try:
@@ -37,3 +39,8 @@ def get_brew_id_from_config(config: configparser.ConfigParser) -> str:
         return brew_id
     except KeyError:
         raise ConfigError("brew_id not found")
+
+
+class ControllerConfig:
+    def __init__(self, filename: str):
+        pass
