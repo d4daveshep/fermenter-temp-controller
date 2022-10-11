@@ -1,2 +1,2 @@
 [fermenter]
-blah = blah_blah
+target_temp = 21.3

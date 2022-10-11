@@ -11,11 +11,13 @@ class ConfigError(Exception):
 
 class ControllerConfig:
     def __init__(self, filename: str):
+        self.target_temp = None
         if not exists(filename):
             raise ConfigError(f"Config file '{filename}' not found")
 
         config_parser = self.get_config(filename)
-
+        self.target_temp = self.get_target_temp_from_config(config_parser)
+        self.brew_id = self.get_brew_id_from_config(config_parser)
 
     def get_config(self, config_filename_location: str):
         try:
@@ -26,24 +28,21 @@ class ControllerConfig:
         except KeyError:
             raise ConfigError("'fermenter' section does not exist in config file")
 
+    def get_target_temp_from_config(self, config: configparser.ConfigParser) -> float:
+        try:
+            fermenter_section = config["fermenter"]
+            target_temp_string = fermenter_section["target_temp"]
+            target_temp = float(target_temp_string)
+            return target_temp
+        except KeyError as err:
+            raise ConfigError("target_temp not found")
+        except ValueError as err:
+            raise ConfigError(f"target_temp '{target_temp_string}' could not be read as a float")
 
-def get_target_temp_from_config(config: configparser.ConfigParser) -> float:
-    try:
-        fermenter_section = config["fermenter"]
-        target_temp_string = fermenter_section["target_temp"]
-        target_temp = float(target_temp_string)
-        return target_temp
-    except KeyError as err:
-        raise ConfigError("target_temp not found")
-    except ValueError as err:
-        raise ConfigError(f"target_temp '{target_temp_string}' could not be read as a float")
-
-
-def get_brew_id_from_config(config: configparser.ConfigParser) -> str:
-    try:
-        fermenter_section = config["fermenter"]
-        brew_id = fermenter_section["brew_id"]
-        return brew_id
-    except KeyError:
-        raise ConfigError("brew_id not found")
-
+    def get_brew_id_from_config(self, config: configparser.ConfigParser) -> str:
+        try:
+            fermenter_section = config["fermenter"]
+            brew_id = fermenter_section["brew_id"]
+            return brew_id
+        except KeyError:
+            raise ConfigError("brew_id not found")

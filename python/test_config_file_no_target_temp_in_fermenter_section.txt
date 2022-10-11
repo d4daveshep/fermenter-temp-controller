@@ -1,2 +1,2 @@
 [fermenter]
-blah = blah_blah
+brew_id = 00-TEST-v00
