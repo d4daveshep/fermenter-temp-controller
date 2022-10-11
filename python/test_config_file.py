@@ -10,23 +10,29 @@ import new_main
 from new_main import ConfigError
 
 
-def test_get_config_object():
-    filename = "./test_config_file.txt"
+def test_get_values_from_valid_config_object():
+    filename = "./test_valid_config_file.txt"
     assert exists(filename)
-
     controller_config = new_main.ControllerConfig(filename)
     assert controller_config
+
     target_temp = controller_config.target_temp
     assert isinstance(target_temp, float)
     assert target_temp == 21.3
 
+    brew_id = controller_config.brew_id
+    assert isinstance(brew_id, str)
+    assert brew_id == "00-TEST-v00"
 
 def test_get_config_fails_if_file_not_exist():
     filename = "./does_not_exist"
     assert not exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
-        config = new_main.get_config(filename)
+        controllor_config = new_main.ControllerConfig(filename)
+        assert controllor_config
+
+    assert err_info.value.args[0] == f"Config file '{filename}' not found"
 
 
 def test_get_config_fails_if_no_fermenter_section():
@@ -34,8 +40,10 @@ def test_get_config_fails_if_no_fermenter_section():
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
-        config = new_main.get_config(filename)
+        controllor_config = new_main.ControllerConfig(filename)
+        assert controllor_config
 
+    assert err_info.value.args[0] == "'fermenter' section does not exist in config file"
 
 def test_get_config_fails_if_no_target_temp_in_fermenter_section():
     filename = "./test_config_file_no_target_temp_in_fermenter_section.txt"
@@ -60,7 +68,7 @@ def test_get_config_fails_if_invalid_target_temp():
 
 
 def test_get_target_temp_from_config_file():
-    filename = "./test_config_file.txt"
+    filename = "test_valid_config_file.txt"
     assert exists(filename)
 
     config = new_main.get_config(filename)
@@ -81,7 +89,7 @@ def test_get_config_file_fails_if_no_brew_id_in_fermenter_section():
 
 
 def test_get_brew_id_from_config_file():
-    filename = "./test_config_file.txt"
+    filename = "test_valid_config_file.txt"
     assert exists(filename)
 
     config = new_main.get_config(filename)
