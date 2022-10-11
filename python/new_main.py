@@ -15,11 +15,11 @@ class ControllerConfig:
         if not exists(filename):
             raise ConfigError(f"Config file '{filename}' not found")
 
-        config_parser = self.get_config(filename)
-        self.target_temp = self.get_target_temp_from_config(config_parser)
-        self.brew_id = self.get_brew_id_from_config(config_parser)
+        config_parser = self._get_config(filename)
+        self.target_temp = self._get_target_temp_from_config(config_parser)
+        self.brew_id = self._get_brew_id_from_config(config_parser)
 
-    def get_config(self, config_filename_location: str):
+    def _get_config(self, config_filename_location: str):
         try:
             config = configparser.ConfigParser()
             config.read(config_filename_location)
@@ -28,7 +28,7 @@ class ControllerConfig:
         except KeyError:
             raise ConfigError("'fermenter' section does not exist in config file")
 
-    def get_target_temp_from_config(self, config: configparser.ConfigParser) -> float:
+    def _get_target_temp_from_config(self, config: configparser.ConfigParser) -> float:
         try:
             fermenter_section = config["fermenter"]
             target_temp_string = fermenter_section["target_temp"]
@@ -39,7 +39,7 @@ class ControllerConfig:
         except ValueError as err:
             raise ConfigError(f"target_temp '{target_temp_string}' could not be read as a float")
 
-    def get_brew_id_from_config(self, config: configparser.ConfigParser) -> str:
+    def _get_brew_id_from_config(self, config: configparser.ConfigParser) -> str:
         try:
             fermenter_section = config["fermenter"]
             brew_id = fermenter_section["brew_id"]
