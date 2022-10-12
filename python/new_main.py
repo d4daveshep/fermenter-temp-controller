@@ -1,5 +1,7 @@
 import configparser
 from os.path import exists
+
+import pytz
 from pytz import timezone
 
 
@@ -9,7 +11,6 @@ class ConfigError(Exception):
 
 class ControllerConfig:
     def __init__(self, filename: str):
-        self.timezone = timezone("Pacific/Auckland")
         self.target_temp = None
         if not exists(filename):
             raise ConfigError(f"Config file '{filename}' not found")
@@ -17,6 +18,9 @@ class ControllerConfig:
         config_parser = self._get_config(filename)
         self.target_temp = self._get_target_temp_from_config(config_parser)
         self.brew_id = self._get_brew_id_from_config(config_parser)
+        self.timezone = self._get_timezone_from_config(config_parser)
+
+
 
     def _get_config(self, config_filename_location: str):
         try:
@@ -45,3 +49,17 @@ class ControllerConfig:
             return brew_id
         except KeyError:
             raise ConfigError("brew_id not found")
+
+    def _get_timezone_from_config(self, config: configparser.ConfigParser) -> pytz.timezone:
+        try:
+            general_section = config["general"]
+            if "timezone" in general_section:
+                tz_string = general_section["timezone"]
+            else:
+                tz_string = "Pacific/Auckland"
+            return pytz.timezone(tz_string)
+        except pytz.exceptions.Error as err:
+            raise ConfigError(f"invalid timezone {err} in general section of config file")
+        except KeyError:
+            raise ConfigError("'general' section not found in config file")
+

@@ -8,4 +8,4 @@ org = daveshep.net
 bucket = temp-test
 
 [general]
-timezone = Pacific/Auckland
+timezone = blah_blah

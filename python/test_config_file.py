@@ -27,6 +27,8 @@ def test_get_values_from_valid_config_object():
     assert isinstance(brew_id, str)
     assert brew_id == "00-TEST-v00"
 
+    tz = controller_config.timezone
+    assert tz == timezone("Pacific/Auckland")
 
 def test_get_config_fails_if_file_not_exist():
     filename = "./does_not_exist"
@@ -98,3 +100,38 @@ def test_get_timezone_from_config():
 
     nztz = controller_config.timezone
     assert nztz == timezone("Pacific/Auckland")
+
+
+def test_config_fails_if_no_general_section():
+    filename = "./test_config_file_no_general_section.txt"
+    assert exists(filename)
+
+    with pytest.raises(ConfigError) as err_info:
+        controller_config = new_main.ControllerConfig(filename)
+        assert controller_config
+
+        tz = controller_config.timezone
+
+    assert err_info.value.args[0] == "'general' section not found in config file"
+
+def test_config_defaults_to_auckland_if_no_timezone_in_general_section():
+    filename = "./test_config_file_no_timezone_in_general_section.txt"
+    assert exists(filename)
+
+    controller_config = new_main.ControllerConfig(filename)
+    assert controller_config
+
+    tz = controller_config.timezone
+    assert tz == pytz.timezone("Pacific/Auckland")
+
+def test_config_fails_if_invalid_timezone_general_section():
+    filename = "./test_config_file_invalid_timezone_in_general_section.txt"
+    assert exists(filename)
+
+    with pytest.raises(ConfigError) as err_info:
+        controller_config = new_main.ControllerConfig(filename)
+        assert controller_config
+
+        tz = controller_config.timezone
+
+    assert err_info.value.args[0] == "invalid timezone 'blah_blah' in general section of config file"
