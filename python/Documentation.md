@@ -1,6 +1,13 @@
 
 ## Documentation for Python data gathering daemon ##
 
+### Logic flow after refactoring ###
+``config.py`` module defines ``ControllorConfig`` class
+* reads and validates the specified config file
+* sets config settings in object attributes fermenter, timezone and influxdb credentials
+
+  
+
 ### Logic flow before refactoring ###
 
 When called as main module
