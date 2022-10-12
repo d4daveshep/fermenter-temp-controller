@@ -1,8 +1,6 @@
 import configparser
 from os.path import exists
-
-
-# from os.path import exists
+from pytz import timezone
 
 
 class ConfigError(Exception):
@@ -11,6 +9,7 @@ class ConfigError(Exception):
 
 class ControllerConfig:
     def __init__(self, filename: str):
+        self.timezone = timezone("Pacific/Auckland")
         self.target_temp = None
         if not exists(filename):
             raise ConfigError(f"Config file '{filename}' not found")

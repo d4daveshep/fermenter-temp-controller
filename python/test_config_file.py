@@ -4,6 +4,9 @@ import random
 import tempfile
 from os.path import exists
 
+import pytz
+from pytz import timezone
+
 import pytest
 
 import new_main
@@ -84,3 +87,14 @@ def test_get_config_file_fails_if_no_brew_id_in_fermenter_section():
         brew_id = controllor_config.brew_id
 
     assert err_info.value.args[0] == "brew_id not found"
+
+
+def test_get_timezone_from_config():
+    filename = "./test_valid_config_file.txt"
+    assert exists(filename)
+
+    controller_config = new_main.ControllerConfig(filename)
+    assert controller_config
+
+    nztz = controller_config.timezone
+    assert nztz == timezone("Pacific/Auckland")
