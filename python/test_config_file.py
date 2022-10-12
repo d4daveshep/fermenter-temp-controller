@@ -42,14 +42,14 @@ def test_get_config_fails_if_file_not_exist():
 
 
 def test_get_config_fails_if_no_fermenter_section():
-    filename = "./test_empty_config_file.txt"
+    filename = "./test_config_file_no_fermenter_section.txt"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
         controllor_config = config.ControllerConfig(filename)
-        assert controllor_config
+        target_temp = controllor_config.target_temp
 
-    assert err_info.value.args[0] == "'fermenter' section does not exist in config file"
+    assert err_info.value.args[0] == "'fermenter' section not found in config file"
 
 
 def test_get_config_fails_if_no_target_temp_in_fermenter_section():
@@ -88,7 +88,7 @@ def test_get_config_file_fails_if_no_brew_id_in_fermenter_section():
 
         brew_id = controllor_config.brew_id
 
-    assert err_info.value.args[0] == "brew_id not found"
+    assert err_info.value.args[0] == "'brew_id' not found in fermenter section in config file"
 
 
 def test_get_timezone_from_config():

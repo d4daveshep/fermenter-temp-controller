@@ -28,17 +28,23 @@ class ControllerConfig:
         try:
             config = configparser.ConfigParser()
             config.read(config_filename_location)
-            fermenter_section = config["fermenter"]
+            # fermenter_section = config["fermenter"]
             return config
+        except configparser.Error as err:
+            raise ConfigError(err)
+
+    def _get_fermenter_section_from_config(self, config_parser: configparser.ConfigParser) -> configparser.SectionProxy:
+        try:
+            return config_parser["fermenter"]
         except KeyError:
-            raise ConfigError("'fermenter' section does not exist in config file")
+            raise ConfigError("'fermenter' section not found in config file")
+
 
     def _get_target_temp_from_config(self, config: configparser.ConfigParser) -> float:
         try:
-            fermenter_section = config["fermenter"]
+            fermenter_section = self._get_fermenter_section_from_config(config)
             target_temp_string = fermenter_section["target_temp"]
-            target_temp = float(target_temp_string)
-            return target_temp
+            return float(target_temp_string)
         except KeyError as err:
             raise ConfigError("target_temp not found")
         except ValueError as err:
@@ -46,15 +52,21 @@ class ControllerConfig:
 
     def _get_brew_id_from_config(self, config: configparser.ConfigParser) -> str:
         try:
-            fermenter_section = config["fermenter"]
+            fermenter_section = self._get_fermenter_section_from_config(config)
             brew_id = fermenter_section["brew_id"]
             return brew_id
         except KeyError:
-            raise ConfigError("brew_id not found")
+            raise ConfigError("'brew_id' not found in fermenter section in config file")
+
+    def _get_general_section_from_config(self, config_parser: configparser.ConfigParser) -> configparser.SectionProxy:
+        try:
+            return config_parser["general"]
+        except KeyError:
+            raise ConfigError("'general' section not found in config file")
 
     def _get_timezone_from_config(self, config: configparser.ConfigParser) -> pytz.timezone:
         try:
-            general_section = config["general"]
+            general_section = self._get_general_section_from_config(config)
             if "timezone" in general_section:
                 tz_string = general_section["timezone"]
             else:
@@ -62,10 +74,8 @@ class ControllerConfig:
             return pytz.timezone(tz_string)
         except pytz.exceptions.Error as err:
             raise ConfigError(f"invalid timezone {err} in general section of config file")
-        except KeyError:
-            raise ConfigError("'general' section not found in config file")
 
-    def _get_influxdb_section_from_config(self, config_parser: configparser.ConfigParser):
+    def _get_influxdb_section_from_config(self, config_parser: configparser.ConfigParser) -> configparser.SectionProxy:
         try:
             return config_parser["influxdb"]
         except KeyError:

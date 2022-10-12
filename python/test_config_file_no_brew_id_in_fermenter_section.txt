@@ -1,2 +1,11 @@
 [fermenter]
 target_temp = 21.3
+
+[influxdb]
+auth_token = my-super-secret-auth-token
+org = daveshep.net
+bucket = temp-test
+
+[general]
+timezone = Pacific/Auckland[fermenter]
+target_temp = 21.3
