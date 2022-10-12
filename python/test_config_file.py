@@ -148,16 +148,40 @@ def test_get_influxdb_credentials_from_config():
     assert controller_config.influxdb_bucket == "temp-test"
 
 
+def test_config_fails_if_no_influxdb_section():
+    filename = "./test_config_file_no_influxdb_section.txt"
+    assert exists(filename)
 
+    with pytest.raises(ConfigError) as err_info:
+        controller_config = config.ControllerConfig(filename)
 
-# def test_config_fails_if_no_influxdb_section():
-#     filename = "./test_config_file_no_influxdb_section.txt"
-#     assert exists(filename)
-#
-#     with pytest.raises(ConfigError) as err_info:
-#         controller_config = config.ControllerConfig(filename)
-#         assert controller_config
-#
-#
-#
-#     assert err_info.value.args[0] == "'general' section not found in config file"
+    assert err_info.value.args[0] == "'influxdb' section not found in config file"
+
+def test_config_fails_if_no_auth_token_in_influxdb_section():
+    filename = "./test_config_file_no_auth_token_in_influxdb_section.txt"
+    assert exists(filename)
+
+    with pytest.raises(ConfigError) as err_info:
+        controller_config = config.ControllerConfig(filename)
+
+    assert err_info.value.args[0] == "'auth_token' not found in influxdb section in config file"
+
+def test_config_fails_if_no_org_in_influxdb_section():
+    filename = "./test_config_file_no_org_in_influxdb_section.txt"
+    assert exists(filename)
+
+    with pytest.raises(ConfigError) as err_info:
+        controller_config = config.ControllerConfig(filename)
+
+    assert err_info.value.args[0] == "'org' not found in influxdb section in config file"
+    
+def test_config_fails_if_no_bucket_in_influxdb_section():
+    filename = "./test_config_file_no_bucket_in_influxdb_section.txt"
+    assert exists(filename)
+
+    with pytest.raises(ConfigError) as err_info:
+        controller_config = config.ControllerConfig(filename)
+
+    assert err_info.value.args[0] == "'bucket' not found in influxdb section in config file"
+    
+    

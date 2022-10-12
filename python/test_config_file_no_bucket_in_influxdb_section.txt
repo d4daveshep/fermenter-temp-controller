@@ -5,7 +5,6 @@ brew_id = 00-TEST-v00
 [influxdb]
 auth_token = my-super-secret-auth-token
 org = daveshep.net
-bucket = temp-test
 
 [general]
 timezone = Pacific/Auckland

@@ -3,6 +3,6 @@ target_temp = 21.3
 brew_id = 00-TEST-v00
 
 [influxdb]
-token = my-super-secret-auth-token
+auth_token = my-super-secret-auth-token
 org = daveshep.net
 bucket = temp-test
