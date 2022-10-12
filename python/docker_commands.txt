@@ -1,0 +1,5 @@
+To build docker image
+docker build -t <image name> .
+
+To run docker container
+docker run <image name>
