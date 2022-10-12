@@ -136,3 +136,28 @@ def test_config_fails_if_invalid_timezone_general_section():
 
     assert err_info.value.args[0] == "invalid timezone 'blah_blah' in general section of config file"
 
+def test_get_influxdb_credentials_from_config():
+    filename = "./test_valid_config_file.txt"
+    assert exists(filename)
+
+    controller_config = config.ControllerConfig(filename)
+    assert controller_config
+
+    assert controller_config.influxdb_token == "my-super-secret-auth-token"
+    assert controller_config.influxdb_org == "daveshep.net"
+    assert controller_config.influxdb_bucket == "temp-test"
+
+
+
+
+# def test_config_fails_if_no_influxdb_section():
+#     filename = "./test_config_file_no_influxdb_section.txt"
+#     assert exists(filename)
+#
+#     with pytest.raises(ConfigError) as err_info:
+#         controller_config = config.ControllerConfig(filename)
+#         assert controller_config
+#
+#
+#
+#     assert err_info.value.args[0] == "'general' section not found in config file"

@@ -17,6 +17,11 @@ class ControllerConfig:
         config_parser = self._get_config(filename)
         self.target_temp = self._get_target_temp_from_config(config_parser)
         self.brew_id = self._get_brew_id_from_config(config_parser)
+
+        self.influxdb_bucket = None
+        self.influxdb_org = None
+        self.influxdb_token = None
+
         self.timezone = self._get_timezone_from_config(config_parser)
 
 
