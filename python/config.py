@@ -2,7 +2,6 @@ import configparser
 from os.path import exists
 
 import pytz
-from pytz import timezone
 
 
 class ConfigError(Exception):
