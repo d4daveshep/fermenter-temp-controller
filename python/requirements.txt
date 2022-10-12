@@ -2,3 +2,4 @@ pytest
 pytz
 pyserial
 mock-serial
+requests

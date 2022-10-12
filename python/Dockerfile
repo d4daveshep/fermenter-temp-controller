@@ -6,4 +6,4 @@ COPY requirements.txt .
 
 RUN pip3 install --no-cache-dir --upgrade -r requirements.txt
 
-CMD ["python3", "-m", "pytest", "-v", "test_config_file.py", "test_serial.py"]
+CMD ["python3", "-m", "pytest", "-v", "test_config_file.py", "test_serial.py", "test_influxdb.py"]
