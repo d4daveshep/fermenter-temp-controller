@@ -4,3 +4,4 @@ pyserial
 mock-serial
 requests
 validators
+influxdb_client
