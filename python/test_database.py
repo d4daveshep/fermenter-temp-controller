@@ -27,3 +27,13 @@ def test_open_database_connection():
 
     database_client = temperature_database.get_database_client()
     assert database_client
+    # database_client.close()
+
+def test_reopen_database_connection():
+    config = ControllerConfig("./test_valid_config_file.txt")
+    temperature_database = TemperatureDatabase(config)
+    assert temperature_database.is_server_available()
+
+    database_client = temperature_database.get_database_client()
+    database_client.close()
+    assert not database_client
