@@ -2,6 +2,7 @@ import configparser
 from os.path import exists
 
 import pytz
+import validators as validators
 
 
 class ConfigError(Exception):
@@ -106,7 +107,10 @@ class ControllerConfig:
     def _get_influxdb_url_from_config(self, config: configparser.ConfigParser) -> str:
         try:
             influxdb_section = self._get_influxdb_section_from_config(config)
-            return influxdb_section["url"]
+            url = influxdb_section["url"]
+            if not validators.url(url):
+                raise ConfigError(f"URL '{url}' is not valid URL in influxdb section in config file")
+            return url
         except KeyError:
             raise ConfigError("'url' not found in influxdb section in config file")
 

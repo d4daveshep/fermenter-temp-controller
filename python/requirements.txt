@@ -3,3 +3,4 @@ pytz
 pyserial
 mock-serial
 requests
+validators
