@@ -1,5 +1,0 @@
-To build docker image
-docker build -t <image name> .
-
-To run docker container in host network mode
-docker run --network="host" <image name>
