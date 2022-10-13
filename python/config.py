@@ -18,6 +18,7 @@ class ControllerConfig:
         self.target_temp = self._get_target_temp_from_config(config_parser)
         self.brew_id = self._get_brew_id_from_config(config_parser)
 
+        self.influxdb_url = self._get_influxdb_url_from_config(config_parser)
         self.influxdb_token = self._get_influxdb_auth_token_from_config(config_parser)
         self.influxdb_org = self._get_influxdb_org_from_config(config_parser)
         self.influxdb_bucket = self._get_influxdb_bucket_from_config(config_parser)
@@ -101,4 +102,11 @@ class ControllerConfig:
             return influxdb_section["bucket"]
         except KeyError:
             raise ConfigError("'bucket' not found in influxdb section in config file")
+
+    def _get_influxdb_url_from_config(self, config: configparser.ConfigParser) -> str:
+        try:
+            influxdb_section = self._get_influxdb_section_from_config(config)
+            return influxdb_section["url"]
+        except KeyError:
+            raise ConfigError("'url' not found in influxdb section in config file")
 

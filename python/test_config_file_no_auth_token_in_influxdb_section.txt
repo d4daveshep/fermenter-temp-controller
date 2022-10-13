@@ -3,6 +3,7 @@ target_temp = 21.3
 brew_id = 00-TEST-v00
 
 [influxdb]
+url = http://localhost:8086
 org = daveshep.net
 bucket = temp-test
 

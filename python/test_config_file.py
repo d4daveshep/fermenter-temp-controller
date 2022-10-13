@@ -13,7 +13,7 @@ import config
 from config import ConfigError
 
 
-def test_get_values_from_valid_config_object():
+def test_get_target_temp_config_file():
     filename = "./test_valid_config_file.txt"
     assert exists(filename)
     controller_config = config.ControllerConfig(filename)
@@ -23,12 +23,16 @@ def test_get_values_from_valid_config_object():
     assert isinstance(target_temp, float)
     assert target_temp == 21.3
 
+def test_get_brew_id_from_config_file():
+    filename = "./test_valid_config_file.txt"
+    assert exists(filename)
+    controller_config = config.ControllerConfig(filename)
+    assert controller_config
+
     brew_id = controller_config.brew_id
     assert isinstance(brew_id, str)
     assert brew_id == "00-TEST-v00"
 
-    tz = controller_config.timezone
-    assert tz == timezone("Pacific/Auckland")
 
 def test_get_config_fails_if_file_not_exist():
     filename = "./does_not_exist"
@@ -143,6 +147,7 @@ def test_get_influxdb_credentials_from_config():
     controller_config = config.ControllerConfig(filename)
     assert controller_config
 
+    assert controller_config.influxdb_url == "http://localhost:8086"
     assert controller_config.influxdb_token == "my-super-secret-auth-token"
     assert controller_config.influxdb_org == "daveshep.net"
     assert controller_config.influxdb_bucket == "temp-test"
@@ -165,6 +170,24 @@ def test_config_fails_if_no_auth_token_in_influxdb_section():
         controller_config = config.ControllerConfig(filename)
 
     assert err_info.value.args[0] == "'auth_token' not found in influxdb section in config file"
+
+def test_config_fails_if_no_url_in_influxdb_section():
+    filename = "./test_config_file_no_url_in_influxdb_section.txt"
+    assert exists(filename)
+
+    with pytest.raises(ConfigError) as err_info:
+        controller_config = config.ControllerConfig(filename)
+
+    assert err_info.value.args[0] == "'url' not found in influxdb section in config file"
+
+def test_config_fails_if_invalid_url_in_influxdb_section():
+    filename = "./test_config_file_invalid_url_in_influxdb_section.txt"
+    assert exists(filename)
+
+    with pytest.raises(ConfigError) as err_info:
+        controller_config = config.ControllerConfig(filename)
+
+    assert err_info.value.args[0] == "URL 'blah_blah' is not valid URL in influxdb section in config file"
 
 def test_config_fails_if_no_org_in_influxdb_section():
     filename = "./test_config_file_no_org_in_influxdb_section.txt"

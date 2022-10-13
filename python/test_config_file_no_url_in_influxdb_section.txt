@@ -1,9 +1,8 @@
 [fermenter]
-target_temp = blah_blah
+target_temp = 21.3
 brew_id = 00-TEST-v00
 
 [influxdb]
-url = http://localhost:8086
 auth_token = my-super-secret-auth-token
 org = daveshep.net
 bucket = temp-test
