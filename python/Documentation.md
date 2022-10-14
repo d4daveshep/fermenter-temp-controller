@@ -2,9 +2,25 @@
 ## Documentation for Python data gathering daemon ##
 
 ### Logic flow after refactoring ###
+#### Initialisation ####
 ``config.py`` module defines ``ControllorConfig`` class
 * reads and validates the specified config file
 * sets config settings in object attributes fermenter, timezone and influxdb credentials
+
+#### Main loop ####
+``while(true)`` loop
+* check for messages from the web api server - i.e. change target temp, change brew ID
+* send any messages (e.g. new target temp) to the Arduino controller via serial port
+* read the arduino state (current action, temperature data) json string from Arduino controller via serial port
+* get curent timestamp
+* write data to database with timestamp
+
+#### Messages from web API ####
+* get current target temp and brew ID
+* set new target temp
+* set new brew ID
+* exit/stop/kill (not sure if this is possible)
+
 
   
 
