@@ -86,6 +86,7 @@ def test_write_record_to_database_with_wrong_org(temperature_database):
 
     assert err_info.value.args[0] == f"organization name \"{config.influxdb_org}\" not found"
 
+
 def test_write_record_to_database_with_wrong_bucket(temperature_database):
     config = temperature_database.get_config()
     config.influxdb_bucket = "wrong_bucket"
@@ -96,6 +97,7 @@ def test_write_record_to_database_with_wrong_bucket(temperature_database):
         temperature_database.write_temperature_record(point)
 
     assert err_info.value.args[0] == f"bucket \"{config.influxdb_bucket}\" not found"
+
 
 def test_write_record_to_database_with_wrong_token(temperature_database):
     config = temperature_database.get_config()
