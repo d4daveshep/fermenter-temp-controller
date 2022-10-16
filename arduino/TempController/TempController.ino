@@ -213,6 +213,8 @@ void readSerialWithStartEndMarkers() {
 	char endMarker = '>';
 	char rc;
 
+    newSerialDataReceived = false;
+
 	// if (Serial.available() > 0) {
 	while (Serial.available() > 0 && newSerialDataReceived == false) {
 		rc = Serial.read();
