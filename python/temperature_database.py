@@ -1,16 +1,28 @@
 import configparser
+import datetime
 
 import requests
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 from config import ControllerConfig
-from influxdb_client import InfluxDBClient, Point
+from influxdb_client import InfluxDBClient, Point, WritePrecision
 
 
 class TemperatureDatabase:
     def __init__(self, config: ControllerConfig):
         self.__database_client = None
         self.__config = config
+
+    def get_config(self):
+        return self.__config
+
+    def create_point(self, fermenter_temp: float, ambient_temp: float, timestamp: datetime.datetime) -> Point:
+        point = Point("temperature") \
+            .tag("brew-id", self.__config.brew_id) \
+            .field("fermenter", fermenter_temp) \
+            .field("ambient", ambient_temp) \
+            .time(timestamp, WritePrecision.MS)
+        return point
 
     def is_server_available(self):
         # run equivalant of curl -sL -I localhost:8086/ping?wait_for_leader=30s
