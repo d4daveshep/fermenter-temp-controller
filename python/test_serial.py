@@ -14,6 +14,7 @@ def test_example(mock_serial):
 
     serial = Serial(mock_serial.port)  # open a mocked serial port
 
+
     # create a stub ojbect that we can use multiple timees,  the
     stub = mock_serial.stub(
         receive_bytes=b'123',

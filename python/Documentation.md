@@ -4,15 +4,18 @@
 ### Logic flow after refactoring ###
 #### Initialisation ####
 ``config.py`` module defines ``ControllorConfig`` class
-* reads and validates the specified config file
-* sets config settings in object attributes fermenter, timezone and influxdb credentials
+* [x] reads and validates the specified config file
+* [x] sets config settings in object attributes fermenter, timezone and influxdb credentials
+* [x] open the database connection
+* [ ] open the serial port
+* [ ] write ``target_temp`` to serial port
 
 #### Main loop ####
 ``while(true)`` loop
 * check for messages from the web api server - i.e. change target temp, change brew ID
 * send any messages (e.g. new target temp) to the Arduino controller via serial port
 * read the arduino state (current action, temperature data) json string from Arduino controller via serial port
-* get curent timestamp
+* get current timestamp
 * write data to database with timestamp
 
 #### Messages from web API ####

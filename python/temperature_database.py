@@ -1,9 +1,10 @@
 import configparser
 
 import requests
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 from config import ControllerConfig
-from influxdb_client import InfluxDBClient
+from influxdb_client import InfluxDBClient, Point
 
 
 class TemperatureDatabase:
@@ -29,4 +30,9 @@ class TemperatureDatabase:
             self.__database_client = InfluxDBClient(url=self.__config.influxdb_url,
                                                     token=self.__config.influxdb_token,
                                                     org=self.__config.influxdb_org)
+            write_api = self.__database_client.write_api(write_options=SYNCHRONOUS)
         return self.__database_client
+
+    def write_temperature_record(self, point: Point) -> object:
+        write_api = self.get_database_client().write_api(write_options=SYNCHRONOUS)
+        return write_api.write(self.__config.influxdb_bucket, self.__config.influxdb_org, point)
