@@ -11,12 +11,12 @@
 * [ ] write ``target_temp`` to serial port
 
 #### Main loop ####
-``while(true)`` loop
+- [ ] ``while(true)`` loop
 * check for messages from the web api server - i.e. change target temp, change brew ID
 * send any messages (e.g. new target temp) to the Arduino controller via serial port
 * read the arduino state (current action, temperature data) json string from Arduino controller via serial port
 * get current timestamp
-* write data to database with timestamp
+* [x] write data to database with timestamp
 
 #### Messages from web API ####
 * get current target temp and brew ID
