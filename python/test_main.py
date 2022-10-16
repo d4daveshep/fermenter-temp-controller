@@ -4,7 +4,7 @@ from time import sleep
 import main
 
 
-def test_send_and_received_target_temp_to_serial():
+def test_send_and_receive_target_temp_to_serial():
     serial_port = main.get_serial_port()
 
     # important that we read from serial port before first write
