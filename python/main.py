@@ -62,3 +62,8 @@ async def write_float_to_serial_port(serial_port_writer: StreamWriter, float_num
     print(f"writing {string_to_write} to serial")
     result = serial_port_writer.write(string_to_write.encode())
     await asyncio.sleep(0)
+
+
+async def read_line_from_serial(serial_port_reader: StreamReader) -> str:
+    line = await serial_port_reader.readline()
+    return str(line, 'utf-8')
