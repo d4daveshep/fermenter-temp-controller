@@ -11,7 +11,6 @@ class ConfigError(Exception):
 
 class ControllerConfig:
     def __init__(self, filename: str):
-        self.target_temp = None
         if not exists(filename):
             raise ConfigError(f"Config file '{filename}' not found")
 
@@ -24,7 +23,12 @@ class ControllerConfig:
         self.influxdb_org = self._get_influxdb_org_from_config(config_parser)
         self.influxdb_bucket = self._get_influxdb_bucket_from_config(config_parser)
 
+        self.serial_port = self._get_serial_port_from_config(config_parser)
+
+
         self.timezone = self._get_timezone_from_config(config_parser)
+
+
 
     def _get_config(self, config_filename_location: str):
         try:
@@ -114,3 +118,16 @@ class ControllerConfig:
         except KeyError:
             raise ConfigError("'url' not found in influxdb section in config file")
 
+    def _get_serial_port_from_config(self, config: configparser.ConfigParser) -> str:
+        try:
+            arduino_section = self._get_arduino_section_from_config(config)
+            serial_port = arduino_section["serial_port"]
+            return serial_port
+        except KeyError:
+            raise ConfigError("'arduino' section not found in config file")
+
+    def _get_arduino_section_from_config(self, config_parser: configparser.ConfigParser) -> configparser.SectionProxy:
+        try:
+            return config_parser["arduino"]
+        except KeyError:
+            raise ConfigError("'arduino' section not found in config file")

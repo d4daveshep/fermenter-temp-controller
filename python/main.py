@@ -54,5 +54,9 @@ def get_serial_port() -> Serial:
     return port
 
 
-async def open_serial_connection():
-    return await serial_asyncio.open_serial_connection(url='/dev/ttyACM0', baudrate=115200)
+async def open_serial_connection(port_url: str):
+    return await serial_asyncio.open_serial_connection(url=port_url, baudrate=115200)
+
+
+async def write_float_to_serial_port(serial_port_writer, target_temp):
+    return None

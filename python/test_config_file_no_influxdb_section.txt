@@ -2,5 +2,9 @@
 target_temp = 21.3
 brew_id = 00-TEST-v00
 
+[arduino]
+serial_port = /dev/ttyACM0
+baud_rate = 115200
+
 [general]
 timezone = Pacific/Auckland

@@ -7,5 +7,9 @@ url = http://localhost:8086
 auth_token = my-super-secret-auth-token
 org = daveshep.net
 
+[arduino]
+serial_port = /dev/ttyACM0
+baud_rate = 115200
+
 [general]
 timezone = Pacific/Auckland

@@ -215,3 +215,12 @@ def test_get_serial_port_from_config():
     assert controller_config
 
     assert controller_config.serial_port == "/dev/ttyACM0"
+
+def test_config_fails_if_no_arduino_section():
+    filename = "./test_config_file_no_arduino_section.txt"
+    assert exists(filename)
+
+    with pytest.raises(ConfigError) as err_info:
+        controller_config = config.ControllerConfig(filename)
+
+    assert err_info.value.args[0] == "'arduino' section not found in config file"

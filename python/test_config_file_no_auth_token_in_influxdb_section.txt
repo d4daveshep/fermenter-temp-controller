@@ -7,5 +7,9 @@ url = http://localhost:8086
 org = daveshep.net
 bucket = temp-test
 
+[arduino]
+serial_port = /dev/ttyACM0
+baud_rate = 115200
+
 [general]
 timezone = Pacific/Auckland

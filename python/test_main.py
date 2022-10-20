@@ -1,23 +1,41 @@
 import random
+from os.path import exists
 from time import sleep
-import pytest_asyncio
+
 import pytest
-import main
-import asyncio
 from serial.serialutil import SerialException
 
-@pytest.mark.asyncio
-async def test_open_serial_connection():
+import config
+import main
 
+
+@pytest.fixture
+def valid_config():
+    filename = "./test_valid_config_file.txt"
+    assert exists(filename)
+
+    controller_config = config.ControllerConfig(filename)
+    assert controller_config
+
+    return controller_config
+
+
+@pytest.mark.asyncio
+async def test_open_serial_connection(valid_config):
+    serial_port_reader, serial_port_writer = await main.open_serial_connection(valid_config.serial_port)
+
+
+@pytest.mark.asyncio
+async def test_open_serial_connection_with_bad_port_url():
     with pytest.raises(SerialException) as err_info:
-        serial_port_reader, serial_port_writer = await main.open_serial_connection()
+        serial_port_reader, serial_port_writer = await main.open_serial_connection("/dev/blah_blah")
 
     pass
 
 
 @pytest.mark.asyncio
-async def test_write_async_serial_string():
-    serial_port_reader, serial_port_writer = main.open_serial_connection()
+async def test_write_async_serial_string(valid_config):
+    serial_port_reader, serial_port_writer = await main.open_serial_connection(valid_config.serial_port)
 
     target_temp = random.randrange(10, 30)
 
@@ -33,7 +51,7 @@ def test_send_and_receive_target_temp_to_serial():
     # important that we read from serial port before first write
     json = main.read_json_from_serial(serial_port)
 
-    for i in range(10):
+    for i in range(1):
         target_temp = random.randrange(10, 30)
 
         main.write_float_to_serial(serial_port, target_temp)

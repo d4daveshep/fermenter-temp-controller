@@ -111,7 +111,17 @@ void readSerialWithStartEndMarkers() {
 				if (ndx >= serialBufSize) {
 				ndx = serialBufSize - 1;
 				}
-			}
+			}pythonp
+
+
+
+
+
+
+
+
+
+
 			else {
 				receivedChars[ndx] = '\0'; // terminate the string
 				recvInProgress = false;

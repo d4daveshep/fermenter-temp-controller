@@ -1,5 +1,6 @@
 [fermenter]
 target_temp = 21.3
+brew_id = 00-TEST-v00
 
 [influxdb]
 url = http://localhost:8086
@@ -7,10 +8,5 @@ auth_token = my-super-secret-auth-token
 org = daveshep.net
 bucket = temp-test
 
-[arduino]
-serial_port = /dev/ttyACM0
-baud_rate = 115200
-
 [general]
-timezone = Pacific/Auckland[fermenter]
-target_temp = 21.3
+timezone = Pacific/Auckland
