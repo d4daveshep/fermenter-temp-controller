@@ -4,11 +4,20 @@ import pytest_asyncio
 import pytest
 import main
 import asyncio
+from serial.serialutil import SerialException
+
+@pytest.mark.asyncio
+async def test_open_serial_connection():
+
+    with pytest.raises(SerialException) as err_info:
+        serial_port_reader, serial_port_writer = await main.open_serial_connection()
+
+    pass
 
 
 @pytest.mark.asyncio
-async def test_write_async_serial_string(event_loop):
-    serial_port_reader, serial_port_writer = event_loop.run_until_complete(main.open_serial_connection())
+async def test_write_async_serial_string():
+    serial_port_reader, serial_port_writer = main.open_serial_connection()
 
     target_temp = random.randrange(10, 30)
 

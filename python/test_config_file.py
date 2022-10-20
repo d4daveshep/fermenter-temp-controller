@@ -207,4 +207,11 @@ def test_config_fails_if_no_bucket_in_influxdb_section():
 
     assert err_info.value.args[0] == "'bucket' not found in influxdb section in config file"
     
-    
+def test_get_serial_port_from_config():
+    filename = "./test_valid_config_file.txt"
+    assert exists(filename)
+
+    controller_config = config.ControllerConfig(filename)
+    assert controller_config
+
+    assert controller_config.serial_port == "/dev/ttyACM0"

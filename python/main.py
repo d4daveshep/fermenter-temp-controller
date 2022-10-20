@@ -3,6 +3,8 @@ import json
 
 import serial
 from serial import SerialException, Serial
+import asyncio
+import serial_asyncio
 
 from config import ControllerConfig
 
@@ -50,3 +52,7 @@ def get_serial_port() -> Serial:
     # time.sleep(30)
 
     return port
+
+
+async def open_serial_connection():
+    return await serial_asyncio.open_serial_connection(url='/dev/ttyACM0', baudrate=115200)
