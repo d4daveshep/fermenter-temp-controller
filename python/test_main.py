@@ -47,6 +47,11 @@ async def test_read_line_from_serial(valid_config):
 
     assert read_string
 
+@pytest.mark.asyncio
+async def test_serial_async_write_and_read(valid_config):
+    assert False
+
+
 # def test_send_and_receive_target_temp_to_serial():
 #     serial_port = main.get_serial_port()
 #
