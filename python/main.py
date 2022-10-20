@@ -1,12 +1,11 @@
+import asyncio
 import glob
 import json
+from asyncio import StreamWriter, StreamReader
 
 import serial
-from serial import SerialException, Serial
-import asyncio
 import serial_asyncio
-
-from config import ControllerConfig
+from serial import SerialException, Serial
 
 
 # def loop(config: ControllerConfig):
@@ -54,9 +53,12 @@ def get_serial_port() -> Serial:
     return port
 
 
-async def open_serial_connection(port_url: str):
+async def open_serial_connection(port_url: str) -> (StreamReader, StreamWriter):
     return await serial_asyncio.open_serial_connection(url=port_url, baudrate=115200)
 
 
-async def write_float_to_serial_port(serial_port_writer, target_temp):
-    return None
+async def write_float_to_serial_port(serial_port_writer: StreamWriter, float_num: float) -> None:
+    string_to_write = '<' + str(float_num) + '>'
+    print(f"writing {string_to_write} to serial")
+    result = serial_port_writer.write(string_to_write.encode())
+    await asyncio.sleep(0)
