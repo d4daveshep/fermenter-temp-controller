@@ -6,4 +6,4 @@ IMAGE_NAME="test_fermenter_controller"
 docker build -t ${IMAGE_NAME} .
 
 #To run docker container in host network mode
-docker run --network="host" ${IMAGE_NAME}
+docker run --privileged --network="host" ${IMAGE_NAME}
