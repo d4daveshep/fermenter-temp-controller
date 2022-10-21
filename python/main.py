@@ -66,4 +66,11 @@ async def write_float_to_serial_port(serial_port_writer: StreamWriter, float_num
 
 async def read_line_from_serial(serial_port_reader: StreamReader) -> str:
     line = await serial_port_reader.readline()
+    print(f"read {line} from serial")
     return str(line, 'utf-8')
+
+
+def get_target_temp_from_serial_string(serial_string: str) -> float:
+    json_data = json.loads(serial_string)
+    target_temp = json_data["target"]
+    return target_temp
