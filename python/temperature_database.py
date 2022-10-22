@@ -1,4 +1,5 @@
-import datetime
+import json
+from datetime import datetime
 
 import requests
 from influxdb_client import InfluxDBClient, Point, WritePrecision
@@ -15,12 +16,30 @@ class TemperatureDatabase:
     def get_config(self):
         return self.__config
 
-    def create_point(self, fermenter_temp: float, ambient_temp: float, timestamp: datetime.datetime) -> Point:
+    def create_point(self, fermenter_temp: float, ambient_temp: float, target_temp: float,
+                     timestamp: datetime) -> Point:
         point = Point("temperature") \
             .tag("brew-id", self.__config.brew_id) \
             .field("fermenter", fermenter_temp) \
             .field("ambient", ambient_temp) \
+            .field("target", target_temp) \
             .time(timestamp, WritePrecision.MS)
+        return point
+
+    def create_point_from_fermenter_json(self, json_string: str) -> Point:
+
+        json_dict = json.loads(json_string)
+        timestamp = datetime.utcnow()
+
+        point = Point("temperature").tag("brew-id", self.__config.brew_id)
+
+        for key, value in json_dict.items():
+            # fix and remove some specific fields
+            if key == "target":
+                value = float(value)
+            point.field(key, value)
+
+        point.time(timestamp, WritePrecision.MS)
         return point
 
     def is_server_available(self):

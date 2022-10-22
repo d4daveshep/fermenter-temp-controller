@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 import pytest
@@ -45,20 +46,21 @@ def temperature_database():
 def test_create_point_object(temperature_database):
     time_stamp = datetime.utcnow()
     point_1 = temperature_database.create_point(
-        fermenter_temp=21.3, ambient_temp=15.6, timestamp=time_stamp)
+        fermenter_temp=21.3, ambient_temp=15.6, target_temp=20.0, timestamp=time_stamp)
 
     point_2 = Point("temperature") \
         .tag("brew-id", "00-test-v00") \
         .field("fermenter", 21.3) \
         .field("ambient", 15.6) \
+        .field("target", 20.0) \
         .time(datetime.utcnow(), WritePrecision.MS)
 
     assert point_1.__eq__(point_2)
 
 
 def test_write_record_to_database(temperature_database):
-    point = temperature_database.create_point(
-        fermenter_temp=21.3, ambient_temp=15.6, timestamp=datetime.utcnow())
+    point = temperature_database.create_point(fermenter_temp=21.3, ambient_temp=15.6, target_temp=20.0,
+                                              timestamp=datetime.utcnow())
 
     temperature_database.write_temperature_record(point)
 
@@ -68,18 +70,46 @@ def test_write_record_to_database(temperature_database):
     query_api = client.query_api()
 
     tables = query_api.query(query_string)
-    ambient = tables[0].records[0].values["_value"]
-    fermenter = tables[1].records[0].values["_value"]
 
-    assert ambient == 15.6
-    assert fermenter == 21.3
+
+def test_write_record_to_database_from_fermenter_json(temperature_database):
+    real_json_string = """{
+                       "now": 8.0625,
+                       "avg": 8.178817,
+                       "min": 8.0625,
+                       "max": 12.4375,
+                       "target": 19,
+                       "ambient": 19.64673,
+                       "action": "Heat",
+                       "heat": true,
+                       "reason-code": "RC1",
+                       "timestamp": 2622454,
+                       "json-size": 89
+                       }"""
+
+
+    point = temperature_database.create_point_from_fermenter_json(real_json_string)
+
+    temperature_database.write_temperature_record(point)
+
+    # verify record
+    query_string = 'from(bucket: "temp-test") |> range(start: -1m)'
+    client = temperature_database.get_database_client()
+    query_api = client.query_api()
+
+    tables = query_api.query(query_string)
+
+    # ambient = tables[0].records[0].values["_value"]
+    # fermenter = tables[1].records[0].values["_value"]
+    # target = tables[2].records[0].values["_value"]
+
+    # assert False
 
 
 def test_write_record_to_database_with_wrong_org(temperature_database):
     config = temperature_database.get_config()
     config.influxdb_org = "wrong.org"
-    point = temperature_database.create_point(
-        fermenter_temp=21.3, ambient_temp=15.6, timestamp=datetime.utcnow())
+    point = temperature_database.create_point(fermenter_temp=21.3, ambient_temp=15.6, target_temp=20.0, timestamp=datetime.utcnow())
 
     with pytest.raises(ApiException) as err_info:
         temperature_database.write_temperature_record(point)
@@ -90,8 +120,7 @@ def test_write_record_to_database_with_wrong_org(temperature_database):
 def test_write_record_to_database_with_wrong_bucket(temperature_database):
     config = temperature_database.get_config()
     config.influxdb_bucket = "wrong_bucket"
-    point = temperature_database.create_point(
-        fermenter_temp=21.3, ambient_temp=15.6, timestamp=datetime.utcnow())
+    point = temperature_database.create_point(fermenter_temp=21.3, ambient_temp=15.6, target_temp=20.0, timestamp=datetime.utcnow())
 
     with pytest.raises(ApiException) as err_info:
         temperature_database.write_temperature_record(point)
@@ -102,8 +131,7 @@ def test_write_record_to_database_with_wrong_bucket(temperature_database):
 def test_write_record_to_database_with_wrong_token(temperature_database):
     config = temperature_database.get_config()
     config.influxdb_token = "wrong-token"
-    point = temperature_database.create_point(
-        fermenter_temp=21.3, ambient_temp=15.6, timestamp=datetime.utcnow())
+    point = temperature_database.create_point(fermenter_temp=21.3, ambient_temp=15.6, target_temp=20.0, timestamp=datetime.utcnow())
 
     with pytest.raises(ApiException) as err_info:
         temperature_database.write_temperature_record(point)
