@@ -49,7 +49,7 @@ double defaultRange = 0.3; // i.e. +/- either side of target
 ControllerActionRules controller(defaultTargetTemp, defaultRange);
 Decision decision;
 Action currentAction = REST;
-StaticJsonDocument<100> jsonDoc;
+StaticJsonDocument<150> jsonDoc;
 SmartDelay smartDelay(1000);
 
 #endif
@@ -171,8 +171,8 @@ Print Json format to Serial port
 void printJson() {
 	
 	jsonDoc.clear();
-	jsonDoc["now"] = fermenterTemperatureReadings.getLatestTemperatureReading();
-	jsonDoc["avg"] = fermenterTemperatureReadings.getCurrentAverageTemperature();
+	jsonDoc["instant"] = fermenterTemperatureReadings.getLatestTemperatureReading();
+	jsonDoc["average"] = fermenterTemperatureReadings.getCurrentAverageTemperature();
 	jsonDoc["min"] = fermenterTemperatureReadings.getMinimumTemperature();
 	jsonDoc["max"] = fermenterTemperatureReadings.getMaximumTemperature();
 	jsonDoc["target"] = controller.getTargetTemp();
@@ -196,7 +196,7 @@ void printJson() {
 	}
 
 	jsonDoc["reason-code"] = decision.getReasonCode();
-	jsonDoc["timestamp"] = millis();
+//	jsonDoc["timestamp"] = millis();
 	jsonDoc["json-size"] = jsonDoc.memoryUsage();
 
 	serializeJson(jsonDoc, Serial);
