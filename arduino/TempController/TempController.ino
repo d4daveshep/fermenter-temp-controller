@@ -4,7 +4,7 @@
 	Fermenter Temp Controller
 */
 
-#define _DO_UNIT_TESTING
+//#define _DO_UNIT_TESTING
 
 #ifdef _DO_UNIT_TESTING
 #warning "Doing Unit Testing Only"
@@ -212,6 +212,8 @@ void readSerialWithStartEndMarkers() {
 	char startMarker = '<';
 	char endMarker = '>';
 	char rc;
+
+    newSerialDataReceived = false;
 
 	// if (Serial.available() > 0) {
 	while (Serial.available() > 0 && newSerialDataReceived == false) {
