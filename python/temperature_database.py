@@ -35,8 +35,11 @@ class TemperatureDatabase:
 
         for key, value in json_dict.items():
             # fix and remove some specific fields
-            if key == "target":
+            if key == "json-size":  # don't bother writing this to DB
+                continue;
+            if type(value) == int:  # covert any ints to floats (e.g. target)
                 value = float(value)
+
             point.field(key, value)
 
         point.time(timestamp, WritePrecision.MS)
