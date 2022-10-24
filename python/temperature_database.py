@@ -26,20 +26,14 @@ class TemperatureDatabase:
             .time(timestamp, WritePrecision.MS)
         return point
 
-    def create_point_from_fermenter_json(self, json_string: str) -> Point:
+    def create_point_from_fermenter_json(self, json_dict: dict) -> Point:
 
-        json_dict = json.loads(json_string)
+        # json_dict = json.loads(json_string)
         timestamp = datetime.utcnow()
 
         point = Point("temperature").tag("brew-id", self.__config.brew_id)
 
         for key, value in json_dict.items():
-            # fix and remove some specific fields
-            if key == "json-size":  # don't bother writing this to DB
-                continue;
-            if type(value) == int:  # covert any ints to floats (e.g. target)
-                value = float(value)
-
             point.field(key, value)
 
         point.time(timestamp, WritePrecision.MS)
