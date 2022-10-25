@@ -14,8 +14,8 @@ class TempController:
         self.temperature_database = TemperatureDatabase(self.config)
         self.current_target_temp = 0.0
 
-        self._serial_port_writer = None
-        self._serial_port_reader = None
+        self.serial_port_writer = None
+        self.serial_port_reader = None
 
         # self.serial_port_reader, self.serial_port_writer = await self._open_serial_connectionpen_serial_connection(self.config.serial_port)
 
@@ -23,14 +23,14 @@ class TempController:
         return await serial_asyncio.open_serial_connection(url=port_url, baudrate=115200)
 
     async def read_line_from_serial(self) -> str:
-        line = await self._serial_port_reader.readline()
+        line = await self.serial_port_reader.readline()
         print(f"read {line} from serial")
         return str(line, 'utf-8')
 
     async def write_float_to_serial_port(self, float_num: float) -> None:
         string_to_write = '<' + str(float_num) + '>'
         print(f"writing {string_to_write} to serial")
-        self._serial_port_writer.write(string_to_write.encode())
+        self.serial_port_writer.write(string_to_write.encode())
         await asyncio.sleep(0)
 
     def fix_json_values(self, json_dict: dict) -> dict:
@@ -82,7 +82,7 @@ class TempController:
         loop = asyncio.get_event_loop()
 
         try:
-            self._serial_port_reader, self._serial_port_writer = loop.run_until_complete(
+            self.serial_port_reader, self.serial_port_writer = loop.run_until_complete(
                 self.open_serial_connection(self.config.serial_port))
 
             discard_first_record = loop.run_until_complete(self.read_line_from_serial())

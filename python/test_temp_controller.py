@@ -1,3 +1,4 @@
+import json
 import random
 from os.path import exists
 
@@ -38,8 +39,6 @@ def test_create_temperature_controller_object(temp_controller):
     temperature_database = temp_controller.temperature_database
     assert temperature_database.is_server_available()
 
-    assert False  # TODO finish this
-
 
 @pytest.mark.asyncio
 async def test_open_serial_connection(temp_controller, valid_config):
@@ -54,22 +53,46 @@ async def test_open_serial_connection_with_bad_port_url(temp_controller):
 
 @pytest.mark.asyncio
 async def test_write_async_serial_string(temp_controller):
-    target_temp = random.randrange(10, 30)
-    await temp_controller.write_float_to_serial_port(target_temp)
+    try:
+        temp_controller.serial_port_reader, temp_controller.serial_port_writer = await temp_controller.open_serial_connection(
+            temp_controller.config.serial_port)
+        target_temp = random.randrange(10, 30)
+        await temp_controller.write_float_to_serial_port(target_temp)
+    except Exception as err_info:
+        print(err_info)
+        assert False
 
 
 @pytest.mark.asyncio
 async def test_read_line_from_serial(temp_controller):
-    read_string = await temp_controller.read_line_from_serial()
-    assert read_string
+    try:
+        temp_controller.serial_port_reader, temp_controller.serial_port_writer = await temp_controller.open_serial_connection(
+            temp_controller.config.serial_port)
+
+        read_string = await temp_controller.read_line_from_serial()
+        assert read_string
+    except Exception as err_info:
+        print(err_info)
+        assert False
+
 
 @pytest.mark.asyncio
 async def test_serial_async_write_and_read(temp_controller):
+    try:
+        temp_controller.serial_port_reader, temp_controller.serial_port_writer = await temp_controller.open_serial_connection(
+            temp_controller.config.serial_port)
 
-    target_temp_written = random.randrange(10, 30)
-    await temp_controller.write_float_to_serial_port(target_temp_written)
-    read_string = await temp_controller.read_line_from_serial()
+        target_temp_written = random.randrange(10, 30)
+        await temp_controller.write_float_to_serial_port(target_temp_written)
+        read_string = await temp_controller.read_line_from_serial()
+        json_dict = json.loads(read_string)
 
-    target_temp_read = temp_controller.get_target_temp_from_serial_string(read_string)
+        json_dict = temp_controller.fix_json_values(json_dict)
 
-    assert target_temp_written == target_temp_read
+        target_temp_read = json_dict["target"]
+
+        assert target_temp_written == target_temp_read
+
+    except Exception as err_info:
+        print(err_info)
+        assert False
