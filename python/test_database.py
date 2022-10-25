@@ -6,7 +6,7 @@ from influxdb_client import Point, WritePrecision
 from influxdb_client.rest import ApiException
 
 from config import ControllerConfig
-from python.temp_controller import TempController
+from temp_controller import TempController
 from temperature_database import TemperatureDatabase
 
 
