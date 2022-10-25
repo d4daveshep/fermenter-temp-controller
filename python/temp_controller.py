@@ -33,7 +33,8 @@ class TempController:
         self.serial_port_writer.write(string_to_write.encode())
         await asyncio.sleep(0)
 
-    def fix_json_values(self, json_dict: dict) -> dict:
+    @classmethod
+    def fix_json_values(cls, json_dict: dict) -> dict:
 
         for key, value in json_dict.items():
             # fix and remove some specific fields
@@ -58,7 +59,7 @@ class TempController:
                 # store some key data fields
                 self.current_target_temp = data_dict["target"]
 
-                point = self.temperature_database.create_point_from_fermenter_json(json_dict)
+                point = self.temperature_database.create_point_from_fermenter_json_dict(json_dict)
                 self.temperature_database.write_temperature_record(point)
 
                 await asyncio.sleep(0)

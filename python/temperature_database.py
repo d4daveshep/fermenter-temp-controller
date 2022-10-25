@@ -26,7 +26,7 @@ class TemperatureDatabase:
             .time(timestamp, WritePrecision.MS)
         return point
 
-    def create_point_from_fermenter_json(self, json_dict: dict) -> Point:
+    def create_point_from_fermenter_json_dict(self, json_dict: dict) -> Point:
 
         # json_dict = json.loads(json_string)
         timestamp = datetime.utcnow()

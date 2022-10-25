@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 import pytest
@@ -5,6 +6,7 @@ from influxdb_client import Point, WritePrecision
 from influxdb_client.rest import ApiException
 
 from config import ControllerConfig
+from python.temp_controller import TempController
 from temperature_database import TemperatureDatabase
 
 
@@ -73,8 +75,8 @@ def test_write_record_to_database(temperature_database):
 
 def test_write_record_to_database_from_fermenter_json(temperature_database):
     real_json_string = """{
-                       "now": 8.0625,
-                       "avg": 8.178817,
+                       "instant": 8.0625,
+                       "average": 8.178817,
                        "min": 8.0625,
                        "max": 12.4375,
                        "target": 19,
@@ -86,7 +88,11 @@ def test_write_record_to_database_from_fermenter_json(temperature_database):
                        "json-size": 89
                        }"""
 
-    point = temperature_database.create_point_from_fermenter_json(real_json_string)
+    json_dict = json.loads(real_json_string)
+
+    json_dict = TempController.fix_json_values(json_dict)
+
+    point = temperature_database.create_point_from_fermenter_json_dict(json_dict)
 
     temperature_database.write_temperature_record(point)
 
