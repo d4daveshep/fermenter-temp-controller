@@ -14,23 +14,26 @@ class TempController:
         self.temperature_database = TemperatureDatabase(self.config)
         self.current_target_temp = 0.0
 
+        self._serial_port_writer = None
+        self._serial_port_reader = None
+
         # self.serial_port_reader, self.serial_port_writer = await self._open_serial_connectionpen_serial_connection(self.config.serial_port)
 
-    async def _open_serial_connection(self, port_url: str) -> (StreamReader, StreamWriter):
+    async def open_serial_connection(self, port_url: str) -> (StreamReader, StreamWriter):
         return await serial_asyncio.open_serial_connection(url=port_url, baudrate=115200)
 
-    async def _read_line_from_serial(self) -> str:
+    async def read_line_from_serial(self) -> str:
         line = await self._serial_port_reader.readline()
         print(f"read {line} from serial")
         return str(line, 'utf-8')
 
-    async def _write_float_to_serial_port(self, float_num: float) -> None:
+    async def write_float_to_serial_port(self, float_num: float) -> None:
         string_to_write = '<' + str(float_num) + '>'
         print(f"writing {string_to_write} to serial")
         self._serial_port_writer.write(string_to_write.encode())
         await asyncio.sleep(0)
 
-    def _fix_json_values(self, json_dict: dict) -> dict:
+    def fix_json_values(self, json_dict: dict) -> dict:
 
         for key, value in json_dict.items():
             # fix and remove some specific fields
@@ -42,15 +45,15 @@ class TempController:
 
         return json_dict
 
-    async def _read_temps_from_serial_and_write_to_database(self):
+    async def read_temps_from_serial_and_write_to_database(self):
 
         while True:
             try:
 
-                json_read = await self._read_line_from_serial()
+                json_read = await self.read_line_from_serial()
                 json_dict = json.loads(json_read)
 
-                data_dict = self._fix_json_values(json_dict)
+                data_dict = self.fix_json_values(json_dict)
 
                 # store some key data fields
                 self.current_target_temp = data_dict["target"]
@@ -63,19 +66,16 @@ class TempController:
             except Exception as err_info:
                 print(err_info)
 
-
-    async def _update_target_temp(self):
+    async def write_target_temp_to_serial_port_if_updated(self):
 
         while True:
             # check if target_temp needs updating
 
             if self.config.target_temp != self.current_target_temp:
                 print(f"target temp needs updating to {self.config.target_temp}")
-                await self._write_float_to_serial_port(self.config.target_temp)
+                await self.write_float_to_serial_port(self.config.target_temp)
 
             await asyncio.sleep(1)
-
-
 
     def run(self):
 
@@ -83,13 +83,13 @@ class TempController:
 
         try:
             self._serial_port_reader, self._serial_port_writer = loop.run_until_complete(
-                self._open_serial_connection(self.config.serial_port))
+                self.open_serial_connection(self.config.serial_port))
 
-            discard_first_record = loop.run_until_complete(self._read_line_from_serial())
+            discard_first_record = loop.run_until_complete(self.read_line_from_serial())
 
-            reader_task = loop.create_task(self._read_temps_from_serial_and_write_to_database())
+            reader_task = loop.create_task(self.read_temps_from_serial_and_write_to_database())
 
-            writer_task = loop.create_task(self._update_target_temp())
+            writer_task = loop.create_task(self.write_target_temp_to_serial_port_if_updated())
 
             loop.run_forever()
 
