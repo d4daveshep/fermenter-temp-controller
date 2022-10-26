@@ -10,16 +10,14 @@ from config import ControllerConfig
 
 class TemperatureDatabase:
     def __init__(self, config: ControllerConfig):
-        self.__database_client = None
-        self.__config = config
+        self.database_client = None
+        self.config = config
 
-    def get_config(self):
-        return self.__config
 
     def create_point(self, fermenter_temp: float, ambient_temp: float, target_temp: float,
                      timestamp: datetime) -> Point:
         point = Point("temperature") \
-            .tag("brew-id", self.__config.brew_id) \
+            .tag("brew-id", self.config.brew_id) \
             .field("fermenter", fermenter_temp) \
             .field("ambient", ambient_temp) \
             .field("target", target_temp) \
@@ -31,7 +29,7 @@ class TemperatureDatabase:
         # json_dict = json.loads(json_string)
         timestamp = datetime.utcnow()
 
-        point = Point("temperature").tag("brew-id", self.__config.brew_id)
+        point = Point("temperature").tag("brew-id", self.config.brew_id)
 
         for key, value in json_dict.items():
             point.field(key, value)
@@ -41,7 +39,7 @@ class TemperatureDatabase:
 
     def is_server_available(self):
         # run equivalant of curl -sL -I localhost:8086/ping?wait_for_leader=30s
-        url = self.__config.influxdb_url + "/ping"
+        url = self.config.influxdb_url + "/ping"
         params = {'wait_for_leader': "30s"}
 
         try:
@@ -53,13 +51,13 @@ class TemperatureDatabase:
             return False
 
     def get_database_client(self) -> InfluxDBClient:
-        if not self.__database_client:
-            self.__database_client = InfluxDBClient(url=self.__config.influxdb_url,
-                                                    token=self.__config.influxdb_token,
-                                                    org=self.__config.influxdb_org)
-            write_api = self.__database_client.write_api(write_options=SYNCHRONOUS)
-        return self.__database_client
+        if not self.database_client:
+            self.database_client = InfluxDBClient(url=self.config.influxdb_url,
+                                                  token=self.config.influxdb_token,
+                                                  org=self.config.influxdb_org)
+            write_api = self.database_client.write_api(write_options=SYNCHRONOUS)
+        return self.database_client
 
     def write_temperature_record(self, point: Point) -> object:
         write_api = self.get_database_client().write_api(write_options=SYNCHRONOUS)
-        return write_api.write(self.__config.influxdb_bucket, self.__config.influxdb_org, point)
+        return write_api.write(self.config.influxdb_bucket, self.config.influxdb_org, point)
