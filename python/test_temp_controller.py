@@ -116,8 +116,3 @@ async def test_serial_async_write_and_read(temp_controller):
     except Exception as err_info:
         print(err_info)
         assert False
-
-
-
-
-
