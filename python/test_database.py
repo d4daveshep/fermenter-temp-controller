@@ -90,7 +90,7 @@ def test_write_record_to_database_from_fermenter_json(temperature_database):
 
     json_dict = json.loads(real_json_string)
 
-    json_dict = TempController.fix_json_values(json_dict)
+    json_dict = TempController.convert_dict_int_values_to_float(json_dict)
 
     point = temperature_database.create_point_from_fermenter_json_dict(json_dict)
 

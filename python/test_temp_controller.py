@@ -39,22 +39,27 @@ def test_create_temperature_controller_object(temp_controller):
     temperature_database = temp_controller.temperature_database
     assert temperature_database.is_server_available()
 
-
-@pytest.mark.asyncio
-async def test_open_serial_connection(temp_controller, valid_config):
-    serial_port_reader, serial_port_writer = await temp_controller.open_serial_connection(valid_config.serial_port)
+    assert temp_controller.serial_port_writer is None
+    assert temp_controller.serial_port_reader is None
 
 
 @pytest.mark.asyncio
-async def test_open_serial_connection_with_bad_port_url(temp_controller):
+async def test_open_serial_connection(valid_config):
+    serial_port_reader, serial_port_writer = await TempController.open_serial_connection(valid_config.serial_port)
+    assert serial_port_writer
+    assert serial_port_reader
+
+
+@pytest.mark.asyncio
+async def test_open_serial_connection_with_bad_port_url():
     with pytest.raises(SerialException) as err_info:
-        serial_port_reader, serial_port_writer = await temp_controller.open_serial_connection("/dev/blah_blah")
+        serial_port_reader, serial_port_writer = await TempController.open_serial_connection("/dev/blah_blah")
 
 
 @pytest.mark.asyncio
-async def test_write_async_serial_string(temp_controller):
+async def test_write_float_to_serial_port(temp_controller):
     try:
-        temp_controller.serial_port_reader, temp_controller.serial_port_writer = await temp_controller.open_serial_connection(
+        temp_controller.serial_port_reader, temp_controller.serial_port_writer = await TempController.open_serial_connection(
             temp_controller.config.serial_port)
         target_temp = random.randrange(10, 30)
         await temp_controller.write_float_to_serial_port(target_temp)
@@ -66,7 +71,7 @@ async def test_write_async_serial_string(temp_controller):
 @pytest.mark.asyncio
 async def test_read_line_from_serial(temp_controller):
     try:
-        temp_controller.serial_port_reader, temp_controller.serial_port_writer = await temp_controller.open_serial_connection(
+        temp_controller.serial_port_reader, temp_controller.serial_port_writer = await TempController.open_serial_connection(
             temp_controller.config.serial_port)
 
         read_string = await temp_controller.read_line_from_serial()
@@ -76,18 +81,33 @@ async def test_read_line_from_serial(temp_controller):
         assert False
 
 
+def test_convert_dict_int_values_to_float():
+    int_dict = {"number_1": 1, "number_2": 2, "number_3": 3.33, "string_1": "abc", "bool_1": True}
+
+    float_dict = TempController.convert_dict_int_values_to_float(int_dict)
+
+    assert type(float_dict["number_1"]) == float
+    assert float_dict["number_1"] == 1.0
+    assert type(float_dict["number_2"]) == float
+    assert float_dict["number_2"] == 2.0
+    assert type(float_dict["number_3"]) == float
+    assert float_dict["number_3"] == 3.33
+
+
 @pytest.mark.asyncio
 async def test_serial_async_write_and_read(temp_controller):
     try:
-        temp_controller.serial_port_reader, temp_controller.serial_port_writer = await temp_controller.open_serial_connection(
+        temp_controller.serial_port_reader, temp_controller.serial_port_writer = await TempController.open_serial_connection(
             temp_controller.config.serial_port)
+
+        discard_first_line = await temp_controller.read_line_from_serial()
 
         target_temp_written = random.randrange(10, 30)
         await temp_controller.write_float_to_serial_port(target_temp_written)
         read_string = await temp_controller.read_line_from_serial()
         json_dict = json.loads(read_string)
 
-        json_dict = temp_controller.fix_json_values(json_dict)
+        json_dict = TempController.convert_dict_int_values_to_float(json_dict)
 
         target_temp_read = json_dict["target"]
 
@@ -96,3 +116,8 @@ async def test_serial_async_write_and_read(temp_controller):
     except Exception as err_info:
         print(err_info)
         assert False
+
+
+
+
+

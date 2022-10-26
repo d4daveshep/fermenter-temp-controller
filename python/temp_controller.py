@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from asyncio import StreamReader, StreamWriter
 
 import serial_asyncio
@@ -10,6 +11,7 @@ from temperature_database import TemperatureDatabase
 
 class TempController:
     def __init__(self, config_filename: str):
+        self.logger = None
         self.config = ControllerConfig(config_filename)
         self.temperature_database = TemperatureDatabase(self.config)
         self.current_target_temp = 0.0
@@ -17,24 +19,25 @@ class TempController:
         self.serial_port_writer = None
         self.serial_port_reader = None
 
-        # self.serial_port_reader, self.serial_port_writer = await self._open_serial_connectionpen_serial_connection(self.config.serial_port)
+        self.configure_logging()
 
-    async def open_serial_connection(self, port_url: str) -> (StreamReader, StreamWriter):
+    @classmethod
+    async def open_serial_connection(cls, port_url: str) -> (StreamReader, StreamWriter):
         return await serial_asyncio.open_serial_connection(url=port_url, baudrate=115200)
 
     async def read_line_from_serial(self) -> str:
         line = await self.serial_port_reader.readline()
-        print(f"read {line} from serial")
+        self.logger.debug(f"read {line} from serial")
         return str(line, 'utf-8')
 
     async def write_float_to_serial_port(self, float_num: float) -> None:
         string_to_write = '<' + str(float_num) + '>'
-        print(f"writing {string_to_write} to serial")
+        self.logger.info(f"writing {string_to_write} to serial")
         self.serial_port_writer.write(string_to_write.encode())
         await asyncio.sleep(0)
 
     @classmethod
-    def fix_json_values(cls, json_dict: dict) -> dict:
+    def convert_dict_int_values_to_float(cls, json_dict: dict) -> dict:
 
         for key, value in json_dict.items():
             # fix and remove some specific fields
@@ -54,7 +57,7 @@ class TempController:
                 json_read = await self.read_line_from_serial()
                 json_dict = json.loads(json_read)
 
-                data_dict = self.fix_json_values(json_dict)
+                data_dict = self.convert_dict_int_values_to_float(json_dict)
 
                 # store some key data fields
                 self.current_target_temp = data_dict["target"]
@@ -71,7 +74,6 @@ class TempController:
 
         while True:
             # check if target_temp needs updating
-
             if self.config.target_temp != self.current_target_temp:
                 print(f"target temp needs updating to {self.config.target_temp}")
                 await self.write_float_to_serial_port(self.config.target_temp)
@@ -100,6 +102,15 @@ class TempController:
         finally:
             print("Closing loop")
             loop.close()
+
+    def configure_logging(self):
+        self.logger = logging.getLogger("stdout")
+        self.logger.setLevel(logging.DEBUG)
+        console_handler = logging.StreamHandler()
+        # console_handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter("%(levelname)s: %(asctime)s: %(message)s")
+        console_handler.setFormatter(formatter)
+        self.logger.addHandler(console_handler)
 
 
 if __name__ == "__main__":
