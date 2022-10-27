@@ -28,7 +28,7 @@ class ControllerConfig:
 
         self.timezone = self._get_timezone_from_config(config_parser)
 
-        self.zmq_url = "tcp://localhost:5555"
+        self.zmq_url = "tcp://127.0.0.1:5555"
 
 
 
