@@ -1,9 +1,9 @@
 FROM python:alpine
 
 WORKDIR .
-COPY requirements.txt .
+COPY ./requirements.txt .
 RUN pip3 install --no-cache-dir --upgrade -r requirements.txt
 
 COPY fastapi_app.py ./
 
-CMD ["uvicorn", "fastapi_app.py:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "fastapi_app:app", "--host", "0.0.0.0", "--port", "8080"]
