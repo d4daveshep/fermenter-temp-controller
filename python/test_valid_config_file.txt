@@ -12,5 +12,8 @@ bucket = temp-test
 serial_port = /dev/ttyACM0
 baud_rate = 115200
 
+[zmq]
+url = tcp://127.0.0.1:5555
+
 [general]
 timezone = Pacific/Auckland

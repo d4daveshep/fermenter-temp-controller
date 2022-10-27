@@ -28,7 +28,7 @@ class ControllerConfig:
 
         self.timezone = self._get_timezone_from_config(config_parser)
 
-        self.zmq_url = "tcp://127.0.0.1:5555"
+        self.zmq_url = self._get_zmq_url_from_config(config_parser)
 
 
 
@@ -126,10 +126,26 @@ class ControllerConfig:
             serial_port = arduino_section["serial_port"]
             return serial_port
         except KeyError:
-            raise ConfigError("'arduino' section not found in config file")
+            raise ConfigError("'serial_port' not found in arduino section in config file")
 
     def _get_arduino_section_from_config(self, config_parser: configparser.ConfigParser) -> configparser.SectionProxy:
         try:
             return config_parser["arduino"]
         except KeyError:
             raise ConfigError("'arduino' section not found in config file")
+
+    def _get_zmq_url_from_config(self, config_parser: configparser.ConfigParser) -> str:
+        try:
+            zmq_section = self._get_zmq_section_from_config(config_parser)
+            zmq_url = zmq_section["url"]
+            # if not validators.url(zmq_url):
+            #     raise ConfigError(f"URL '{zmq_url}' is not valid URL in influxdb section in config file")
+            return zmq_url
+        except KeyError:
+            raise ConfigError("'url' not found in zmq section in config file")
+
+    def _get_zmq_section_from_config(self, config_parser: configparser.ConfigParser) -> configparser.SectionProxy:
+        try:
+            return config_parser["zmq"]
+        except KeyError:
+            raise ConfigError("'zmq' section not found in config file")

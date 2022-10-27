@@ -224,3 +224,39 @@ def test_config_fails_if_no_arduino_section():
         controller_config = config.ControllerConfig(filename)
 
     assert err_info.value.args[0] == "'arduino' section not found in config file"
+
+def test_get_zmq_url_from_config():
+    filename = "./test_valid_config_file.txt"
+    assert exists(filename)
+
+    controller_config = config.ControllerConfig(filename)
+    assert controller_config
+
+    assert controller_config.zmq_url == "tcp://127.0.0.1:5555"
+
+def test_config_fails_if_no_zmq_section():
+    filename = "./test_config_file_no_zmq_section.txt"
+    assert exists(filename)
+
+    with pytest.raises(ConfigError) as err_info:
+        controller_config = config.ControllerConfig(filename)
+
+    assert err_info.value.args[0] == "'zmq' section not found in config file"
+
+def test_config_fails_if_no_url_in_zmq_section():
+    filename = "./test_config_file_no_url_in_zmq_section.txt"
+    assert exists(filename)
+
+    with pytest.raises(ConfigError) as err_info:
+        controller_config = config.ControllerConfig(filename)
+
+    assert err_info.value.args[0] == "'url' not found in zmq section in config file"
+
+def test_config_fails_if_invalid_url_in_zmq_section():
+    filename = "./test_config_file_invalid_url_in_zmq_section.txt"
+    assert exists(filename)
+
+    with pytest.raises(ConfigError) as err_info:
+        controller_config = config.ControllerConfig(filename)
+
+    assert err_info.value.args[0] == "URL 'blah_blah' is not valid URL in zmq section in config file"
