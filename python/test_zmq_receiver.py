@@ -1,4 +1,5 @@
 # I don't know how to test this yet
+import asyncio
 from os.path import exists
 
 import pytest
@@ -18,6 +19,13 @@ class ZmqReceiver:
         self.pull.connect(self.config.zmq_url)
         self.poller = Poller()
         self.poller.register(self.pull, zmq.POLLIN)
+
+    async def wait_for_message(self):
+        # await asyncio.sleep(1)
+        events = await self.poller.poll()
+        if self.pull in dict(events):
+            message_received = await self.pull.recv_multipart()
+            return message_received
 
     # async def zmq_receiver(self, ctx: Context, url: str) -> None:
     #     """receive messages with polling"""
@@ -58,4 +66,7 @@ def receiver(valid_config_file):
 
 @pytest.mark.asyncio
 async def test_receive_json(receiver):
+
+    json_string = await receiver.wait_for_message()
+    print(f"received {json_string}")
     assert False

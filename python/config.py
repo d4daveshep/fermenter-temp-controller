@@ -28,6 +28,8 @@ class ControllerConfig:
 
         self.timezone = self._get_timezone_from_config(config_parser)
 
+        self.zmq_url = "tcp://localhost:5555"
+
 
 
     def _get_config(self, config_filename_location: str):
