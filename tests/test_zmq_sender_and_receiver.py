@@ -12,7 +12,7 @@ from zmq_sender import ZmqSender
 
 @pytest.fixture
 def valid_config_file():
-    filename = "./test_valid_config_file.txt"
+    filename = "test_valid_config_file.ini"
     assert exists(filename)
     return filename
 
@@ -26,7 +26,7 @@ def receiver(valid_config_file):
 
 
 def test_create_zmq_receiver(valid_config_file):
-    config = ControllerConfig("./test_valid_config_file.txt")
+    config = ControllerConfig("test_valid_config_file.ini")
     receiver = ZmqReceiver(config)
     assert receiver
 
@@ -43,7 +43,7 @@ def sender(valid_config_file):
 
 
 def test_create_zmq_sender(valid_config_file):
-    config = ControllerConfig("./test_valid_config_file.txt")
+    config = ControllerConfig("test_valid_config_file.ini")
     try:
         sender = ZmqSender(config)
         assert sender

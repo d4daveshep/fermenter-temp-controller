@@ -11,13 +11,13 @@ from temperature_database import TemperatureDatabase
 
 
 def test_database_server_is_available():
-    config = ControllerConfig("./test_valid_config_file.txt")
+    config = ControllerConfig("test_valid_config_file.ini")
     temperature_database = TemperatureDatabase(config)
     assert temperature_database.is_server_available()
 
 
 def test_database_server_is_unavailable():
-    config = ControllerConfig("./test_valid_config_file.txt")
+    config = ControllerConfig("test_valid_config_file.ini")
     config.influxdb_url = "http://localhost:9999"
 
     # with pytest.raises(requests.exceptions.ConnectionError) as err_info:
@@ -26,7 +26,7 @@ def test_database_server_is_unavailable():
 
 
 def test_open_database_connection():
-    config = ControllerConfig("./test_valid_config_file.txt")
+    config = ControllerConfig("test_valid_config_file.ini")
     temperature_database = TemperatureDatabase(config)
     assert temperature_database.is_server_available()
 
@@ -38,7 +38,7 @@ def test_open_database_connection():
 
 @pytest.fixture
 def temperature_database():
-    config = ControllerConfig("./test_valid_config_file.txt")
+    config = ControllerConfig("test_valid_config_file.ini")
     my_temperature_database = TemperatureDatabase(config)
     assert my_temperature_database.is_server_available()
     return my_temperature_database

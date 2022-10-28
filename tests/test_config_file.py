@@ -14,7 +14,7 @@ from config import ConfigError
 
 
 def test_get_target_temp_config_file():
-    filename = "./test_valid_config_file.txt"
+    filename = "test_valid_config_file.ini"
     assert exists(filename)
     controller_config = config.ControllerConfig(filename)
     assert controller_config
@@ -24,7 +24,7 @@ def test_get_target_temp_config_file():
     assert target_temp == 21.3
 
 def test_get_brew_id_from_config_file():
-    filename = "./test_valid_config_file.txt"
+    filename = "test_valid_config_file.ini"
     assert exists(filename)
     controller_config = config.ControllerConfig(filename)
     assert controller_config
@@ -46,7 +46,7 @@ def test_get_config_fails_if_file_not_exist():
 
 
 def test_get_config_fails_if_no_fermenter_section():
-    filename = "./test_config_file_no_fermenter_section.txt"
+    filename = "test_config_file_no_fermenter_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -57,7 +57,7 @@ def test_get_config_fails_if_no_fermenter_section():
 
 
 def test_get_config_fails_if_no_target_temp_in_fermenter_section():
-    filename = "./test_config_file_no_target_temp_in_fermenter_section.txt"
+    filename = "test_config_file_no_target_temp_in_fermenter_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -70,7 +70,7 @@ def test_get_config_fails_if_no_target_temp_in_fermenter_section():
 
 
 def test_get_config_fails_if_invalid_target_temp():
-    filename = "./test_config_file_invalid_target_temp.txt"
+    filename = "test_config_file_invalid_target_temp.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -83,7 +83,7 @@ def test_get_config_fails_if_invalid_target_temp():
 
 
 def test_get_config_file_fails_if_no_brew_id_in_fermenter_section():
-    filename = "./test_config_file_no_brew_id_in_fermenter_section.txt"
+    filename = "test_config_file_no_brew_id_in_fermenter_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -96,7 +96,7 @@ def test_get_config_file_fails_if_no_brew_id_in_fermenter_section():
 
 
 def test_get_timezone_from_config():
-    filename = "./test_valid_config_file.txt"
+    filename = "test_valid_config_file.ini"
     assert exists(filename)
 
     controller_config = config.ControllerConfig(filename)
@@ -107,7 +107,7 @@ def test_get_timezone_from_config():
 
 
 def test_config_fails_if_no_general_section():
-    filename = "./test_config_file_no_general_section.txt"
+    filename = "test_config_file_no_general_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -119,7 +119,7 @@ def test_config_fails_if_no_general_section():
     assert err_info.value.args[0] == "'general' section not found in config file"
 
 def test_config_defaults_to_auckland_if_no_timezone_in_general_section():
-    filename = "./test_config_file_no_timezone_in_general_section.txt"
+    filename = "test_config_file_no_timezone_in_general_section.ini"
     assert exists(filename)
 
     controller_config = config.ControllerConfig(filename)
@@ -129,7 +129,7 @@ def test_config_defaults_to_auckland_if_no_timezone_in_general_section():
     assert tz == pytz.timezone("Pacific/Auckland")
 
 def test_config_fails_if_invalid_timezone_general_section():
-    filename = "./test_config_file_invalid_timezone_in_general_section.txt"
+    filename = "test_config_file_invalid_timezone_in_general_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -141,7 +141,7 @@ def test_config_fails_if_invalid_timezone_general_section():
     assert err_info.value.args[0] == "invalid timezone 'blah_blah' in general section of config file"
 
 def test_get_influxdb_credentials_from_config():
-    filename = "./test_valid_config_file.txt"
+    filename = "test_valid_config_file.ini"
     assert exists(filename)
 
     controller_config = config.ControllerConfig(filename)
@@ -154,7 +154,7 @@ def test_get_influxdb_credentials_from_config():
 
 
 def test_config_fails_if_no_influxdb_section():
-    filename = "./test_config_file_no_influxdb_section.txt"
+    filename = "test_config_file_no_influxdb_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -163,7 +163,7 @@ def test_config_fails_if_no_influxdb_section():
     assert err_info.value.args[0] == "'influxdb' section not found in config file"
 
 def test_config_fails_if_no_auth_token_in_influxdb_section():
-    filename = "./test_config_file_no_auth_token_in_influxdb_section.txt"
+    filename = "test_config_file_no_auth_token_in_influxdb_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -172,7 +172,7 @@ def test_config_fails_if_no_auth_token_in_influxdb_section():
     assert err_info.value.args[0] == "'auth_token' not found in influxdb section in config file"
 
 def test_config_fails_if_no_url_in_influxdb_section():
-    filename = "./test_config_file_no_url_in_influxdb_section.txt"
+    filename = "test_config_file_no_url_in_influxdb_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -181,7 +181,7 @@ def test_config_fails_if_no_url_in_influxdb_section():
     assert err_info.value.args[0] == "'url' not found in influxdb section in config file"
 
 def test_config_fails_if_invalid_url_in_influxdb_section():
-    filename = "./test_config_file_invalid_url_in_influxdb_section.txt"
+    filename = "test_config_file_invalid_url_in_influxdb_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -190,7 +190,7 @@ def test_config_fails_if_invalid_url_in_influxdb_section():
     assert err_info.value.args[0] == "URL 'blah_blah' is not valid URL in influxdb section in config file"
 
 def test_config_fails_if_no_org_in_influxdb_section():
-    filename = "./test_config_file_no_org_in_influxdb_section.txt"
+    filename = "test_config_file_no_org_in_influxdb_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -199,7 +199,7 @@ def test_config_fails_if_no_org_in_influxdb_section():
     assert err_info.value.args[0] == "'org' not found in influxdb section in config file"
     
 def test_config_fails_if_no_bucket_in_influxdb_section():
-    filename = "./test_config_file_no_bucket_in_influxdb_section.txt"
+    filename = "test_config_file_no_bucket_in_influxdb_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -208,7 +208,7 @@ def test_config_fails_if_no_bucket_in_influxdb_section():
     assert err_info.value.args[0] == "'bucket' not found in influxdb section in config file"
     
 def test_get_serial_port_from_config():
-    filename = "./test_valid_config_file.txt"
+    filename = "test_valid_config_file.ini"
     assert exists(filename)
 
     controller_config = config.ControllerConfig(filename)
@@ -217,7 +217,7 @@ def test_get_serial_port_from_config():
     assert controller_config.serial_port == "/dev/ttyACM0"
 
 def test_config_fails_if_no_arduino_section():
-    filename = "./test_config_file_no_arduino_section.txt"
+    filename = "test_config_file_no_arduino_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -226,7 +226,7 @@ def test_config_fails_if_no_arduino_section():
     assert err_info.value.args[0] == "'arduino' section not found in config file"
 
 def test_get_zmq_url_from_config():
-    filename = "./test_valid_config_file.txt"
+    filename = "test_valid_config_file.ini"
     assert exists(filename)
 
     controller_config = config.ControllerConfig(filename)
@@ -235,7 +235,7 @@ def test_get_zmq_url_from_config():
     assert controller_config.zmq_url == "tcp://127.0.0.1:5555"
 
 def test_config_fails_if_no_zmq_section():
-    filename = "./test_config_file_no_zmq_section.txt"
+    filename = "test_config_file_no_zmq_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -244,7 +244,7 @@ def test_config_fails_if_no_zmq_section():
     assert err_info.value.args[0] == "'zmq' section not found in config file"
 
 def test_config_fails_if_no_url_in_zmq_section():
-    filename = "./test_config_file_no_url_in_zmq_section.txt"
+    filename = "test_config_file_no_url_in_zmq_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:
@@ -253,7 +253,7 @@ def test_config_fails_if_no_url_in_zmq_section():
     assert err_info.value.args[0] == "'url' not found in zmq section in config file"
 
 def test_config_fails_if_invalid_url_in_zmq_section():
-    filename = "./test_config_file_invalid_url_in_zmq_section.txt"
+    filename = "test_config_file_invalid_url_in_zmq_section.ini"
     assert exists(filename)
 
     with pytest.raises(ConfigError) as err_info:

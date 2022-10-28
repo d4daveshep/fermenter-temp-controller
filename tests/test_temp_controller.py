@@ -11,7 +11,7 @@ from temp_controller import TempController
 
 @pytest.fixture
 def valid_config_file():
-    filename = "./test_valid_config_file.txt"
+    filename = "test_valid_config_file.ini"
     assert exists(filename)
 
     return filename
