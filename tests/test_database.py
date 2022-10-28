@@ -5,9 +5,9 @@ import pytest
 from influxdb_client import Point, WritePrecision
 from influxdb_client.rest import ApiException
 
-from config import ControllerConfig
-from temp_controller import TempController
-from temperature_database import TemperatureDatabase
+from controller.config import ControllerConfig
+from controller.temp_controller import TempController
+from controller.temperature_database import TemperatureDatabase
 
 
 def test_database_server_is_available():

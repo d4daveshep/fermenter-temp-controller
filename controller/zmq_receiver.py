@@ -1,7 +1,7 @@
 import zmq as zmq
 from zmq.asyncio import Context, Poller
 
-from config import ControllerConfig
+from controller.config import ControllerConfig
 
 
 class ZmqReceiver:

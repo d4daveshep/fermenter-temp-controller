@@ -1,19 +1,20 @@
 # from mock_serial import MockSerial
+import logging
+import sys
+
 from serial import Serial
+
 # import pytest
 
-import logging, sys
-
 logging.basicConfig(
-  stream=sys.stdout,
-  level=logging.DEBUG,
-  format="%(levelname)s - %(message)s"
+    stream=sys.stdout,
+    level=logging.DEBUG,
+    format="%(levelname)s - %(message)s"
 )
 
+
 def test_example(mock_serial):
-
     serial = Serial(mock_serial.port)  # open a mocked serial port
-
 
     # create a stub ojbect that we can use multiple timees,  the
     stub = mock_serial.stub(
@@ -29,4 +30,3 @@ def test_example(mock_serial):
     assert stub.calls == 2
 
     serial.close()
-

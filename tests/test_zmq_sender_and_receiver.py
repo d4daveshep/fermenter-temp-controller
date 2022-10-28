@@ -5,9 +5,9 @@ from os.path import exists
 
 import pytest
 
-from config import ControllerConfig
-from zmq_receiver import ZmqReceiver
-from zmq_sender import ZmqSender
+from controller.config import ControllerConfig
+from controller.zmq_receiver import ZmqReceiver
+from controller.zmq_sender import ZmqSender
 
 
 @pytest.fixture

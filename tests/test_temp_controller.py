@@ -5,8 +5,8 @@ from os.path import exists
 import pytest
 from serial.serialutil import SerialException
 
-import config
-from temp_controller import TempController
+from controller.config import ControllerConfig
+from controller.temp_controller import TempController
 
 
 @pytest.fixture
@@ -19,7 +19,7 @@ def valid_config_file():
 
 @pytest.fixture
 def valid_config(valid_config_file):
-    controller_config = config.ControllerConfig(valid_config_file)
+    controller_config = ControllerConfig(valid_config_file)
     assert controller_config
 
     return controller_config

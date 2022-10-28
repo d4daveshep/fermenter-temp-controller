@@ -1,6 +1,7 @@
-from config import ControllerConfig
 import zmq as zmq
 from zmq.asyncio import Context
+
+from controller.config import ControllerConfig
 
 
 class ZmqSender:
@@ -15,4 +16,3 @@ class ZmqSender:
 
     async def send_string(self, string_to_send: str):
         await self.push.send_multipart([string_to_send.encode("utf-8")])
-

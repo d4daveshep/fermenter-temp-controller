@@ -1,18 +1,16 @@
-import json
 from datetime import datetime
 
 import requests
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 
-from config import ControllerConfig
+from controller.config import ControllerConfig
 
 
 class TemperatureDatabase:
     def __init__(self, config: ControllerConfig):
         self.database_client = None
         self.config = config
-
 
     def create_point(self, fermenter_temp: float, ambient_temp: float, target_temp: float,
                      timestamp: datetime) -> Point:

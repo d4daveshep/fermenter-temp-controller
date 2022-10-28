@@ -5,8 +5,8 @@ from asyncio import StreamReader, StreamWriter
 
 import serial_asyncio
 
-from config import ControllerConfig
-from temperature_database import TemperatureDatabase
+from controller.config import ControllerConfig
+from controller.temperature_database import TemperatureDatabase
 
 
 class TempController:
