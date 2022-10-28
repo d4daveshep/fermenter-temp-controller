@@ -7,6 +7,7 @@ import serial_asyncio
 
 from controller.config import ControllerConfig
 from controller.temperature_database import TemperatureDatabase
+from controller.zmq_receiver import ZmqReceiver
 
 
 class TempController:
@@ -14,6 +15,7 @@ class TempController:
         self.logger = None
         self.config = ControllerConfig(config_filename)
         self.temperature_database = TemperatureDatabase(self.config)
+        self.zmq_receiver = ZmqReceiver(self.config)
         self.current_target_temp = 0.0
 
         self.serial_port_writer = None
@@ -57,10 +59,16 @@ class TempController:
                 json_read = await self.read_line_from_serial()
                 json_dict = json.loads(json_read)
 
-                data_dict = self.convert_dict_int_values_to_float(json_dict)
+                data_dict = TempController.convert_dict_int_values_to_float(json_dict)
 
-                # store some key data fields
+                # store some key data fields to display on web
                 self.current_target_temp = data_dict["target"]
+                self.fermenter_temp_now = data_dict["average"]
+                self.fermenter_temp_min = data_dict["min"]
+                self.fermenter_temp_max = data_dict["max"]
+                self.ambient_temp_now = data_dict["ambient"]
+                self.current_action = data_dict["action"]
+                self.action_reason_code = data_dict["reason-code"]
 
                 point = self.temperature_database.create_point_from_fermenter_json_dict(json_dict)
                 self.temperature_database.write_temperature_record(point)
@@ -80,6 +88,28 @@ class TempController:
 
             await asyncio.sleep(1)
 
+    async def receive_and_process_zmq_message(self):
+
+        while True:
+            message_received = await self.zmq_receiver.wait_for_a_message()
+            string_received = (message_received[0]).decode("utf-8")
+            self.logger.debug(f"received zmq message: {string_received}")
+
+            self.process_zmq_message(self, string_received)
+
+    def process_zmq_message(self, json_string: str) -> None:
+
+        json_dict = json.loads(json_string)
+
+        if "new-target-temp" in json_dict.keys():
+            self.config.target_temp = float(json_dict["new-target-temp"])
+            self.logger.info(f"set new target temp to: {self.config.target_temp:.1f}")
+
+        if "new-brew-id" in json_dict.keys():
+            self.config.brew_id = json.dict["new-brew-id"]
+            self.logger.info(f"set new brew-id to: {self.config.brew_id}")
+
+
     def run(self):
 
         loop = asyncio.get_event_loop()
@@ -93,6 +123,8 @@ class TempController:
             reader_task = loop.create_task(self.read_temps_from_serial_and_write_to_database())
 
             writer_task = loop.create_task(self.write_target_temp_to_serial_port_if_updated())
+
+            receiver_task = loop.create_task(self.receive_and_process_zmq_message())
 
             loop.run_forever()
 
@@ -111,6 +143,7 @@ class TempController:
         formatter = logging.Formatter("%(levelname)s: %(asctime)s: %(message)s")
         console_handler.setFormatter(formatter)
         self.logger.addHandler(console_handler)
+
 
 
 if __name__ == "__main__":

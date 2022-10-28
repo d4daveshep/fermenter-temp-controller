@@ -22,6 +22,8 @@ class ZmqReceiver:
             message_received = await self.pull.recv_multipart()
             return message_received
 
+
+
     # async def zmq_receiver(self, ctx: Context, url: str) -> None:
     #     """receive messages with polling"""
     #     while True:

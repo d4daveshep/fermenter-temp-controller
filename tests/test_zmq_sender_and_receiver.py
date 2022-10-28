@@ -56,7 +56,7 @@ async def test_send_and_receive_json(valid_config_file, receiver):
     config = ControllerConfig(valid_config_file)
 
     target_temp = random.randrange(10, 30)
-    string_to_send = json.dumps({"target-temp": target_temp})
+    string_to_send = json.dumps({"new-target-temp": target_temp})
     try:
         sender = ZmqSender(config)
         await sender.send_string(string_to_send)
@@ -67,3 +67,5 @@ async def test_send_and_receive_json(valid_config_file, receiver):
 
     except Exception as err_info:
         assert False
+
+
