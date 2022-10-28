@@ -68,4 +68,3 @@ async def test_send_and_receive_json(valid_config_file, receiver):
     except Exception as err_info:
         assert False
 
-
