@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 from os.path import exists
 
@@ -119,4 +120,16 @@ async def test_serial_async_write_and_read(temp_controller):
 
 def test_process_zmq_message(temp_controller):
 
-    assert False
+    temp_controller.logger.setLevel(logging.DEBUG)
+
+    target_temp = 12.3
+    brew_id = "new_brew_id"
+
+    message_dict = {"new-target-temp":target_temp, "new-brew-id": brew_id}
+    json_string = json.dumps(message_dict)
+
+    temp_controller.process_zmq_message(json_string)
+
+    assert temp_controller.config.target_temp == target_temp
+    assert temp_controller.config.brew_id == brew_id
+

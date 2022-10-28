@@ -106,7 +106,7 @@ class TempController:
             self.logger.info(f"set new target temp to: {self.config.target_temp:.1f}")
 
         if "new-brew-id" in json_dict.keys():
-            self.config.brew_id = json.dict["new-brew-id"]
+            self.config.brew_id = json_dict["new-brew-id"]
             self.logger.info(f"set new brew-id to: {self.config.brew_id}")
 
 
