@@ -3,8 +3,8 @@ services:
   influxdb:
     image: influxdb:alpine
     volumes:
-      - $PWD/config:/etc/influxdb2:rw
-      - $PWD/data:/var/lib/influxdb2:rw
+      - $PWD/influxdb/config:/etc/influxdb2:rw
+      - $PWD/influxdb/data:/var/lib/influxdb2:rw
     ports:
       - "8086:8086"
 
