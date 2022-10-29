@@ -1,6 +1,7 @@
 import json
 import logging
 import random
+from json import JSONDecodeError
 from os.path import exists
 
 import pytest
@@ -118,14 +119,14 @@ async def test_serial_async_write_and_read(temp_controller):
         print(err_info)
         assert False
 
-def test_process_zmq_message(temp_controller):
 
+def test_process_zmq_message(temp_controller):
     temp_controller.logger.setLevel(logging.DEBUG)
 
     target_temp = 12.3
     brew_id = "new_brew_id"
 
-    message_dict = {"new-target-temp":target_temp, "new-brew-id": brew_id}
+    message_dict = {"new-target-temp": target_temp, "new-brew-id": brew_id}
     json_string = json.dumps(message_dict)
 
     temp_controller.process_zmq_message(json_string)
@@ -133,3 +134,37 @@ def test_process_zmq_message(temp_controller):
     assert temp_controller.config.target_temp == target_temp
     assert temp_controller.config.brew_id == brew_id
 
+
+def test_process_empty_zmq_message(temp_controller):
+    temp_controller.logger.setLevel(logging.DEBUG)
+
+    with pytest.raises(JSONDecodeError) as err_info:
+        temp_controller.process_zmq_message("")
+
+    temp_controller.logger.debug(err_info)
+
+
+def test_process_invalid_target_temp_in_zmq_message(temp_controller):
+    temp_controller.logger.setLevel(logging.DEBUG)
+
+    target_temp = "not a number"
+
+    message_dict = {"new-target-temp": target_temp}
+    json_string = json.dumps(message_dict)
+
+    with pytest.raises(ValueError) as err_info:
+        temp_controller.process_zmq_message(json_string)
+
+    temp_controller.logger.debug(err_info)
+
+def test_process_invalid_target_temp_in_zmq_message(temp_controller):
+    temp_controller.logger.setLevel(logging.DEBUG)
+
+    brew_id = 12345.67890
+    message_dict = {"new-brew-id": brew_id}
+    json_string = json.dumps(message_dict)
+
+    with pytest.raises(ValueError) as err_info:
+        temp_controller.process_zmq_message(json_string)
+
+    temp_controller.logger.debug(err_info)

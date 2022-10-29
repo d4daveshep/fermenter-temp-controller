@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 from asyncio import StreamReader, StreamWriter
+from json import JSONDecodeError
 
 import serial_asyncio
 
@@ -99,15 +100,27 @@ class TempController:
 
     def process_zmq_message(self, json_string: str) -> None:
 
-        json_dict = json.loads(json_string)
+        try:
+            json_dict = json.loads(json_string)
 
-        if "new-target-temp" in json_dict.keys():
-            self.config.target_temp = float(json_dict["new-target-temp"])
-            self.logger.info(f"set new target temp to: {self.config.target_temp:.1f}")
+            if "new-target-temp" in json_dict.keys():
+                self.config.target_temp = float(json_dict["new-target-temp"])
+                self.logger.info(f"set new target temp to: {self.config.target_temp:.1f}")
 
-        if "new-brew-id" in json_dict.keys():
-            self.config.brew_id = json_dict["new-brew-id"]
-            self.logger.info(f"set new brew-id to: {self.config.brew_id}")
+            if "new-brew-id" in json_dict.keys():
+                brew_id = json_dict["new-brew-id"]
+                if type(brew_id) == str:
+                    self.config.brew_id = json_dict["new-brew-id"]
+                    self.logger.info(f"set new brew-id to: {self.config.brew_id}")
+                else:
+                    raise ValueError(f"new-brew-id '{brew_id}' is not a string")
+
+        except JSONDecodeError as err_info:
+            self.logger.error("error processing zmq message: " + str(err_info))
+            raise
+        except ValueError as err_info:
+            self.logger.error("error: processing zmq message: " + str(err_info))
+            raise
 
 
     def run(self):
