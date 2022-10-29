@@ -1,0 +1,11 @@
+FROM python:alpine
+
+WORKDIR .
+COPY controller/requirements.txt .
+RUN pip3 install --no-cache-dir --upgrade -r requirements.txt
+
+COPY controller/*.py ./controller/
+COPY controller/config-test.ini ./controller/
+
+CMD ["python3", "controller/temp_controller.py"]
+

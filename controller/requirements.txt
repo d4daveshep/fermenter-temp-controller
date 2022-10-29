@@ -1,9 +1,6 @@
-pytest
-pytest-asyncio
 pytz
 pyserial
 pyserial_asyncio
-#mock-serial
 requests
 validators
 influxdb_client

@@ -165,7 +165,7 @@ class TempController:
 
 
 if __name__ == "__main__":
-    filename = "config-test.ini"
+    filename = "controller/config-test.ini"
 
     controller = TempController(filename)
 

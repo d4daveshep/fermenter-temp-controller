@@ -2,7 +2,7 @@
 
 IMAGE_NAME="web_apis"
 
-# Docker build
+# Docker image build
 docker build -f ./Dockerfile.web_apis -t ${IMAGE_NAME} .
 
 # Docker run

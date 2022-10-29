@@ -14,8 +14,6 @@ def random_temp(current_temp):
 
 # You can generate an API token from the "API Tokens Tab" in the UI
 token = "my-super-secret-auth-token"
-# org = "my-org"
-# bucket = "my-bucket"
 org = "daveshep.net"
 bucket = "temp-test"
 
