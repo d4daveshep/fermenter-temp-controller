@@ -83,11 +83,14 @@ class TempController:
 
         while True:
             # check if target_temp needs updating
+            # self.logger.debug("checking if target temp needs updating")
             if self.config.target_temp != self.current_target_temp:
-                print(f"target temp needs updating to {self.config.target_temp}")
+                self.logger.info(f"target temp needs updating to {self.config.target_temp}")
                 await self.write_float_to_serial_port(self.config.target_temp)
-
-            await asyncio.sleep(1)
+            else:
+                # self.logger.debug("target temp did NOT need updating")
+                pass
+            await asyncio.sleep(5)
 
     async def receive_and_process_zmq_message(self):
 
@@ -96,7 +99,9 @@ class TempController:
             string_received = (message_received[0]).decode("utf-8")
             self.logger.debug(f"received zmq message: {string_received}")
 
-            self.process_zmq_message(self, string_received)
+            self.process_zmq_message(string_received)
+
+            await asyncio.sleep(0)
 
     def process_zmq_message(self, json_string: str) -> None:
 
