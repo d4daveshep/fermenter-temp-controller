@@ -6,10 +6,12 @@
 
 //#define _DO_UNIT_TESTING
 
-//#ifdef _DO_UNIT_TESTING
-//#warning "Doing Unit Testing Only"
-//#include <AUnit.h>
-//#else
+#ifdef _DO_UNIT_TESTING
+#warning "Doing Unit Testing Only"
+#include <AUnit.h>
+#include <ArduinoJson.h>
+#include "Decision.h"
+#else
 
 #include <LiquidCrystal.h>
 #include <OneWire.h>
@@ -51,7 +53,7 @@ Action currentAction = REST;
 StaticJsonDocument<150> jsonDoc;
 SmartDelay smartDelay(1000);
 
-//#endif
+#endif
 
 /*
 Setup runs once
@@ -60,9 +62,9 @@ void setup(void) {
 	delay(1000); // wait for stability on some boards to prevent garbage Serial
 	Serial.begin(115200); // ESP8266 default of 74880 not supported on Linux
 	
-//#ifdef _DO_UNIT_TESTING
-//	Serial.println();
-//#else
+#ifdef _DO_UNIT_TESTING
+	Serial.println();
+#else
 	// TODO try higher number 115200??
 	Serial.begin(115200);
 
@@ -85,7 +87,7 @@ void setup(void) {
 	lastJsonPrintTimestamp = millis(); // initialise the Json printing timer
 
 	delay(1000); // wait 1 sec before proceeding
-//#endif
+#endif
 }
 
 /*
@@ -93,9 +95,9 @@ void setup(void) {
 */
 void loop(void) {
 
-//#ifdef _DO_UNIT_TESTING
-//	aunit::TestRunner::run();
-//#else
+#ifdef _DO_UNIT_TESTING
+	aunit::TestRunner::run();
+#else
 	
 	// start the 1 sec smart delay timer
 	smartDelay.start();
@@ -130,31 +132,31 @@ void loop(void) {
 	// complete the 1 sec smart delay
 	smartDelay.doDelay();
 	
-//#endif
+#endif
 
 }
 
-//#ifdef _DO_UNIT_TESTING
-//test(WriteJsonString) {
-//	StaticJsonDocument<100> jsonDoc;
-//
-//	jsonDoc["now"] = 12.34;
-//	jsonDoc["avg"] = 23.45;
-//	jsonDoc["override"] = true;
-//	Decision decision;
-//	decision.setNextAction(REST);
-//	decision.setReasonCode("RC3.1");
-//	jsonDoc["action"] = decision.getActionText();
-//	jsonDoc["rest"] = true;
-//	jsonDoc["reason-code"] = decision.getReasonCode();
-//
-//	Serial.println(jsonDoc.memoryUsage());
-//
-//	String output = "";
-//	serializeJson(jsonDoc, output);
-//	assertEqual("{\"now\":12.34,\"avg\":23.45,\"override\":true,\"action\":\"Rest\",\"rest\":true,\"reason-code\":\"RC3.1\"}",output);
-//}
-//#else
+#ifdef _DO_UNIT_TESTING
+test(WriteJsonString) {
+	StaticJsonDocument<100> jsonDoc;
+
+	jsonDoc["now"] = 12.34;
+	jsonDoc["avg"] = 23.45;
+	jsonDoc["override"] = true;
+	Decision decision;
+	decision.setNextAction(REST);
+	decision.setReasonCode("RC3.1");
+	jsonDoc["action"] = decision.getActionText();
+	jsonDoc["rest"] = true;
+	jsonDoc["reason-code"] = decision.getReasonCode();
+
+	Serial.println(jsonDoc.memoryUsage());
+
+	String output = "";
+	serializeJson(jsonDoc, output);
+	assertEqual("{\"now\":12.34,\"avg\":23.45,\"override\":true,\"action\":\"Rest\",\"rest\":true,\"reason-code\":\"RC3.1\"}",output);
+}
+#else
 
 void printJsonEvery10Secs() {
 	unsigned long now = millis();
@@ -312,4 +314,4 @@ void updateLCD() {
 
 }
 
-//#endif
+#endif

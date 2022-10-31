@@ -1,5 +1,5 @@
 #include <Arduino.h>
-//#include <AUnit.h>
+#include <AUnit.h>
 
 #include "ControllerActionRules.h"
 #include "Decision.h"
