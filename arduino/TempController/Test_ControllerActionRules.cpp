@@ -334,11 +334,11 @@ test(WhatToDoNext) {
 	assertEqual(REST, decision.getNextAction());
 
 	controller.resetDecision();
-	// Test 9.2 we are cooling and ambient is low but temp is above target range so REST (and use natural cooling
+	// Test 9.2 we are cooling and ambient is low but temp is above target range so keep COOLing 
 	currentAction = COOL;
 	decision = controller.makeActionDecision(currentAction, ambientLow, aboveTargetRange);
 	assertEqual("RC9.2", decision.getReasonCode());
-	assertEqual(REST, decision.getNextAction());
+	assertEqual(COOL, decision.getNextAction());
 
 	controller.resetDecision();
 	// Test 9.3 we are heating and ambient is low but temp is above target range so REST (and use natural cooling)
