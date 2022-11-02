@@ -80,7 +80,7 @@ def main(config_file):
     while True:
         logging.debug("--------------------")
         line = serial_port.readline()  # read serial line as bytes
-        # logging.debug(line.decode("utf-8"))
+        logging.debug(line.decode("utf-8"))
 
         try:
             # convert serial line to string and load to JSON sequence
@@ -199,8 +199,8 @@ if __name__ == '__main__':
     dirname, filename = os.path.split(os.path.abspath(__file__))  # get the directory for the log file
     logging.basicConfig(
         filename=dirname + "/tempcontroller.log",
-        level=logging.INFO,
-#        level=logging.DEBUG,
+        # level=logging.INFO,
+       level=logging.DEBUG,
         format="%(levelname)s: %(asctime)s: %(message)s")
 
     logging.info("")
