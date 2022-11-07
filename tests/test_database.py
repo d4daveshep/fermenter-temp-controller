@@ -96,6 +96,8 @@ def test_get_last_database_record(temperature_database):
     assert results_dict["fermenter"] == 21.3
     assert results_dict["target"] == 20.0
     assert results_dict["ambient"] == 15.6
+    assert results_dict["time"].hour == timestamp.hour
+    assert results_dict["time"].minute == timestamp.minute
     assert results_dict["time"].second == timestamp.second
 
     pass
