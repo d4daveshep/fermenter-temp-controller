@@ -59,3 +59,17 @@ class TemperatureDatabase:
     def write_temperature_record(self, point: Point) -> object:
         write_api = self.get_database_client().write_api(write_options=SYNCHRONOUS)
         return write_api.write(self.config.influxdb_bucket, self.config.influxdb_org, point)
+
+    def get_last_record(self) -> dict:
+        query_string = 'from(bucket: "temp-test") |> range(start: -1h) |> last()'
+        client = self.get_database_client()
+        query_api = client.query_api()
+
+        results = {}
+        tablelist = query_api.query(query_string)
+
+        for table in tablelist:
+            results[table.records[0].values["_field"]] = table.records[0].values["_value"]
+            results["time"] = table.records[0].values["_time"]
+
+        return results
