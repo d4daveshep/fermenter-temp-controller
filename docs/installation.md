@@ -7,7 +7,7 @@
 * apply updates (sudo apt-get update, upgrade)
 * install tools like aptitude, git
 * install Arduino IDE v1.8+ from web e.g.
-  * https://downloads.arduino.cc/arduino-1.8.19-linuxaarch64.tar.xzls
+  * https://downloads.arduino.cc/arduino-1.8.19-linuxaarch64.tar.xz
 * install required Arduino libraries
   * OneWire, DallasTemperature, AUnit, ArduinoJSON (not beta)
   * these need unzipping under `~/Arduino/libraries`
