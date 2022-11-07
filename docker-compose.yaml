@@ -1,0 +1,37 @@
+version: "3.4"
+services:
+  influxdb:
+    image: influxdb:alpine
+    volumes:
+      - $PWD/influxdb/config:/etc/influxdb2:rw
+      - $PWD/influxdb/data:/var/lib/influxdb2:rw
+    ports:
+      - "8086:8086"
+
+  controller:
+    environment:
+      DAVE: "me"
+      PYTHONPATH: "./"
+    build:
+      context: .
+      dockerfile: Dockerfile.controller
+    command: python3 controller/temp_controller.py
+#    command: echo $DAVE
+    depends_on:
+      - influxdb
+    network_mode: "host"
+    restart: on-failure
+    privileged: true
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web_apis
+    command: uvicorn fastapi_app:app --host 0.0.0.0 --port 8080
+    depends_on:
+      - controller
+    ports:
+      - "8080:8080"
+    network_mode: "host"
+
+

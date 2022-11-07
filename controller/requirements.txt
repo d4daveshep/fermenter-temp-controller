@@ -1,0 +1,7 @@
+pytz
+pyserial
+pyserial_asyncio
+requests
+validators
+influxdb_client
+pyzmq

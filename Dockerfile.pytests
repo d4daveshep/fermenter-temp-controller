@@ -1,0 +1,14 @@
+FROM python:alpine
+
+WORKDIR .
+
+COPY tests/requirements.txt .
+RUN pip3 install --no-cache-dir --upgrade -r requirements.txt
+
+COPY controller/*.py ./controller/
+COPY tests/*.py ./tests/
+COPY tests/test*.ini ./
+
+
+#CMD ["python3", "-m", "pytest", "-v", "test_config_file.py", "test_database.py", "test_temp_controller.py", "test_zmq_sender_and_receiver.py"]
+CMD ["python3", "-m", "pytest", "-v", "tests/test_config_file.py"]

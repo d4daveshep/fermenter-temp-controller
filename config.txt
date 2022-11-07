@@ -1,3 +1,0 @@
-[fermenter]
-BrewID = 64-Kolsch-v12
-TargetTemp = 17.0
