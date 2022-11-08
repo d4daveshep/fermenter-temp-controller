@@ -4,3 +4,4 @@ pytz
 validators
 requests
 influxdb_client
+jinja2

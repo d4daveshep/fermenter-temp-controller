@@ -21,6 +21,8 @@ async def read_root(request: Request):
 
     # return results_dict
     results_dict["request"] = request
+    # results_dict["test"] = "test"
+    results_dict["reason"] = results_dict["reason-code"]
     return templates.TemplateResponse("root.html", results_dict)
 
 @app.get("/items/{item_id}")
