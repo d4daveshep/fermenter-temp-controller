@@ -21,9 +21,9 @@ async def read_root(request: Request):
 
     # return results_dict
     results_dict["request"] = request
-    # results_dict["test"] = "test"
-    results_dict["reason"] = results_dict["reason-code"]
+    results_dict["reason"] = results_dict["reason-code"]  # adjust key name as hyphen doesn't work in template
     return templates.TemplateResponse("root.html", results_dict)
+
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: Union[str, None] = None):
