@@ -16,14 +16,14 @@ def temperature_database():
     assert my_temperature_database.is_server_available()
     return my_temperature_database
 
-def test_read_main(temperature_database):
+def test_read_debug(temperature_database):
 
     timestamp = datetime.utcnow()
     point = temperature_database.create_point(fermenter_temp=21.3, ambient_temp=15.6, target_temp=20.0,
                                               timestamp=timestamp)
     temperature_database.write_temperature_record(point)
 
-    response = client.get("/")
+    response = client.get("/debug")
     assert response.status_code == 200
     assert response.json()["fermenter"] == 21.3
     assert response.json()["ambient"] == 15.6

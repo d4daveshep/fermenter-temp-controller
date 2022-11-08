@@ -27,6 +27,11 @@ async def read_root(request: Request):
 
     return templates.TemplateResponse("root.html", results_dict)
 
+@app.get("/debug")
+async def read_root():
+    results_dict = temperature_database.get_last_record()
+    return results_dict
+
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: Union[str, None] = None):
