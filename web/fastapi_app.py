@@ -19,9 +19,12 @@ templates = Jinja2Templates(directory="templates")
 async def read_root(request: Request):
     results_dict = temperature_database.get_last_record()
 
-    # return results_dict
     results_dict["request"] = request
-    results_dict["reason"] = results_dict["reason-code"]  # adjust key name as hyphen doesn't work in template
+
+    # adjust key name as hyphen doesn't work in template
+    results_dict["reason"] = results_dict["reason-code"]
+    results_dict["brew"] = results_dict["brew-id"]
+
     return templates.TemplateResponse("root.html", results_dict)
 
 
