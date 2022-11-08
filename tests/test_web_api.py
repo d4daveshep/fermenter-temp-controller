@@ -25,4 +25,6 @@ def test_read_main(temperature_database):
 
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"fermenter":21.3}
+    assert response.json()["fermenter"] == 21.3
+    assert response.json()["ambient"] == 15.6
+    assert response.json()["target"] == 20.0
