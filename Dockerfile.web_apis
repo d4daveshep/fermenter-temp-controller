@@ -5,6 +5,7 @@ COPY web/requirements.txt .
 RUN pip3 install --no-cache-dir --upgrade -r requirements.txt
 
 COPY web/fastapi_app.py ./
+COPY web/templates/*.html ./templates/
 
 COPY controller/*.py ./controller/
 COPY controller/config-test.ini ./
