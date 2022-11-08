@@ -1,2 +1,6 @@
 fastapi
 uvicorn
+pytz
+validators
+requests
+influxdb_client

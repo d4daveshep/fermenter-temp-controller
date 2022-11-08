@@ -7,7 +7,6 @@ RUN pip3 install --no-cache-dir --upgrade -r requirements.txt
 COPY web/fastapi_app.py ./
 
 COPY controller/*.py ./controller/
-#COPY controller/config-test.ini ./controller/
 COPY controller/config-test.ini ./
 
 CMD ["uvicorn", "fastapi_app:app", "--host", "0.0.0.0", "--port", "8080"]
