@@ -1,4 +1,5 @@
 import configparser
+from os import getcwd
 from os.path import exists
 
 import pytz
@@ -12,7 +13,8 @@ class ConfigError(Exception):
 class ControllerConfig:
     def __init__(self, filename: str):
         if not exists(filename):
-            raise ConfigError(f"Config file '{filename}' not found")
+            cwd = getcwd()
+            raise ConfigError(f"Config file '{filename}' not found in {cwd}")
 
         config_parser = self._get_config(filename)
         self.target_temp = self._get_target_temp_from_config(config_parser)

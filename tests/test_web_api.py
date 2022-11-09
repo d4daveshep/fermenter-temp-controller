@@ -18,7 +18,10 @@ def temperature_database():
     return my_temperature_database
 
 
-def test_read_debug(temperature_database):
+def test_read_debug():
+    config = ControllerConfig("test_valid_config_file.ini")
+    temperature_database = TemperatureDatabase(config)
+
     timestamp = datetime.utcnow()
     point = temperature_database.create_point(fermenter_temp=21.3, ambient_temp=15.6, target_temp=20.0,
                                               timestamp=timestamp)
