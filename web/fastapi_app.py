@@ -17,8 +17,7 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    # results_dict = temperature_database.get_last_record()
-    results_dict = {}
+    results_dict = temperature_database.get_last_record()
     results_dict["request"] = request
 
     # adjust key name as hyphen doesn't work in template
