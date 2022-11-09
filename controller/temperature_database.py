@@ -71,5 +71,6 @@ class TemperatureDatabase:
         for table in tablelist:
             results[table.records[0].values["_field"]] = table.records[0].values["_value"]
             results["time"] = table.records[0].values["_time"]
+            results["brew-id"] = table.records[0].values["brew-id"]
 
         return results

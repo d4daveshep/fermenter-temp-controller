@@ -1,6 +1,8 @@
 from typing import Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 from controller.config import ControllerConfig
 from controller.temperature_database import TemperatureDatabase
@@ -10,9 +12,24 @@ app = FastAPI()
 config = ControllerConfig("config-test.ini")
 temperature_database = TemperatureDatabase(config)
 
+templates = Jinja2Templates(directory="templates")
 
-@app.get("/")
-def read_root():
+
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    # results_dict = temperature_database.get_last_record()
+    results_dict = {}
+    results_dict["request"] = request
+
+    # adjust key name as hyphen doesn't work in template
+    results_dict["reason"] = results_dict["reason-code"]
+    results_dict["brew"] = results_dict["brew-id"]
+
+    return templates.TemplateResponse("root.html", results_dict)
+
+
+@app.get("/debug")
+async def read_debug():
     results_dict = temperature_database.get_last_record()
     return results_dict
 
