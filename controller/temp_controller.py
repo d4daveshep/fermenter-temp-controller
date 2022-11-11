@@ -6,7 +6,7 @@ from json import JSONDecodeError
 
 import serial_asyncio
 
-from controller.config import ControllerConfig
+from controller.config import ControllerConfig, Settings
 from controller.temperature_database import TemperatureDatabase
 from controller.zmq_receiver import ZmqReceiver
 
@@ -165,8 +165,10 @@ class TempController:
 
 
 if __name__ == "__main__":
-    filename = "controller/config-test.ini"
+    # filename = "controller/config-test.ini"
 
-    controller = TempController(filename)
+    settings = Settings()
+
+    controller = TempController(settings.config_filename)
 
     controller.run()
