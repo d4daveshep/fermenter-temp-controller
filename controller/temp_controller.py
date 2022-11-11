@@ -127,7 +127,6 @@ class TempController:
             self.logger.error("error: processing zmq message: " + str(err_info))
             raise
 
-
     def run(self):
 
         loop = asyncio.get_event_loop()
@@ -163,10 +162,7 @@ class TempController:
         self.logger.addHandler(console_handler)
 
 
-
 if __name__ == "__main__":
-    # filename = "controller/config-test.ini"
-
     settings = EnvSettings()
 
     controller = TempController(settings.config_filename)

@@ -10,4 +10,6 @@ COPY web/templates/*.html ./templates/
 COPY controller/*.py ./controller/
 COPY controller/config-test.ini ./config.ini
 
+#ENV CONFIG_FILE="config-test.ini"
+
 CMD ["uvicorn", "fastapi_app:app", "--host", "0.0.0.0", "--port", "8080"]

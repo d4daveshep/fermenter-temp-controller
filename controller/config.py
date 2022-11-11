@@ -14,8 +14,6 @@ class EnvSettings(BaseSettings):
         fields = {"config_filename": {"env": "config_file"}}
 
 
-
-
 class ConfigError(Exception):
     pass
 
