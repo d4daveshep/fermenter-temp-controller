@@ -7,7 +7,7 @@ import validators as validators
 from pydantic import BaseSettings
 
 
-class Settings(BaseSettings):
+class EnvSettings(BaseSettings):
     config_filename: str = "config.ini"
 
     class Config:

@@ -4,12 +4,13 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from controller.config import ControllerConfig
+from controller.config import ControllerConfig, EnvSettings
 from controller.temperature_database import TemperatureDatabase
 
 app = FastAPI()
 
-config = ControllerConfig("config-test.ini")
+settings = EnvSettings()
+config = ControllerConfig(settings.config_filename)
 temperature_database = TemperatureDatabase(config)
 
 templates = Jinja2Templates(directory="templates")
