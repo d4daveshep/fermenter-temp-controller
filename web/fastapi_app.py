@@ -21,8 +21,10 @@ async def read_root(request: Request):
     results_dict["request"] = request
 
     # adjust key name as hyphen doesn't work in template
-    results_dict["reason"] = results_dict["reason-code"]
-    results_dict["brew"] = results_dict["brew-id"]
+    if "reason-code" in results_dict.keys():
+        results_dict["reason"] = results_dict["reason-code"]
+    if "brew-id" in results_dict.keys():
+        results_dict["brew"] = results_dict["brew-id"]
 
     return templates.TemplateResponse("root.html", results_dict)
 
