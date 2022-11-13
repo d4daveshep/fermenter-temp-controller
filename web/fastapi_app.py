@@ -14,9 +14,9 @@ app = FastAPI()
 
 config = ControllerConfig("config-test.ini")
 temperature_database = TemperatureDatabase(config)
+sender = ZmqSender(config)
 
 templates = Jinja2Templates(directory="templates")
-
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -44,14 +44,14 @@ def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
 
-@app.get("/update-target-temp")
-async def update_target_temp():
-    new_target_temp = float(random.randrange(10, 30))
+@app.get("/update-target-temp/{temp}")
+async def update_target_temp(temp: float):
+    new_target_temp = temp
+    # new_target_temp = float(random.randrange(10, 30))
     config.logger.info(f"setting target temp to {new_target_temp}")
 
-    zmq_message_to_send = json.dumps({"new-target-temp":new_target_temp})
+    zmq_message_to_send = json.dumps({"new-target-temp": new_target_temp})
     try:
-        sender = ZmqSender(config)
         await sender.send_string(zmq_message_to_send)
     except Exception as err_info:
         config.logger.error(err_info)
