@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Set target temp</title>
+</head>
+<body>
+    <form action="/post-target-temp" method="post">
+        <label for="temp">New target temp (C):</label>
+        <input type="text", id="temp", name="temp", value="{{ target }}">
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>

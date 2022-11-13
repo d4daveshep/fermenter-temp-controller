@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 from asyncio import StreamReader, StreamWriter
 from json import JSONDecodeError
 
@@ -13,7 +12,6 @@ from controller.zmq_receiver import ZmqReceiver
 
 class TempController:
     def __init__(self, config_filename: str):
-        self.logger = None
         self.config = ControllerConfig(config_filename)
         self.temperature_database = TemperatureDatabase(self.config)
         self.zmq_receiver = ZmqReceiver(self.config)
@@ -22,7 +20,7 @@ class TempController:
         self.serial_port_writer = None
         self.serial_port_reader = None
 
-        self.configure_logging()
+        # self.configure_logging()
 
     @classmethod
     async def open_serial_connection(cls, port_url: str) -> (StreamReader, StreamWriter):
@@ -30,12 +28,12 @@ class TempController:
 
     async def read_line_from_serial(self) -> str:
         line = await self.serial_port_reader.readline()
-        self.logger.debug(f"read {line} from serial")
+        self.config.logger.debug(f"read {line} from serial")
         return str(line, 'utf-8')
 
     async def write_float_to_serial_port(self, float_num: float) -> None:
         string_to_write = '<' + str(float_num) + '>'
-        self.logger.info(f"writing {string_to_write} to serial")
+        self.config.logger.info(f"writing {string_to_write} to serial")
         self.serial_port_writer.write(string_to_write.encode())
         await asyncio.sleep(0)
 
@@ -85,7 +83,7 @@ class TempController:
             # check if target_temp needs updating
             # self.logger.debug("checking if target temp needs updating")
             if self.config.target_temp != self.current_target_temp:
-                self.logger.info(f"target temp needs updating to {self.config.target_temp}")
+                self.config.logger.info(f"target temp needs updating to {self.config.target_temp}")
                 await self.write_float_to_serial_port(self.config.target_temp)
             else:
                 # self.logger.debug("target temp did NOT need updating")
@@ -97,7 +95,7 @@ class TempController:
         while True:
             message_received = await self.zmq_receiver.wait_for_a_message()
             string_received = (message_received[0]).decode("utf-8")
-            self.logger.debug(f"received zmq message: {string_received}")
+            self.config.logger.debug(f"received zmq message: {string_received}")
 
             self.process_zmq_message(string_received)
 
@@ -110,21 +108,21 @@ class TempController:
 
             if "new-target-temp" in json_dict.keys():
                 self.config.target_temp = float(json_dict["new-target-temp"])
-                self.logger.info(f"set new target temp to: {self.config.target_temp:.1f}")
+                self.config.logger.info(f"set new target temp to: {self.config.target_temp:.1f}")
 
             if "new-brew-id" in json_dict.keys():
                 brew_id = json_dict["new-brew-id"]
                 if type(brew_id) == str:
                     self.config.brew_id = json_dict["new-brew-id"]
-                    self.logger.info(f"set new brew-id to: {self.config.brew_id}")
+                    self.config.logger.info(f"set new brew-id to: {self.config.brew_id}")
                 else:
                     raise ValueError(f"new-brew-id '{brew_id}' is not a string")
 
         except JSONDecodeError as err_info:
-            self.logger.error("error processing zmq message: " + str(err_info))
+            self.config.logger.error("error processing zmq message: " + str(err_info))
             raise
         except ValueError as err_info:
-            self.logger.error("error: processing zmq message: " + str(err_info))
+            self.config.logger.error("error: processing zmq message: " + str(err_info))
             raise
 
     def run(self):
@@ -152,15 +150,14 @@ class TempController:
             print("Closing loop")
             loop.close()
 
-    def configure_logging(self):
-        self.logger = logging.getLogger("stdout")
-        self.logger.setLevel(logging.DEBUG)
-        console_handler = logging.StreamHandler()
-        # console_handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter("%(levelname)s: %(asctime)s: %(message)s")
-        console_handler.setFormatter(formatter)
-        self.logger.addHandler(console_handler)
-
+    # def configure_logging(self):
+    #     self.logger = logging.getLogger("stdout")
+    #     self.logger.setLevel(logging.DEBUG)
+    #     console_handler = logging.StreamHandler()
+    #     # console_handler.setLevel(logging.DEBUG)
+    #     formatter = logging.Formatter("%(levelname)s: %(asctime)s: %(message)s")
+    #     console_handler.setFormatter(formatter)
+    #     self.logger.addHandler(console_handler)
 
 if __name__ == "__main__":
     settings = EnvSettings()

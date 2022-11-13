@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 
 import pytest
@@ -59,80 +58,15 @@ def test_create_point_object(temperature_database):
     assert point_1.__eq__(point_2)
 
 
-def test_write_record_to_database_1(temperature_database):
-    timestamp = datetime.utcnow()
-    point = temperature_database.create_point(fermenter_temp=21.3, ambient_temp=15.6, target_temp=20.0,
-                                              timestamp=timestamp)
-    temperature_database.write_temperature_record(point)
 
-    # verify record
-    query_string = 'from(bucket: "temp-test") |> range(start: -1h) |> last()'
-    client = temperature_database.get_database_client()
-    query_api = client.query_api()
-
-    tablelist = query_api.query(query_string)
-
-    assert tablelist[0].records[0].values["_field"] == "ambient"
-    assert tablelist[0].records[0].values["_value"] == 15.6
-    assert tablelist[0].records[0].values["_time"].second == timestamp.second
-
-    assert tablelist[1].records[0].values["_field"] == "fermenter"
-    assert tablelist[1].records[0].values["_value"] == 21.3
-
-    assert tablelist[2].records[0].values["_field"] == "target"
-    assert tablelist[2].records[0].values["_value"] == 20.0
-
-    pass
-
-
-def test_get_last_database_record(temperature_database):
-    timestamp = datetime.utcnow()
-    point = temperature_database.create_point(fermenter_temp=21.3, ambient_temp=15.6, target_temp=20.0,
-                                              timestamp=timestamp)
-    temperature_database.write_temperature_record(point)
-
-    results_dict = temperature_database.get_last_record()
-
-    assert results_dict["fermenter"] == 21.3
-    assert results_dict["target"] == 20.0
-    assert results_dict["ambient"] == 15.6
-    assert results_dict["time"].hour == timestamp.hour
-    assert results_dict["time"].minute == timestamp.minute
-    assert results_dict["time"].second == timestamp.second
-
-    pass
-
-
-# def test_write_record_to_database(temperature_database):
-#     point = temperature_database.create_point(fermenter_temp=21.3, ambient_temp=15.6, target_temp=20.0,
-#                                               timestamp=datetime.utcnow())
-#
-#     temperature_database.write_temperature_record(point)
-#
-#     # verify record
-#     query_string = 'from(bucket: "temp-test") |> range(start: -1m)'
-#     client = temperature_database.get_database_client()
-#     query_api = client.query_api()
-#
-#     tables = query_api.query(query_string)
-#
 
 def test_write_record_to_database_from_fermenter_json(temperature_database):
-    real_json_string = """{
-                       "instant": 8.0625,
-                       "average": 8.178817,
-                       "min": 8.0625,
-                       "max": 12.4375,
-                       "target": 19,
-                       "ambient": 19.64673,
-                       "action": "Heat",
-                       "heat": true,
-                       "reason-code": "RC1",
-                       "timestamp": 2622454,
-                       "json-size": 89
-                       }"""
+    timestamp = datetime.utcnow()
 
-    json_dict = json.loads(real_json_string)
+    json_dict = {"instant": 8.0625, "average": 8.178817, "min": 8.0625, "max": 12.4375, "target": 19,
+                 "ambient": 19.64673, "action": "Heat", "heat": True, "reason-code": "RC1",
+                 "timestamp": timestamp.timestamp(),
+                 "json-size": 89}
 
     json_dict = TempController.convert_dict_int_values_to_float(json_dict)
 
@@ -140,18 +74,21 @@ def test_write_record_to_database_from_fermenter_json(temperature_database):
 
     temperature_database.write_temperature_record(point)
 
-    # verify record
-    query_string = 'from(bucket: "temp-test") |> range(start: -1m)'
-    client = temperature_database.get_database_client()
-    query_api = client.query_api()
+    results_dict = temperature_database.get_last_record()
+    assert results_dict["instant"] == 8.0625
+    assert results_dict["average"] == 8.178817
+    assert results_dict["min"] == 8.0625
+    assert results_dict["max"] == 12.4375
+    assert results_dict["target"] == 19.0
+    assert results_dict["ambient"] == 19.64673
+    assert results_dict["action"] == "Heat"
+    assert results_dict["heat"]
+    assert results_dict["reason-code"] == "RC1"
+    assert results_dict["json-size"] == 89
 
-    tables = query_api.query(query_string)
-
-    # ambient = tables[0].records[0].values["_value"]
-    # fermenter = tables[1].records[0].values["_value"]
-    # target = tables[2].records[0].values["_value"]
-
-    # assert False
+    assert results_dict["time"].hour == timestamp.hour
+    assert results_dict["time"].minute == timestamp.minute
+    assert results_dict["time"].second == timestamp.second
 
 
 def test_write_record_to_database_with_wrong_org(temperature_database):

@@ -5,3 +5,5 @@ validators
 requests
 influxdb_client
 jinja2
+zmq
+python-multipart

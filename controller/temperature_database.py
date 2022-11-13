@@ -58,6 +58,7 @@ class TemperatureDatabase:
 
     def write_temperature_record(self, point: Point) -> object:
         write_api = self.get_database_client().write_api(write_options=SYNCHRONOUS)
+        self.config.logger.info(f"Writing point to database: {point}")
         return write_api.write(self.config.influxdb_bucket, self.config.influxdb_org, point)
 
     def get_last_record(self) -> dict:
@@ -72,5 +73,7 @@ class TemperatureDatabase:
             results[table.records[0].values["_field"]] = table.records[0].values["_value"]
             results["time"] = table.records[0].values["_time"]
             results["brew-id"] = table.records[0].values["brew-id"]
+
+        self.config.logger.debug(f"Read last database record as: {results}")
 
         return results

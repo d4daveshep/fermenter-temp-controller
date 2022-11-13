@@ -121,7 +121,7 @@ async def test_serial_async_write_and_read(temp_controller):
 
 
 def test_process_zmq_message(temp_controller):
-    temp_controller.logger.setLevel(logging.DEBUG)
+    temp_controller.config.logger.setLevel(logging.DEBUG)
 
     target_temp = 12.3
     brew_id = "new_brew_id"
@@ -136,16 +136,16 @@ def test_process_zmq_message(temp_controller):
 
 
 def test_process_empty_zmq_message(temp_controller):
-    temp_controller.logger.setLevel(logging.DEBUG)
+    temp_controller.config.logger.setLevel(logging.DEBUG)
 
     with pytest.raises(JSONDecodeError) as err_info:
         temp_controller.process_zmq_message("")
 
-    temp_controller.logger.debug(err_info)
+    temp_controller.config.logger.debug(err_info)
 
 
 def test_process_invalid_target_temp_in_zmq_message(temp_controller):
-    temp_controller.logger.setLevel(logging.DEBUG)
+    temp_controller.config.logger.setLevel(logging.DEBUG)
 
     target_temp = "not a number"
 
@@ -155,10 +155,11 @@ def test_process_invalid_target_temp_in_zmq_message(temp_controller):
     with pytest.raises(ValueError) as err_info:
         temp_controller.process_zmq_message(json_string)
 
-    temp_controller.logger.debug(err_info)
+    temp_controller.config.logger.debug(err_info)
 
-def test_process_invalid_target_temp_in_zmq_message(temp_controller):
-    temp_controller.logger.setLevel(logging.DEBUG)
+
+def test_process_invalid_brew_id_in_zmq_message(temp_controller):
+    temp_controller.config.logger.setLevel(logging.DEBUG)
 
     brew_id = 12345.67890
     message_dict = {"new-brew-id": brew_id}
@@ -167,4 +168,4 @@ def test_process_invalid_target_temp_in_zmq_message(temp_controller):
     with pytest.raises(ValueError) as err_info:
         temp_controller.process_zmq_message(json_string)
 
-    temp_controller.logger.debug(err_info)
+    temp_controller.config.logger.debug(err_info)
