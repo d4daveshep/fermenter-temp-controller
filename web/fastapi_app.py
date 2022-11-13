@@ -1,9 +1,8 @@
 import json
-import random
 from typing import Union
 
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Form, status
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from controller.config import ControllerConfig
@@ -58,3 +57,27 @@ async def update_target_temp(temp: float):
         raise
 
     return {"new-target": new_target_temp}
+
+
+@app.get("/new-target-temp", response_class=HTMLResponse)
+async def new_target_temp_form(request: Request):
+    results_dict = temperature_database.get_last_record()
+    request_dict = {"request": request, "target": results_dict["target"]}
+
+    return templates.TemplateResponse("new_target_temp_form.html", request_dict)
+
+
+@app.post("/post-target-temp/")
+async def send_new_target_temp(request: Request, temp: float = Form()):
+    new_target_temp = temp
+    # new_target_temp = float(random.randrange(10, 30))
+    config.logger.info(f"setting target temp to {new_target_temp}")
+
+    zmq_message_to_send = json.dumps({"new-target-temp": new_target_temp})
+    try:
+        await sender.send_string(zmq_message_to_send)
+    except Exception as err_info:
+        config.logger.error(err_info)
+        raise
+
+    return RedirectResponse(request.url_for("read_root"), status_code=status.HTTP_303_SEE_OTHER)

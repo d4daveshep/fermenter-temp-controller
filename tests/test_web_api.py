@@ -44,7 +44,7 @@ def test_update_target_temp(temperature_database):
     assert results_dict["target"] == new_target_temp
 
 
-
-
-
-
+def test_post_new_target_temp():
+    response = client.post("/new-target-temp/", data={"temp": 23.4})
+    assert response.status_code == 200
+    assert response.json() == {"new-target-temp": 23.4}
