@@ -1,5 +1,4 @@
 import json
-from typing import Union
 
 from fastapi import FastAPI, Request, Form, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -19,7 +18,7 @@ templates = Jinja2Templates(directory="templates")
 
 
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
+async def root(request: Request):
     results_dict = temperature_database.get_last_record()
     results_dict["request"] = request
 
@@ -33,14 +32,9 @@ async def read_root(request: Request):
 
 
 @app.get("/debug")
-async def read_debug():
+async def debug():
     results_dict = temperature_database.get_last_record()
     return results_dict
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
 
 
 @app.get("/update-target-temp/{temp}")
@@ -60,7 +54,7 @@ async def update_target_temp(temp: float):
 
 
 @app.get("/new-target-temp", response_class=HTMLResponse)
-async def new_target_temp_form(request: Request):
+async def display_target_temp_form(request: Request):
     results_dict = temperature_database.get_last_record()
     request_dict = {"request": request, "target": results_dict["target"]}
 
