@@ -1,4 +1,5 @@
 import configparser
+import logging
 from os import getcwd
 from os.path import exists
 
@@ -12,6 +13,8 @@ class ConfigError(Exception):
 
 class ControllerConfig:
     def __init__(self, filename: str):
+        self.configure_logging()
+
         if not exists(filename):
             cwd = getcwd()
             raise ConfigError(f"Config file '{filename}' not found in {cwd}")
@@ -151,3 +154,12 @@ class ControllerConfig:
             return config_parser["zmq"]
         except KeyError:
             raise ConfigError("'zmq' section not found in config file")
+
+    def configure_logging(self):
+        self.logger = logging.getLogger("stdout")
+        self.logger.setLevel(logging.DEBUG)
+        console_handler = logging.StreamHandler()
+        # console_handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter("%(levelname)s: %(asctime)s: %(message)s")
+        console_handler.setFormatter(formatter)
+        self.logger.addHandler(console_handler)

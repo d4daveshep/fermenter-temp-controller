@@ -32,3 +32,19 @@ def test_read_debug():
     assert response.json()["fermenter"] == 21.3
     assert response.json()["ambient"] == 15.6
     assert response.json()["target"] == 20.0
+
+
+def test_update_target_temp(temperature_database):
+    response = client.get("/update-target-temp")
+    assert response.status_code == 200
+    new_target_temp = response.json()["new-target"]
+    assert float(new_target_temp)
+
+    results_dict = temperature_database.get_last_record()
+    assert results_dict["target"] == new_target_temp
+
+
+
+
+
+
