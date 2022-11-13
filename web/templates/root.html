@@ -6,6 +6,10 @@
 </head>
 <body>
     <h1>Brew ID: {{ brew }}</h1>
+    <form action="/new-brew-id" method="get">
+        <input type="submit" value="Change Brew ID">
+    </form>
+
     <h1>Temperatures</h1>
     <p>Fermenter: {{ average }} C</p>
     <p>Min: {{ min }} C</p>

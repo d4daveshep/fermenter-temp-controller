@@ -74,3 +74,25 @@ async def send_new_target_temp(request: Request, temp: float = Form()):
         raise
 
     return RedirectResponse(request.url_for("root"), status_code=status.HTTP_303_SEE_OTHER)
+
+@app.get("/new-brew-id", response_class=HTMLResponse)
+async def display_brew_id_form(request: Request):
+    results_dict = temperature_database.get_last_record()
+    request_dict = {"request": request, "brew": results_dict["brew-id"]}
+
+    return templates.TemplateResponse("new_brew_id_form.html", request_dict)
+
+
+@app.post("/post-brew-id/")
+async def send_new_brew_id(request: Request, brew_id: str = Form()):
+    new_brew_id = brew_id
+    config.logger.info(f"setting brew id to {new_brew_id}")
+
+    zmq_message_to_send = json.dumps({"new-brew-id": new_brew_id})
+    try:
+        await sender.send_string(zmq_message_to_send)
+    except Exception as err_info:
+        config.logger.error(err_info)
+        raise
+
+    return RedirectResponse(request.url_for("root"), status_code=status.HTTP_303_SEE_OTHER)
