@@ -41,7 +41,6 @@ async def debug():
 @app.get("/update-target-temp/{temp}")
 async def update_target_temp(temp: float):
     new_target_temp = temp
-    # new_target_temp = float(random.randrange(10, 30))
     config.logger.info(f"setting target temp to {new_target_temp}")
 
     zmq_message_to_send = json.dumps({"new-target-temp": new_target_temp})
@@ -65,7 +64,6 @@ async def display_target_temp_form(request: Request):
 @app.post("/post-target-temp/")
 async def send_new_target_temp(request: Request, temp: float = Form()):
     new_target_temp = temp
-    # new_target_temp = float(random.randrange(10, 30))
     config.logger.info(f"setting target temp to {new_target_temp}")
 
     zmq_message_to_send = json.dumps({"new-target-temp": new_target_temp})
@@ -75,4 +73,4 @@ async def send_new_target_temp(request: Request, temp: float = Form()):
         config.logger.error(err_info)
         raise
 
-    return RedirectResponse(request.url_for("read_root"), status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(request.url_for("root"), status_code=status.HTTP_303_SEE_OTHER)
