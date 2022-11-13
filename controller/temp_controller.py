@@ -6,7 +6,7 @@ from json import JSONDecodeError
 
 import serial_asyncio
 
-from controller.config import ControllerConfig
+from controller.config import ControllerConfig, EnvSettings
 from controller.temperature_database import TemperatureDatabase
 from controller.zmq_receiver import ZmqReceiver
 
@@ -127,7 +127,6 @@ class TempController:
             self.logger.error("error: processing zmq message: " + str(err_info))
             raise
 
-
     def run(self):
 
         loop = asyncio.get_event_loop()
@@ -163,10 +162,9 @@ class TempController:
         self.logger.addHandler(console_handler)
 
 
-
 if __name__ == "__main__":
-    filename = "controller/config-test.ini"
+    settings = EnvSettings()
 
-    controller = TempController(filename)
+    controller = TempController(settings.config_filename)
 
     controller.run()

@@ -5,3 +5,4 @@ requests
 validators
 influxdb_client
 pyzmq
+pydantic

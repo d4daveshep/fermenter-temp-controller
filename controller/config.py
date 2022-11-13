@@ -4,6 +4,14 @@ from os.path import exists
 
 import pytz
 import validators as validators
+from pydantic import BaseSettings
+
+
+class EnvSettings(BaseSettings):
+    config_filename: str = "config.ini"
+
+    class Config:
+        fields = {"config_filename": {"env": "config_file"}}
 
 
 class ConfigError(Exception):
@@ -27,12 +35,9 @@ class ControllerConfig:
 
         self.serial_port = self._get_serial_port_from_config(config_parser)
 
-
         self.timezone = self._get_timezone_from_config(config_parser)
 
         self.zmq_url = self._get_zmq_url_from_config(config_parser)
-
-
 
     def _get_config(self, config_filename_location: str):
         try:
@@ -48,7 +53,6 @@ class ControllerConfig:
             return config_parser["fermenter"]
         except KeyError:
             raise ConfigError("'fermenter' section not found in config file")
-
 
     def _get_target_temp_from_config(self, config: configparser.ConfigParser) -> float:
         try:
