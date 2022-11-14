@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
     <title>Fermenter Controller</title>
 </head>
 <body>
@@ -10,12 +11,12 @@
         <input type="submit" value="Change Brew ID">
     </form>
 
-    <h1>Fermenter: {{ average }} C</h1>
+    <h1>Fermenter: {{ average }} &#8451;</h1>
     <h2>Other temperatures</h2>
-    <p>Min: {{ min }} C</p>
-    <p>Max: {{ max }} C</p>
-    <p>Ambient: {{ ambient }} C</p>
-        <p>Target: {{ target }} C
+    <p>Min: {{ min }} &#8451;</p>
+    <p>Max: {{ max }} &#8451;</p>
+    <p>Ambient: {{ ambient }} &#8451;</p>
+        <p>Target: {{ target }} &#8451;
     <form action="/new-target-temp" method="get">
         <input type="submit" value="Update target temp">
     </form>

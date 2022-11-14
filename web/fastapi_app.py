@@ -1,8 +1,10 @@
 import json
+from pathlib import Path
 
 from fastapi import FastAPI, Request, Form, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
 from controller.config import ControllerConfig, EnvSettings
 from controller.temperature_database import TemperatureDatabase
@@ -10,10 +12,18 @@ from controller.zmq_sender import ZmqSender
 
 app = FastAPI()
 
+app.mount(
+    "/static",
+    StaticFiles(directory=Path(__file__).parent.parent.absolute() / "static"),
+    name="static",
+)
+
 settings = EnvSettings()
 config = ControllerConfig(settings.config_filename)
 temperature_database = TemperatureDatabase(config)
 sender = ZmqSender(config)
+
+
 
 templates = Jinja2Templates(directory="templates")
 

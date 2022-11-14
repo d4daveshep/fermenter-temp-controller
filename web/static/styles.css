@@ -1,0 +1,17 @@
+h1, h2, p, form {
+    font-family: sans-serif;
+}
+
+input:invalid {
+    border: 2px dashed red;
+}
+
+input:invalid:required {
+    background-color: pink;
+}
+
+
+input:valid {
+    border: 2px solid black;
+}
+

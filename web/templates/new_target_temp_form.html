@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
     <title>Set target temp</title>
 </head>
 <body>
     <form action="/post-target-temp" method="post">
         <label for="temp">New target temp (C):</label>
-        <input type="text", id="temp", name="temp", value="{{ target }}">
+        <input type="number" step="0.1" id="temp" name="temp" value="{{ target }}" min="1" max="30" required>
         <input type="submit" value="Submit">
     </form>
 </body>
