@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
-    <title>Set target temp</title>
+    <title>Update target temp</title>
 </head>
 <body>
+    <h1>Update Target Temp</h1>
     <div>
         <form action="/post-target-temp" method="post">
             <label for="temp">New target temp (C):</label><br>
