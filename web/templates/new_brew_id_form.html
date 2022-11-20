@@ -6,10 +6,12 @@
     <title>Set brew ID</title>
 </head>
 <body>
-    <form action="/post-brew-id" method="post">
-        <label for="brew_id">New Brew ID:</label>
-        <input type="text" id="brew_id" name="brew_id" value="{{ brew }}" required>
-        <input type="submit" value="Submit">
-    </form>
+    <div>
+        <form action="/post-brew-id" method="post">
+            <label for="brew_id">New Brew ID:</label><br>
+            <input type="text" id="brew_id" name="brew_id" value="{{ brew }}" required><br>
+            <input type="submit" value="Enter">
+        </form>
+    </div>
 </body>
 </html>
