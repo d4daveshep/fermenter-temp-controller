@@ -6,3 +6,4 @@ validators
 influxdb_client
 pyzmq
 pydantic
+pydantic-settings
