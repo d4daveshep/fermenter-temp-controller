@@ -5,5 +5,4 @@ requests
 validators
 influxdb_client
 pyzmq
-pydantic
-pydantic-settings
+pydantic~=1.0

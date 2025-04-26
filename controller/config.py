@@ -5,7 +5,7 @@ from os.path import exists
 
 import pytz
 import validators as validators
-from pydantic_settings import BaseSettings
+from pydantic import BaseSettings
 
 
 class EnvSettings(BaseSettings):
