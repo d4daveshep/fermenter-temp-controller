@@ -2,27 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
     <title>Fermenter Controller</title>
 </head>
 <body>
     <h1>Brew ID: {{ brew }}</h1>
-    <form action="/new-brew-id" method="get">
-        <input type="submit" value="Change Brew ID">
-    </form>
-
-    <h1>Fermenter: {{ average }} C</h1>
-    <h2>Other temperatures</h2>
-    <p>Min: {{ min }} C</p>
-    <p>Max: {{ max }} C</p>
-    <p>Ambient: {{ ambient }} C</p>
-        <p>Target: {{ target }} C
-    <form action="/new-target-temp" method="get">
-        <input type="submit" value="Update target temp">
-    </form>
-
-    <h1>Current Action: {{ action }}</h1>
-    <p>Reason code: {{ reason }}</p>
-    <br><br>
-    <button onClick="window.location.reload();">Refresh</button>
+    <div>
+        <h2>Fermenter Temperature:</h2>
+        <p>Timestamp: {{ timestamp }}</p>
+        <p>Target: {{ target }} &#8451;</p>
+        <p>Current: {{ average }} &#8451; &nbsp;
+            <button onClick="window.location.reload();">Refresh</button>
+        </p>
+        <h3>Current Action: {{ action }}</h3>
+        <p>Reason code: {{ reason }}</p>
+        <br>
+        <h3>Other temperatures</h3>
+        <p>Min: {{ min }} &#8451;</p>
+        <p>Max: {{ max }} &#8451;</p>
+        <p>Ambient: {{ ambient }} &#8451;</p>
+        <br>
+        <button onclick="document.location='/new-brew-id'">Change Brew ID</button>
+        <button onclick="document.location='/new-target-temp'">Update target temp</button>
+<!--        <form action="/new-brew-id" method="get">-->
+<!--            <input type="submit" value="Change Brew ID">-->
+<!--        </form>-->
+    </div>
 </body>
 </html>

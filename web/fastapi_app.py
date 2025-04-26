@@ -1,7 +1,10 @@
 import json
-
+from datetime import datetime
+from pathlib import Path
+from pytz import timezone
 from fastapi import FastAPI, Request, Form, status
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from controller.config import ControllerConfig, EnvSettings
@@ -10,17 +13,27 @@ from controller.zmq_sender import ZmqSender
 
 app = FastAPI()
 
+app.mount(
+    "/static",
+    StaticFiles(directory=Path(__file__).parent.parent.absolute() / "static"),
+    name="static",
+)
+
 settings = EnvSettings()
 config = ControllerConfig(settings.config_filename)
 temperature_database = TemperatureDatabase(config)
 sender = ZmqSender(config)
+
+nztz = timezone("Pacific/Auckland")
 
 templates = Jinja2Templates(directory="templates")
 
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
+    now = datetime.now(nztz)
     results_dict = temperature_database.get_last_record()
+    results_dict["timestamp"] = now.strftime("%d %b %Y %H:%M:%S")
     results_dict["request"] = request
 
     # adjust key name as hyphen doesn't work in template
@@ -74,6 +87,7 @@ async def send_new_target_temp(request: Request, temp: float = Form()):
         raise
 
     return RedirectResponse(request.url_for("root"), status_code=status.HTTP_303_SEE_OTHER)
+
 
 @app.get("/new-brew-id", response_class=HTMLResponse)
 async def display_brew_id_form(request: Request):

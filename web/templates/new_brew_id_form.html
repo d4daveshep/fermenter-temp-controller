@@ -2,13 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
     <title>Set brew ID</title>
 </head>
 <body>
-    <form action="/post-brew-id" method="post">
-        <label for="brew_id">New Brew ID:</label>
-        <input type="text", id="brew_id", name="brew_id", value="{{ brew }}">
-        <input type="submit" value="Submit">
-    </form>
+    <h1>Change Brew ID</h1>
+    <div>
+        <form action="/post-brew-id" method="post">
+            <label for="brew_id">New Brew ID:</label><br>
+            <input type="text" id="brew_id" name="brew_id" value="{{ brew }}" required><br>
+            <input type="submit" value="Enter">
+        </form>
+    </div>
 </body>
 </html>
