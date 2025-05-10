@@ -1,16 +1,24 @@
 [project]
 name = "fermenter-temp-controller"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "Modernised (2025) version of Fermentation Temperature Controller"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "influxdb-client>=1.48.0",
-    "pydantic~=1.0",
-    "pyserial>=3.5",
-    "pyserial-asyncio>=0.6",
-    "pytz>=2025.2",
-    "pyzmq>=26.4.0",
-    "requests>=2.32.3",
-    "validators>=0.34.0",
+  "influxdb-client",
+  "pydantic",
+  "pyserial",
+  "pyserial-asyncio",
+  "pytz",
+  "pyzmq",
+  "requests",
+  "validators",
+]
+
+[dependency-groups]
+help = [
+    "pytest>=8.3.5",
+]
+test = [
+    "pytest-asyncio>=0.26.0",
 ]
