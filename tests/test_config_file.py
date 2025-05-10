@@ -1,5 +1,5 @@
 # test that the config file is found in the parent directory to this module
-from controller.config import ControllerConfig
+from controller.config import ControllerConfig, FermenterConfig, load_config
 from pathlib import Path
 
 
@@ -7,8 +7,17 @@ def test_load_config():
     config_file_path: Path = Path("tests/valid_config.ini")
     assert config_file_path.exists()
 
-    config: ControllerConfig = ControllerConfig(config_file_path)
-    assert config
+    config: ControllerConfig = load_config(config_file_path)
+    # assert config
+
+    assert config.fermenter.target_temp == 21.3
+
+
+def test_fermenter_config_class():
+    fermenter_config: FermenterConfig = FermenterConfig(
+        target_temp=21.3, brew_id="00-TEST-v00"
+    )
+    assert fermenter_config
 
 
 # def test_get_target_temp_config_file():

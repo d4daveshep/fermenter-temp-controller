@@ -1,4 +1,5 @@
 from pathlib import Path
+from pydantic import BaseModel, ConfigDict, Extra
 
 # class EnvSettings(BaseSettings):
 #     config_filename: str = "config.ini"
@@ -11,10 +12,19 @@ from pathlib import Path
 #     pass
 
 
-class ControllerConfig:
-    def __init__(self, file_path: Path):
-        pass
+class FermenterConfig(BaseModel):
+    target_temp: float
+    brew_id: str
 
+
+class ControllerConfig(BaseModel):
+    model_config: ConfigDict = ConfigDict(extra=Extra.forbid)
+
+    fermenter: FermenterConfig
+
+
+def load_config(filename: Path) -> ControllerConfig:
+    return None
     #     self.configure_logging()
     #
     #     if not exists(filename):
