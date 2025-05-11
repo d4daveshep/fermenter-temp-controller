@@ -1,4 +1,5 @@
 # test that the config file is found in the parent directory to this module
+from pydantic import AnyUrl, HttpUrl
 from controller.config import (
     ControllerConfig,
     FermenterConfig,
@@ -19,6 +20,15 @@ def test_load_config():
     # assert config
 
     assert config.fermenter.target_temp == 21.3
+    assert config.fermenter.brew_id == "00-TEST-v00"
+    assert config.influxdb.url == HttpUrl("http://localhost:8086")
+    assert config.influxdb.auth_token == "my-super-secret-auth-token"
+    assert config.influxdb.org == "daveshep.net"
+    assert config.influxdb.bucket == "temp-test"
+    assert config.arduino.serial_port == "/dev/ttyACM0"
+    assert config.arduino.baud_rate == 115200
+    assert config.zmq.url == AnyUrl("tcp://127.0.0.1:5555")
+    assert config.general.timezone == "Pacific/Auckland"
 
 
 def test_fermenter_config_class():
@@ -30,7 +40,7 @@ def test_fermenter_config_class():
 
 def test_influxdb_config_class():
     influxdb_config: InfluxDBConfig = InfluxDBConfig(
-        url="http://localhost:8086",
+        url=HttpUrl("http://localhost:8086"),
         auth_token="my auth token",
         org="my_org",
         bucket="the_bucket",
@@ -46,7 +56,7 @@ def test_arduino_config_class():
 
 
 def test_zmq_config_class():
-    zmq_config: ZmqConfig = ZmqConfig(url="http://localhost")
+    zmq_config: ZmqConfig = ZmqConfig(url=AnyUrl("http://localhost"))
     assert zmq_config
 
 

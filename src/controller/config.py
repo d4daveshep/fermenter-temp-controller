@@ -2,7 +2,7 @@ from configparser import ConfigParser
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import AnyUrl, BaseModel, ConfigDict, HttpUrl, ValidationError
 
 
 class FermenterConfig(BaseModel):
@@ -11,7 +11,7 @@ class FermenterConfig(BaseModel):
 
 
 class InfluxDBConfig(BaseModel):
-    url: str
+    url: HttpUrl
     auth_token: str
     org: str
     bucket: str
@@ -23,7 +23,7 @@ class ArduinoConfig(BaseModel):
 
 
 class ZmqConfig(BaseModel):
-    url: str
+    url: AnyUrl
 
 
 class GeneralConfig(BaseModel):
