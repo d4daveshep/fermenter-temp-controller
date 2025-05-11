@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
   "influxdb-client",
-  "pydantic",
+  "pydantic>=2.0",
   "pyserial",
   "pyserial-asyncio",
   "pytz",
@@ -16,9 +16,8 @@ dependencies = [
 ]
 
 [dependency-groups]
-help = [
-    "pytest>=8.3.5",
-]
+help = ["pytest>=8.3.5"]
 test = [
+    "pytest>=8.3.5",
     "pytest-asyncio>=0.26.0",
 ]

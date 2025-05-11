@@ -1,5 +1,13 @@
 # test that the config file is found in the parent directory to this module
-from controller.config import ControllerConfig, FermenterConfig, load_config
+from controller.config import (
+    ControllerConfig,
+    FermenterConfig,
+    GeneralConfig,
+    InfluxDBConfig,
+    ArduinoConfig,
+    ZmqConfig,
+    load_config,
+)
 from pathlib import Path
 
 
@@ -15,9 +23,36 @@ def test_load_config():
 
 def test_fermenter_config_class():
     fermenter_config: FermenterConfig = FermenterConfig(
-        target_temp=21.3, brew_id="00-TEST-v00"
+        target_temp=12.3, brew_id="test_brew_id"
     )
     assert fermenter_config
+
+
+def test_influxdb_config_class():
+    influxdb_config: InfluxDBConfig = InfluxDBConfig(
+        url="http://localhost:8086",
+        auth_token="my auth token",
+        org="my_org",
+        bucket="the_bucket",
+    )
+    assert influxdb_config
+
+
+def test_arduino_config_class():
+    arduino_config: ArduinoConfig = ArduinoConfig(
+        serial_port="/dev/ttyACM0", baud_rate=115200
+    )
+    assert arduino_config
+
+
+def test_zmq_config_class():
+    zmq_config: ZmqConfig = ZmqConfig(url="http://localhost")
+    assert zmq_config
+
+
+def test_general_config_class():
+    general_config: GeneralConfig = GeneralConfig(timezone="Pacific/Auckland")
+    assert general_config
 
 
 # def test_get_target_temp_config_file():

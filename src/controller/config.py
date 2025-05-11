@@ -1,15 +1,8 @@
+from configparser import ConfigParser
 from pathlib import Path
-from pydantic import BaseModel, ConfigDict, Extra
+from typing import Any
 
-# class EnvSettings(BaseSettings):
-#     config_filename: str = "config.ini"
-#
-#     class Config:
-#         fields = {"config_filename": {"env": "config_file"}}
-#
-#
-# class ConfigError(Exception):
-#     pass
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 
 class FermenterConfig(BaseModel):
@@ -17,14 +10,71 @@ class FermenterConfig(BaseModel):
     brew_id: str
 
 
+class InfluxDBConfig(BaseModel):
+    url: str
+    auth_token: str
+    org: str
+    bucket: str
+
+
+class ArduinoConfig(BaseModel):
+    serial_port: str
+    baud_rate: int
+
+
+class ZmqConfig(BaseModel):
+    url: str
+
+
+class GeneralConfig(BaseModel):
+    timezone: str
+
+
 class ControllerConfig(BaseModel):
-    model_config: ConfigDict = ConfigDict(extra=Extra.forbid)
+    model_config = ConfigDict(extra="forbid")
 
     fermenter: FermenterConfig
+    influxdb: InfluxDBConfig
+    arduino: ArduinoConfig
+    zmq: ZmqConfig
+    general: GeneralConfig
 
 
 def load_config(filename: Path) -> ControllerConfig:
-    return None
+    if not filename.exists():
+        raise FileNotFoundError(f"Config file '{filename}' not found")
+
+    # parse the .ini file
+    parser: ConfigParser = ConfigParser()
+    parser.read(filename)
+
+    # convert to a dict format
+    config_dict: dict[str, Any] = {}
+    for section in parser.sections():
+        section_dict: dict[str, Any] = {k: v for k, v in parser.items(section)}
+
+        # Convert boolean strings
+        for key, value in section_dict.items():
+            if value.lower() in ("true", "yes", "on", "1"):
+                section_dict[key] = True
+            elif value.lower() in ("false", "no", "off", "0"):
+                section_dict[key] = False
+            # Try to convert to int if possible
+            elif value.isdigit():
+                section_dict[key] = int(value)
+            # Try to convert to float if possible
+            elif value.replace(".", "", 1).isdigit() and value.count(".") == 1:
+                section_dict[key] = float(value)
+
+        config_dict[section] = section_dict
+
+    # create pydantic model with validation
+    try:
+        config: ControllerConfig = ControllerConfig.model_validate(config_dict)
+        return config
+    except ValidationError as e:
+        raise ValueError(f"Configuruation validation failed: {e}")
+
     #     self.configure_logging()
     #
     #     if not exists(filename):
