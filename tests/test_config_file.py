@@ -12,7 +12,7 @@ from controller.config import (
 from pathlib import Path
 
 
-def test_load_config():
+def test_load_valid_config():
     config_file_path: Path = Path("tests/valid_config.ini")
     assert config_file_path.exists()
 
