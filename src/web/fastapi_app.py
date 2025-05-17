@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from pytz import timezone
@@ -6,8 +7,8 @@ from fastapi import FastAPI, Request, Form, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-
-from controller.config import ControllerConfig, EnvSettings
+from dotenv import load_dotenv
+from controller.config import ControllerConfig, load_config
 from controller.temperature_database import TemperatureDatabase
 from controller.zmq_sender import ZmqSender
 
@@ -19,8 +20,13 @@ app.mount(
     name="static",
 )
 
-settings = EnvSettings()
-config = ControllerConfig(settings.config_filename)
+load_dotenv()
+config_file_str: str | None = os.getenv("CONFIG_FILE")
+if not config_file_str:
+    raise ValueError("CONFIG_FILE not found in .env")
+
+config: ControllerConfig = load_config(Path(config_file_str))
+
 temperature_database = TemperatureDatabase(config)
 sender = ZmqSender(config)
 
@@ -86,7 +92,9 @@ async def send_new_target_temp(request: Request, temp: float = Form()):
         config.logger.error(err_info)
         raise
 
-    return RedirectResponse(request.url_for("root"), status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(
+        request.url_for("root"), status_code=status.HTTP_303_SEE_OTHER
+    )
 
 
 @app.get("/new-brew-id", response_class=HTMLResponse)
@@ -109,4 +117,6 @@ async def send_new_brew_id(request: Request, brew_id: str = Form()):
         config.logger.error(err_info)
         raise
 
-    return RedirectResponse(request.url_for("root"), status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(
+        request.url_for("root"), status_code=status.HTTP_303_SEE_OTHER
+    )
