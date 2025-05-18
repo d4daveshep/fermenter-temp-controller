@@ -4,15 +4,22 @@ from controller.arduino import ArduinoTempController
 from controller.config import ArduinoConfig
 
 
-@pytest.mark.asyncio
-async def test_arduino_open_serial_connection():
-    # create mock reader and writer
-    mock_reader = AsyncMock()
-    mock_writer = MagicMock()
+@pytest.fixture
+def mock_reader() -> AsyncMock:
+    reader = AsyncMock()
 
     # configure the reader mock to return specific data
     # TODO: change this to a temperature json string
-    mock_reader.readline.return_value = b"mocked response\r\n"
+    reader.readline.return_value = b"mocked response\r\n"
+
+    return reader
+
+
+@pytest.mark.asyncio
+async def test_arduino_open_serial_connection(mock_reader: AsyncMock):
+    # create mock reader and writer
+    # mock_reader = AsyncMock()
+    mock_writer = MagicMock()
 
     config: ArduinoConfig = ArduinoConfig(serial_port="/dev/ttyACM0", baud_rate=115200)
     arduino = ArduinoTempController(config)
