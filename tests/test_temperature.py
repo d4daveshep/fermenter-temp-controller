@@ -20,9 +20,6 @@ def json_string() -> str:
 
 
 def test_temperature_reading(json_string: str):
-    # json_dict: dict = json.loads(json_string)
-    # data_dict: dict = TemperatureReading.convert_dict_int_values_to_float(json_dict)
-
     temp_reading: TemperatureReading = TemperatureReading.model_validate_json(
         json_string
     )
