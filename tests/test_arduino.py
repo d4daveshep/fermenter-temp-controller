@@ -20,9 +20,14 @@ async def test_arduino_open_serial_connection():
     # patch the open_serial_connection function
     with patch(
         "serial_asyncio.open_serial_connection", return_value=(mock_reader, mock_writer)
-    ):
+    ) as mock_open:
         # call the function
         reader, writer = await arduino.open_serial_connection()
 
+        assert reader is mock_reader
+        assert writer is mock_writer
         assert reader is arduino.serial_port_reader
         assert writer is arduino.serial_port_writer
+
+        reading: str = await arduino.read_temperature()
+        assert reading == "mocked response\r\n"

@@ -8,7 +8,7 @@ class ArduinoTempController:
     def __init__(self, config: ArduinoConfig):
         self.config = config
 
-    async def open_serial_connection(self) -> (StreamReader, StreamWriter):
+    async def open_serial_connection(self) -> tuple[StreamReader, StreamWriter]:
         reader, writer = await serial_asyncio.open_serial_connection(
             url=self.config.serial_port, baudrate=self.config.baud_rate
         )
@@ -16,6 +16,8 @@ class ArduinoTempController:
         self.serial_port_writer: StreamWriter = writer
         return reader, writer
 
-    def read_temperature(self) -> TemperatureReading:
+    async def read_temperature(self):  # -> TemperatureReading:
         # TODO: implement
-        return TemperatureReading()
+        # return TemperatureReading()
+        data: bytes = await self.serial_port_reader.readline()
+        return data.decode()
