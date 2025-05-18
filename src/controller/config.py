@@ -39,48 +39,48 @@ class ControllerConfig(BaseModel):
     zmq: ZmqConfig
     general: GeneralConfig
 
+    @staticmethod
+    def load_config(filename: Path) -> "ControllerConfig":
+        """
+        Load the specified config .ini file.
+        Raise a ValidationError if the config file is incomplete or has validation errors
 
-def load_config(filename: Path) -> ControllerConfig:
-    """
-    Load the specified config .ini file.
-    Raise a ValidationError if the config file is incomplete or has validation errors
+        Parameters:
+        filename (Path): the file path to the config file
 
-    Parameters:
-    filename (Path): the file path to the config file
+        Returns:
+        ControllerConfig: a ControllerConfig object
+        """
+        if not filename.exists():
+            raise FileNotFoundError(f"Config file '{filename}' not found")
 
-    Returns:
-    ControllerConfig: a ControllerConfig object
-    """
-    if not filename.exists():
-        raise FileNotFoundError(f"Config file '{filename}' not found")
+        # parse the .ini file
+        parser: ConfigParser = ConfigParser()
+        parser.read(filename)
 
-    # parse the .ini file
-    parser: ConfigParser = ConfigParser()
-    parser.read(filename)
+        # convert to a dict format
+        config_dict: dict[str, Any] = {}
+        for section in parser.sections():
+            section_dict: dict[str, Any] = {k: v for k, v in parser.items(section)}
 
-    # convert to a dict format
-    config_dict: dict[str, Any] = {}
-    for section in parser.sections():
-        section_dict: dict[str, Any] = {k: v for k, v in parser.items(section)}
+            # Convert boolean strings
+            for key, value in section_dict.items():
+                if value.lower() in ("true", "yes", "on", "1"):
+                    section_dict[key] = True
+                elif value.lower() in ("false", "no", "off", "0"):
+                    section_dict[key] = False
+                # Try to convert to int if possible
+                elif value.isdigit():
+                    section_dict[key] = int(value)
+                # Try to convert to float if possible
+                elif value.replace(".", "", 1).isdigit() and value.count(".") == 1:
+                    section_dict[key] = float(value)
 
-        # Convert boolean strings
-        for key, value in section_dict.items():
-            if value.lower() in ("true", "yes", "on", "1"):
-                section_dict[key] = True
-            elif value.lower() in ("false", "no", "off", "0"):
-                section_dict[key] = False
-            # Try to convert to int if possible
-            elif value.isdigit():
-                section_dict[key] = int(value)
-            # Try to convert to float if possible
-            elif value.replace(".", "", 1).isdigit() and value.count(".") == 1:
-                section_dict[key] = float(value)
+            config_dict[section] = section_dict
 
-        config_dict[section] = section_dict
-
-    # create pydantic model with validation
-    try:
-        config: ControllerConfig = ControllerConfig.model_validate(config_dict)
-        return config
-    except ValidationError as e:
-        raise ValidationError(f"Configuruation validation failed: {e}")
+        # create pydantic model with validation
+        try:
+            config: ControllerConfig = ControllerConfig.model_validate(config_dict)
+            return config
+        except ValidationError as e:
+            raise ValidationError(f"Configuruation validation failed: {e}")

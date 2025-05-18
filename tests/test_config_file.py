@@ -7,7 +7,6 @@ from controller.config import (
     InfluxDBConfig,
     ArduinoConfig,
     ZmqConfig,
-    load_config,
 )
 from pathlib import Path
 
@@ -16,7 +15,7 @@ def test_load_valid_config():
     config_file_path: Path = Path("tests/valid_config.ini")
     assert config_file_path.exists()
 
-    config: ControllerConfig = load_config(config_file_path)
+    config: ControllerConfig = ControllerConfig.load_config(config_file_path)
     # assert config
 
     assert config.fermenter.target_temp == 21.3
