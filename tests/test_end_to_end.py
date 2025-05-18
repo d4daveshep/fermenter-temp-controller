@@ -14,7 +14,12 @@ def test_end_to_end_sync():
     arduino_temp_controller: ArduinoTempController = ArduinoTempController(
         config.arduino
     )
+    reader, writer = arduino_temp_controller.open_serial_connection()
+    assert reader is arduino_temp_controller.serial_port_reader
+    assert writer is arduino_temp_controller.serial_port_writer
+
     temperature_reading: TemperatureReading = arduino_temp_controller.read_temperature()
+
     assert temperature_reading.target_temp == 20.0
 
     # put temperature readings in database
