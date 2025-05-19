@@ -1,5 +1,6 @@
+import json
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch, _patch
 from controller.arduino import ArduinoTempController
 from controller.config import ArduinoConfig
 
@@ -13,6 +14,35 @@ def mock_reader() -> AsyncMock:
     reader.readline.return_value = b"mocked response\r\n"
 
     return reader
+
+
+@pytest.fixture
+def mock_serial_connection() -> dict:
+    """Fixture to create a mock serial connection that return JSON strings"""
+    mock_reader: AsyncMock = AsyncMock()
+    mock_writer: MagicMock = MagicMock()
+
+    # Store the data that will be returned on each readline call
+    json_data = [
+        {"temperature": 22.5, "humidity": 45, "timestamp": "2025-05-19T10:00:00"},
+        {"temperature": 22.7, "humidity": 46, "timestamp": "2025-05-19T10:00:10"},
+        {"temperature": 22.9, "humidity": 47, "timestamp": "2025-05-19T10:00:20"},
+    ]
+
+    # Convert data to JSON strings with newline (as would be received over serial)
+    json_strings = [(json.dumps(data) + "\r\n").encode() for data in json_data]
+
+    # configure readline to return different values on successive calls
+    mock_reader.readline.side_effect = json_strings
+
+    # create a patch for serial_asyncio.open_serial_connection
+    patcher: _patch[AsyncMock] = patch(
+        "serial_asyncio.open_serial_connection", new=AsyncMock()
+    )
+    mock_open: AsyncMock = patcher.start()
+    mock_open.return_value = (mock_reader, mock_writer)
+
+    # TODO: finsish me from Claude.ai
 
 
 @pytest.mark.asyncio
