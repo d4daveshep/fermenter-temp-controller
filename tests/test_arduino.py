@@ -1,4 +1,5 @@
 import json
+from typing import Any, Generator
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch, _patch
 from controller.arduino import ArduinoTempController
@@ -17,7 +18,7 @@ def mock_reader() -> AsyncMock:
 
 
 @pytest.fixture
-def mock_serial_connection() -> dict:
+def mock_serial_connection() -> Generator[Any, Any, Any]:
     """Fixture to create a mock serial connection that return JSON strings"""
     mock_reader: AsyncMock = AsyncMock()
     mock_writer: MagicMock = MagicMock()
@@ -42,7 +43,13 @@ def mock_serial_connection() -> dict:
     mock_open: AsyncMock = patcher.start()
     mock_open.return_value = (mock_reader, mock_writer)
 
-    # TODO: finsish me from Claude.ai
+    # TODO: add mock sleep
+
+    # return everything needed for testing
+    yield {"reader": mock_reader, "writer": mock_writer, "patcher": patcher}
+
+    # clean up the patcher after the test is complete
+    patcher.stop()
 
 
 @pytest.mark.asyncio
