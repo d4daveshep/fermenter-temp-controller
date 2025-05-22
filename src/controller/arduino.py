@@ -1,4 +1,7 @@
+import asyncio
 from asyncio import StreamReader, StreamWriter
+import json
+from typing import Callable, Any
 import serial_asyncio
 from controller.config import ArduinoConfig
 from controller.temperature import TemperatureReading
@@ -16,8 +19,38 @@ class ArduinoTempController:
         self.serial_port_writer: StreamWriter = writer
         return reader, writer
 
-    async def read_temperature(self):  # -> TemperatureReading:
-        # TODO: implement
-        # return TemperatureReading()
-        data: bytes = await self.serial_port_reader.readline()
-        return data.decode()
+    # async def read_temperature(self):  # -> TemperatureReading:
+    #     data: bytes = await self.serial_port_reader.readline()
+    #     return data.decode(encoding="utf-8").strip()
+    #     # return TemperatureReading()
+
+    async def monitor_serial_port(
+        # FIXME: change callable function to accept a string parameter not a dict
+        self,
+        callback: Callable[[dict[str, Any]], None] | None,
+    ):
+        """
+        Monitor the serial port calling the callback function when a line of data is received
+        """
+        await self.open_serial_connection()
+
+        try:
+            while True:
+                data: bytes = await self.serial_port_reader.readline()
+                if not data:
+                    # FIXME: use logging instead of print
+                    print("ERROR: No data received from serial port")
+                    break
+
+                try:
+                    json_string: str = data.decode(encoding="utf-8").strip()
+                    json_data: dict[str, Any] = json.loads(json_string)
+                    if callback:
+                        callback(json_data)
+                except json.JSONDecodeError:
+                    # FIXME: use logging instead of print
+                    print(f"Invalid JSON: {json_string}")
+
+                await asyncio.sleep(0)
+        finally:
+            self.serial_port_writer.close()
