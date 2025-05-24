@@ -58,3 +58,10 @@ class ArduinoTempController:
                 await asyncio.sleep(0)
         finally:
             self.serial_port_writer.close()
+
+    async def write_to_serial_port(self, string_to_write: str) -> None:
+        """
+        Encode a string to bytes and write to the serial port
+        """
+        self.serial_port_writer.write(string_to_write.encode())
+        await asyncio.sleep(0)

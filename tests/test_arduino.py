@@ -62,8 +62,8 @@ def mock_serial_connection() -> Generator[Any, Any, Any]:
 
 @pytest.mark.asyncio
 async def test_arduino_open_serial_connection(mock_reader: AsyncMock):
+    # FIXME: change this test to use the mock_serial_connection fixture
     # create mock reader and writer
-    # mock_reader = AsyncMock()
     mock_writer = MagicMock()
 
     config: ArduinoConfig = ArduinoConfig(serial_port="/dev/ttyACM0", baud_rate=115200)
@@ -98,7 +98,7 @@ async def test_monitor_serial_port(mock_serial_connection: dict):
         received_data.append(data)
 
     # run the monitoring function
-    monitor_task = asyncio.create_task(
+    monitor_task:asyncio.Task[None] = asyncio.create_task(
         arduino.monitor_serial_port(callback=data_callback)
     )
 
@@ -111,3 +111,20 @@ async def test_monitor_serial_port(mock_serial_connection: dict):
     # check that the data was received
     assert len(received_data) == 3
     assert received_data == mock_serial_connection["json_data"]
+
+@pytest.mark.asyncio
+async def test_write_to_serial_port(mock_serial_connection:dict):
+    """
+    Test writing some data to the serial port using mocked serial connection
+    """
+
+    config: ArduinoConfig = ArduinoConfig(serial_port="/dev/ttyACM0", baud_rate=115200)
+    arduino = ArduinoTempController(config)
+
+    write_task:asyncio.Task[None] = asyncio.create_task(arduino.write_to_serial_port("<12.3>"))
+
+    await asyncio.sleep(0.1) # TODO: not sure if we actually need this
+
+    write_task.cancel()
+
+    assert mock_serial_connection["writer"].write.call_count == 1
