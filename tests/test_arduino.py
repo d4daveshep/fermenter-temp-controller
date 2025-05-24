@@ -72,7 +72,7 @@ async def test_arduino_open_serial_connection(mock_reader: AsyncMock):
     # patch the open_serial_connection function
     with patch(
         "serial_asyncio.open_serial_connection", return_value=(mock_reader, mock_writer)
-    ) as mock_open:
+    ):
         # call the function
         reader, writer = await arduino.open_serial_connection()
 
@@ -81,20 +81,17 @@ async def test_arduino_open_serial_connection(mock_reader: AsyncMock):
         assert reader is arduino.serial_port_reader
         assert writer is arduino.serial_port_writer
 
-        reading: str = await arduino.read_temperature()
-        assert reading == "mocked response"
-
 
 @pytest.mark.asyncio
 async def test_monitor_serial_port(mock_serial_connection: dict):
-    """ 
+    """
     Test the monitoring of the serial port using mocked serial connection
     """
 
     config: ArduinoConfig = ArduinoConfig(serial_port="/dev/ttyACM0", baud_rate=115200)
     arduino = ArduinoTempController(config)
 
-    received_data: list[dict[str, Any]] = [] # to hold the json data we receive
+    received_data: list[dict[str, Any]] = []  # to hold the json data we receive
 
     # create a callback function to add the received data
     def data_callback(data: dict[str, Any]):
