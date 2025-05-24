@@ -20,7 +20,9 @@ def mock_reader() -> AsyncMock:
 
 @pytest.fixture
 def mock_serial_connection() -> Generator[Any, Any, Any]:
-    """Fixture to create a mock serial connection that return JSON strings"""
+    """
+    Fixture to create a mock serial connection that return JSON strings
+    """
     mock_reader: AsyncMock = AsyncMock()
     mock_writer: MagicMock = MagicMock()
 
@@ -39,6 +41,11 @@ def mock_serial_connection() -> Generator[Any, Any, Any]:
     # configure readline to return different values on successive calls
     mock_reader.readline.side_effect = json_strings
 
+    # configure the mock writer
+    mock_writer.close = MagicMock()
+    mock_writer.write = MagicMock()
+    mock_writer.drain = MagicMock()
+
     # create a patch for serial_asyncio.open_serial_connection
     patcher: _patch[AsyncMock] = patch(
         "serial_asyncio.open_serial_connection", new=AsyncMock()
@@ -53,7 +60,8 @@ def mock_serial_connection() -> Generator[Any, Any, Any]:
         "reader": mock_reader,
         "writer": mock_writer,
         "json_data": json_data,
-        "patcher": patcher,
+        # "patcher": patcher,
+        "open_connection": mock_open,
     }
 
     # clean up the patcher after the test is complete
@@ -98,7 +106,7 @@ async def test_monitor_serial_port(mock_serial_connection: dict):
         received_data.append(data)
 
     # run the monitoring function
-    monitor_task:asyncio.Task[None] = asyncio.create_task(
+    monitor_task: asyncio.Task[None] = asyncio.create_task(
         arduino.monitor_serial_port(callback=data_callback)
     )
 
@@ -112,8 +120,9 @@ async def test_monitor_serial_port(mock_serial_connection: dict):
     assert len(received_data) == 3
     assert received_data == mock_serial_connection["json_data"]
 
+
 @pytest.mark.asyncio
-async def test_write_to_serial_port(mock_serial_connection:dict):
+async def test_write_to_serial_port(mock_serial_connection: dict):
     """
     Test writing some data to the serial port using mocked serial connection
     """
@@ -121,9 +130,13 @@ async def test_write_to_serial_port(mock_serial_connection:dict):
     config: ArduinoConfig = ArduinoConfig(serial_port="/dev/ttyACM0", baud_rate=115200)
     arduino = ArduinoTempController(config)
 
-    write_task:asyncio.Task[None] = asyncio.create_task(arduino.write_to_serial_port("<12.3>"))
+    await arduino.open_serial_connection()
 
-    await asyncio.sleep(0.1) # TODO: not sure if we actually need this
+    write_task: asyncio.Task[None] = asyncio.create_task(
+        arduino.write_to_serial_port("<12.3>")
+    )
+
+    await asyncio.sleep(0.1)  # TODO: not sure if we actually need this
 
     write_task.cancel()
 

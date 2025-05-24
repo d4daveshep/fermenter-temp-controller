@@ -64,4 +64,5 @@ class ArduinoTempController:
         Encode a string to bytes and write to the serial port
         """
         self.serial_port_writer.write(string_to_write.encode())
-        await asyncio.sleep(0)
+        await self.serial_port_writer.drain()
+        # await asyncio.sleep(0)
