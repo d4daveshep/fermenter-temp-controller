@@ -44,12 +44,16 @@ class ArduinoTempController:
 
                 try:
                     json_string: str = data.decode(encoding="utf-8").strip()
-                    json_data: dict[str, Any] = json.loads(json_string)
-                    if callback:
-                        callback(json_data)
-                except json.JSONDecodeError:
+                    try:
+                        json_data: dict[str, Any] = json.loads(json_string)
+                        if callback:
+                            callback(json_data)
+                    except json.JSONDecodeError:
+                        # FIXME: use logging instead of print
+                        print(f"Invalid JSON: {json_string}")
+                except UnicodeDecodeError:
                     # FIXME: use logging instead of print
-                    print(f"Invalid JSON: {json_string}")
+                    print(f"Can't decode bytes: {data}")
 
                 await asyncio.sleep(0)
         finally:
