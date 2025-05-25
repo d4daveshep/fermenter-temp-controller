@@ -7,15 +7,15 @@ from controller.arduino import ArduinoTempController
 from controller.config import ArduinoConfig
 
 
-@pytest.fixture
-def mock_reader() -> AsyncMock:
-    reader = AsyncMock()
-
-    # configure the reader mock to return specific data
-    # TODO: change this to a temperature json string
-    reader.readline.return_value = b"mocked response\r\n"
-
-    return reader
+# @pytest.fixture
+# def mock_reader() -> AsyncMock:
+#     reader = AsyncMock()
+#
+#     # configure the reader mock to return specific data
+#     # TODO: change this to a temperature json string
+#     reader.readline.return_value = b"mocked response\r\n"
+#
+#     return reader
 
 
 @pytest.fixture
@@ -60,7 +60,6 @@ def mock_serial_connection() -> Generator[Any, Any, Any]:
         "reader": mock_reader,
         "writer": mock_writer,
         "json_data": json_data,
-        # "patcher": patcher,
         "open_connection": mock_open,
     }
 
@@ -69,7 +68,7 @@ def mock_serial_connection() -> Generator[Any, Any, Any]:
 
 
 @pytest.mark.asyncio
-async def test_arduino_open_serial_connection(mock_reader: AsyncMock):
+async def test_arduino_open_serial_connection(mock_serial_connection: Generator):
     # FIXME: change this test to use the mock_serial_connection fixture
     # create mock reader and writer
     mock_writer = MagicMock()
@@ -77,17 +76,11 @@ async def test_arduino_open_serial_connection(mock_reader: AsyncMock):
     config: ArduinoConfig = ArduinoConfig(serial_port="/dev/ttyACM0", baud_rate=115200)
     arduino = ArduinoTempController(config)
 
-    # patch the open_serial_connection function
-    with patch(
-        "serial_asyncio.open_serial_connection", return_value=(mock_reader, mock_writer)
-    ):
-        # call the function
-        reader, writer = await arduino.open_serial_connection()
+    # get the mock serial connection reader and writer
+    mock_reader, mock_writer = await arduino.open_serial_connection()
 
-        assert reader is mock_reader
-        assert writer is mock_writer
-        assert reader is arduino.serial_port_reader
-        assert writer is arduino.serial_port_writer
+    assert mock_reader is arduino.serial_port_reader
+    assert mock_writer is arduino.serial_port_writer
 
 
 @pytest.mark.asyncio
