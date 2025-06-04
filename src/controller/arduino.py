@@ -1,4 +1,6 @@
 import asyncio
+import time
+import serial
 from asyncio import StreamReader, StreamWriter
 import json
 from typing import Callable, Any
@@ -66,3 +68,20 @@ class ArduinoTempController:
         self.serial_port_writer.write(string_to_write.encode())
         await self.serial_port_writer.drain()
         # await asyncio.sleep(0)
+        #
+
+    if __name__ == "__main__":
+        """
+        Read data from serial port and print it to the console
+        """
+        arduino = serial.Serial("/dev/ttyACM0", 115200)
+        time.sleep(2)
+        try:
+            while True:
+                if arduino.in_waiting > 0:
+                    line = arduino.readline().decode("utf-8").strip()
+                    print(line)
+        except KeyboardInterrupt:
+            print("Monitoring stopped")
+        finally:
+            arduino.close()
