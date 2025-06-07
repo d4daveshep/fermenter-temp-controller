@@ -1,4 +1,6 @@
 import math
+import json
+from typing import Any
 
 
 def sine_wave_value(interval: int, min: float = 19.0, max: float = 21.0) -> float:
@@ -29,3 +31,12 @@ def step_value(
         return high
     else:
         raise ValueError(f"can't calculate step value for interval={interval}")
+
+
+def mock_arduino_output(interval: int) -> str:
+    arduino_dict: dict[str, Any] = {
+        "instant": str(interval),
+        "average": str(sine_wave_value(interval)),
+    }
+    arduino_str: str = json.dumps(arduino_dict)
+    return arduino_str
