@@ -1,13 +1,13 @@
 import math
 
 
-def sine_wave_value(interval: int) -> float:
+def sine_wave_value(interval: int, min: float = 19.0, max: float = 21.0) -> float:
     """
-    Return floats between 19.0 and 21.0 using a sine function.
+    Return floats between min and max using a sine function at the specified interval.
     Full cycle is split into 20 intervals.
     """
     intervals: int = 20
-    while True:
-        angle: float = (2 * math.pi * (interval % intervals)) / intervals
-        sine_value: float = math.sin(angle)
-        scaled_value: float = 20.0 + sine_value
+    avg: float = (min + max) / 2.0
+    angle: float = (2 * math.pi * (interval % intervals)) / intervals
+    sine_value: float = math.sin(angle)
+    return avg + sine_value
