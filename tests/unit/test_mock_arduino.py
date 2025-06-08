@@ -117,4 +117,4 @@ async def test_mock_arduino_output_generator(mock_serial_connection):
             print(f"Error reading from mock arduino serial connection: {e}")
             await asyncio.sleep(0.5)
 
-    pass
+    assert mock_serial_connection["reader"].readline.call_count == 60
