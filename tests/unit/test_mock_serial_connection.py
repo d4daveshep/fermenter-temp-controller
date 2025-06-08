@@ -84,6 +84,11 @@ def test_mock_arduino_output():
 
 @pytest.mark.asyncio
 async def test_mock_arduino_output_generator(mock_serial_connection):
+    """
+    Test opening a mock_serial_connection that return as reader,writer tuple.
+    The reader returns output from the mock_arduino_output_generator on each readline() call.
+    By referencing the mock_serial_connection fixture we will get our patched serial connection.
+    """
     # open serial connection (uses patched connection)
     reader, writer = await serial_asyncio.open_serial_connection(
         url="/dev/ttyUSB0",
