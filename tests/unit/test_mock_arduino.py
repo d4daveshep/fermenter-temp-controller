@@ -93,7 +93,7 @@ def test_mock_arduino_temperature_reading_output():
 @pytest.mark.asyncio
 async def test_mock_arduino_output_generator(mock_serial_connection):
     """
-    Test opening a mock_serial_connection that return as reader,writer tuple.
+    Test using the mock_serial_connection that returns as reader,writer tuple.
     The reader returns output from the mock_arduino_output_generator on each readline() call.
     By referencing the mock_serial_connection fixture we will get our patched serial connection.
     """
