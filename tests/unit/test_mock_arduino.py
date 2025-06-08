@@ -1,4 +1,3 @@
-# test_mock_serial_connection.py
 import asyncio
 import serial_asyncio
 import pytest
@@ -14,6 +13,9 @@ from mock_arduino_controller.mock_temperature import (
 
 
 def test_sine_wave():
+    """
+    Test the sine wave function we will use for generating fluctuating fermenter temperature values
+    """
     min_value: float = 19.0
     max_value: float = 21.0
     total: float = 0.0
@@ -33,6 +35,9 @@ def test_sine_wave():
 
 
 def test_step_value():
+    """
+    Test the step value function we will use for generating fluctuating ambient temperature values
+    """
     low_value: float = 18.0
     mid_value: float = 20.0
     high_value: float = 22.0
@@ -47,7 +52,10 @@ def test_step_value():
             assert math.isclose(value, high_value), f"interval:{interval}"
 
 
-def test_mock_arduino_output():
+def test_mock_arduino_temperature_reading_output():
+    """
+    Test the json string output from our mock temperature reading function
+    """
     arduino_output: str = mock_arduino_output(interval=0, target=21.3)
     arduino_json: dict[str, Any] = json.loads(arduino_output)
 
