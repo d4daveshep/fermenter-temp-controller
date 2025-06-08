@@ -50,13 +50,9 @@ def mock_arduino_output(interval: int, target: float = 20.0) -> str:
         "ambient": str(step_value(interval)),
         "action": action,
         "reason-code": "RC7.3",
-        "json-size":12345
+        "json-size": 12345,
     }
-    if action == "Heat":
-        arduino_dict["heat"] = True
-    elif action == "Cool":
-        arduino_dict["cool"] = True
-    else:
-        arduino_dict["rest"] = True
+    arduino_dict[action.lower()] = True
+
     arduino_str: str = json.dumps(arduino_dict)
     return arduino_str
