@@ -1,6 +1,6 @@
-import math
 import json
-from typing import Any
+import math
+from typing import Any, Generator
 
 
 def sine_wave_value(interval: int, min: float = 19.0, max: float = 21.0) -> float:
@@ -56,3 +56,16 @@ def mock_arduino_output(interval: int, target: float = 20.0) -> str:
 
     arduino_str: str = json.dumps(arduino_dict)
     return arduino_str
+
+
+def mock_arduino_output_generator(
+    start_interval: int = 0, target: float = 20.0
+) -> Generator:
+    """
+    Generator that creates mock arduino temperature readings as json responses encoded to a byte array
+    """
+    counter: int = start_interval
+    while True:
+        arduino_output = mock_arduino_output(interval=counter, target=target)
+        counter += 1
+        yield (arduino_output + "\r\n").encode()
