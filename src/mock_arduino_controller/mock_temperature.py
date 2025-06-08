@@ -33,10 +33,30 @@ def step_value(
         raise ValueError(f"can't calculate step value for interval={interval}")
 
 
-def mock_arduino_output(interval: int) -> str:
+def mock_arduino_output(interval: int, target: float = 20.0) -> str:
+    average: float = sine_wave_value(interval)
+    if average < target - 0.3:
+        action: str = "Heat"
+    elif average > target + 0.3:
+        action: str = "Cool"
+    else:
+        action: str = "Rest"
     arduino_dict: dict[str, Any] = {
         "instant": str(interval),
-        "average": str(sine_wave_value(interval)),
+        "average": str(average),
+        "min": str(average),
+        "max": str(average),
+        "target": str(target),
+        "ambient": str(step_value(interval)),
+        "action": action,
+        "reason-code": "RC7.3",
+        "json-size":12345
     }
+    if action == "Heat":
+        arduino_dict["heat"] = True
+    elif action == "Cool":
+        arduino_dict["cool"] = True
+    else:
+        arduino_dict["rest"] = True
     arduino_str: str = json.dumps(arduino_dict)
     return arduino_str

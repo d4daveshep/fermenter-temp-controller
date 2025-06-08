@@ -44,8 +44,8 @@ def test_step_value():
             assert math.isclose(value, high_value), f"interval:{interval}"
 
 
-def test_arduino_output_generator():
-    arduino_output: str = mock_arduino_output(interval=0)
+def test_mock_arduino_output():
+    arduino_output: str = mock_arduino_output(interval=0, target=21.3)
     arduino_json: dict[str, Any] = json.loads(arduino_output)
 
     assert "instant" in arduino_json
@@ -53,3 +53,27 @@ def test_arduino_output_generator():
 
     assert "average" in arduino_json
     assert math.isclose(float(arduino_json["average"]), sine_wave_value(interval=0))
+
+    assert "min" in arduino_json
+    assert math.isclose(float(arduino_json["min"]), sine_wave_value(interval=0))
+
+    assert "max" in arduino_json
+    assert math.isclose(float(arduino_json["max"]), sine_wave_value(interval=0))
+
+    assert "target" in arduino_json
+    assert math.isclose(float(arduino_json["target"]), 21.3)
+
+    assert "ambient" in arduino_json
+    assert math.isclose(float(arduino_json["ambient"]), step_value(interval=0))
+
+    assert "action" in arduino_json
+    assert arduino_json["action"] == "Heat"
+
+    assert "heat" in arduino_json
+    assert arduino_json["heat"]
+
+    assert "reason-code" in arduino_json
+    assert arduino_json["reason-code"].startswith("RC")
+
+    assert "json-size" in arduino_json
+    assert arduino_json["json-size"] == 12345
