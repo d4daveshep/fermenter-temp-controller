@@ -1,11 +1,12 @@
 import json
 import math
-from typing import Any
+from typing import Any, Generator
 
 from mock_arduino_controller.mock_temperature import (
     mock_arduino_output,
     sine_wave_value,
     step_value,
+    mock_arduino_output_generator,
 )
 
 
@@ -85,3 +86,51 @@ def test_mock_arduino_temperature_reading_output():
 
     assert "json-size" in arduino_json
     assert arduino_json["json-size"] == 12345
+
+
+def test_mock_auduino_serial_output_generator_with_target_temp_function():
+    """
+    Test the target temp function in the mock_arduino_output_generator
+    """
+    # create some data
+    data: list[float] = [11.1]
+
+    # define a function to get the latest data item
+    def get_latest_data() -> float:
+        return data[-1]
+
+    # create a generator using the latest data function
+    output_generator: Generator = mock_arduino_output_generator(
+        start_interval=0, get_target=get_latest_data
+    )
+
+    # get next generator output and check the target temp value
+    next_output: bytes = next(output_generator)
+    json_output: dict[str, Any] = json.loads(next_output.decode())
+    assert json_output["target"] == "11.1"
+
+    # add another item to the data
+    data.append(22.2)
+
+    # get next generator output and check temp value is latest
+    next_output: bytes = next(output_generator)
+    json_output: dict[str, Any] = json.loads(next_output.decode())
+    assert json_output["target"] == "22.2"
+
+
+def test_mock_auduino_serial_output_generator_with_no_target_temp_function():
+    """
+    Test the mock_arduino_output_generator without specifying a target temp function
+    """
+    # create a generator without a get target function
+    output_generator: Generator = mock_arduino_output_generator(start_interval=0)
+
+    # get next generator output and check the target temp value
+    next_output: bytes = next(output_generator)
+    json_output: dict[str, Any] = json.loads(next_output.decode())
+    assert json_output["target"] == "20.0"
+
+    # get next generator output and check temp value is latest
+    next_output: bytes = next(output_generator)
+    json_output: dict[str, Any] = json.loads(next_output.decode())
+    assert json_output["target"] == "20.0"

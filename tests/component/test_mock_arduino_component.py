@@ -1,10 +1,12 @@
 import asyncio
 import json
-from typing import Any
+from typing import Any, Generator
 from unittest import mock
 
 import pytest
 import serial_asyncio
+
+from mock_arduino_controller.mock_temperature import mock_arduino_output_generator
 
 
 @pytest.mark.asyncio
@@ -68,11 +70,15 @@ async def test_mock_arduino_serial_write_target_temp(mock_serial_connection):
     # check the write happened as expected
     assert mock_serial_connection["writer"].write.call_count == 1
     mock_serial_connection["writer"].write.assert_called_once_with(command_bytes)
-    assert len(mock_serial_connection["written_data"]) == 1 assert mock_serial_connection["written_data"][0] == new_target_temp_command.encode()
+    assert len(mock_serial_connection["written_data"]) == 1
+    assert mock_serial_connection["written_data"][0] == new_target_temp_command.encode()
+
     # read a temperature reading from serial port
     data: bytes = await reader.readline()
     decoded_str: str = data.decode().strip()
     if decoded_str:
         arduino_json: dict[str, Any] = json.loads(decoded_str)
         assert "target" in arduino_json
-        assert arduino_json["target"] == "12.3"
+        assert arduino_json["target"] == "20.0"
+
+

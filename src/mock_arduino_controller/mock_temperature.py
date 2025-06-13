@@ -1,6 +1,6 @@
 import json
 import math
-from typing import Any, Generator
+from typing import Any, Callable, Generator
 
 
 def sine_wave_value(interval: int, min: float = 19.0, max: float = 21.0) -> float:
@@ -33,7 +33,7 @@ def step_value(
         raise ValueError(f"can't calculate step value for interval={interval}")
 
 
-def mock_arduino_output(interval: int, target: float = 20.0) -> str:
+def mock_arduino_output(interval: int, target: float = 0.0) -> str:
     average: float = sine_wave_value(interval)
     if average < target - 0.3:
         action: str = "Heat"
@@ -59,13 +59,14 @@ def mock_arduino_output(interval: int, target: float = 20.0) -> str:
 
 
 def mock_arduino_output_generator(
-    start_interval: int = 0, target: float = 20.0
+    start_interval: int = 0, get_target: Callable = (lambda: 20.0)
 ) -> Generator:
     """
     Generator that creates mock arduino temperature readings as json responses encoded to a byte array
     """
     counter: int = start_interval
     while True:
+        target: float = get_target()
         arduino_output = mock_arduino_output(interval=counter, target=target)
         counter += 1
         yield (arduino_output + "\r\n").encode()
