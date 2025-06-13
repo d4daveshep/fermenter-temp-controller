@@ -4,9 +4,9 @@ from typing import Any, Generator
 
 from mock_arduino_controller.mock_temperature import (
     mock_arduino_output,
+    mock_arduino_output_generator,
     sine_wave_value,
     step_value,
-    mock_arduino_output_generator,
 )
 
 

@@ -1,7 +1,5 @@
-import asyncio
 import json
-from typing import Any, Generator
-from unittest import mock
+from typing import Any
 
 import pytest
 import serial_asyncio
@@ -80,5 +78,3 @@ async def test_mock_arduino_serial_write_target_temp(mock_serial_connection):
         arduino_json: dict[str, Any] = json.loads(decoded_str)
         assert "target" in arduino_json
         assert arduino_json["target"] == "20.0"
-
-
