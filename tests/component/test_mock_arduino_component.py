@@ -42,4 +42,36 @@ async def test_mock_arduino_serial_write_target_temp(mock_serial_connection):
     Test the mock serial connection can accept a target temperature and
     update the target temperature returned on the next output
     """
-    assert False, "implement this test"
+    # temp command using the format understood by the aduino code
+    new_target_temp_command: str = "<12.3>"
+
+    # open serial connection (uses patched connection)
+    reader, writer = await serial_asyncio.open_serial_connection(
+        url="/dev/ttyUSB0",
+        baudrate=9600,
+    )
+
+    # read a temperature reading from serial port
+    data: bytes = await reader.readline()
+    decoded_str: str = data.decode().strip()
+    if decoded_str:
+        arduino_json: dict[str, Any] = json.loads(decoded_str)
+        assert "target" in arduino_json
+        assert arduino_json["target"] == "20.0"
+
+    # write the command to the serial port
+    command_bytes: bytes = new_target_temp_command.encode()
+    writer.write(command_bytes)
+    await writer.drain()
+
+    # check the write happened as expected
+    assert mock_serial_connection["writer"].write.call_count == 1
+    mock_serial_connection["writer"].write.assert_called_once_with(command_bytes)
+
+    # read a temperature reading from serial port
+    data: bytes = await reader.readline()
+    decoded_str: str = data.decode().strip()
+    if decoded_str:
+        arduino_json: dict[str, Any] = json.loads(decoded_str)
+        assert "target" in arduino_json
+        assert arduino_json["target"] == "12.3"
