@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -21,6 +22,15 @@ def mock_serial_connection():
     # Configure readline to return different responses
     mock_reader.readline.side_effect = mock_arduino_output_generator()
 
+    # Configure the writer to store data written
+    written_data: list[bytes] = []
+
+    def store_writes(data: bytes) -> Any:
+        written_data.append(data)
+        return MagicMock.return_value
+
+    mock_writer.write.side_effect = store_writes
+
     # Patch the serial connection
     patcher = patch("serial_asyncio.open_serial_connection", new=AsyncMock())
     mock_open = patcher.start()
@@ -30,7 +40,7 @@ def mock_serial_connection():
         "reader": mock_reader,
         "writer": mock_writer,
         "open_connection": mock_open,
-        # "expected_responses": json_responses,
+        "written_data": written_data,
     }
 
     patcher.stop()
