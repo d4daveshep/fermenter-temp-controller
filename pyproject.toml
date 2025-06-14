@@ -5,6 +5,7 @@ description = "Modernised (2025) version of Fermentation Temperature Controller"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+  "fastapi>=0.115.12",
   "influxdb-client",
   "pydantic",
   "pyserial",
@@ -13,6 +14,7 @@ dependencies = [
   "pytz",
   "pyzmq",
   "requests",
+  "uvicorn>=0.34.3",
   "validators",
 ]
 

@@ -1,20 +1,33 @@
 # main.py
+import logging
 import asyncio
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
 import serial_asyncio
+import uvicorn
 from asyncio import Queue, StreamReader, StreamWriter, Task
+
+# Define global queues for inter-task communication
+db_queue: Queue
+command_queue: Queue
+
+# Create global logger
+logger = logging.getLogger(__name__)
 
 
 async def read_from_arduino(reader: StreamReader, db_queue: Queue) -> None:
     """Continuously read from Arduino serial port and queue data for database"""
+    logging.debug("Starting read_from_arduino task")
     while True:
         try:
             data: bytes = await reader.readline()
             decoded_data: str = data.decode("utf-8").strip()
+            logging.info(f"Read from Arduino: {decoded_data}")
             if decoded_data:
                 await db_queue.put(decoded_data)
                 await asyncio.sleep(0.5)
         except Exception as e:
-            print(f"Error reading from Arduino: {e}")
+            logging.error(f"Error reading from Arduino: {e}")
             await asyncio.sleep(0.5)
 
 
@@ -50,18 +63,29 @@ async def write_data_to_db(data: str) -> None:
     print(f"Wrote to DB: {data}")
 
 
-async def main() -> None:
+async def arduino_serial_handler() -> None:
+    """
+    Handle Arduino serial communication asynchronously
+    """
+    global db_queue, command_queue
+
+    logging.info("Starting the Arduino serial handler")
+
     # Create queues for inter-task communication
-    db_queue: Queue = Queue()
-    command_queue: Queue = Queue()
+    db_queue = Queue()
+    command_queue = Queue()
 
     # Open serial connection to Arduino
-    reader: StreamReader
-    writer: StreamWriter
-    reader, writer = await serial_asyncio.open_serial_connection(
-        url="/dev/ttyUSB0",  # Adjust for your Arduino port
-        baudrate=9600,
-    )
+    try:
+        reader: StreamReader
+        writer: StreamWriter
+        reader, writer = await serial_asyncio.open_serial_connection(
+            url="/dev/ttyACM0",  # Adjust for your Arduino port
+            baudrate=9600,
+        )
+    except Exception as e:
+        logger.error(f"Failed to connect to Arduino: {e}")
+        return
 
     # Create and run all tasks concurrently
     tasks: list[Task] = [
@@ -71,19 +95,59 @@ async def main() -> None:
     ]
 
     try:
-        # Example: Add a command to the queue
-        await command_queue.put("LED_ON")
-
         # Run all tasks concurrently
         await asyncio.gather(*tasks)
 
-    except KeyboardInterrupt:
-        print("Shutting down...")
+    except asyncio.CancelledError:
+        print("Arduino tasks cancelled")
         for task in tasks:
             task.cancel()
         writer.close()
         await writer.wait_closed()
 
 
+# Lifespan manager for FastAPI
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start Arduino handler as background task
+    arduino_task: Task = asyncio.create_task(arduino_serial_handler())
+
+    # wait for Arduino connection to establish
+    await asyncio.sleep(10)
+
+    yield
+
+    # Cleanup on shutdown
+    arduino_task.cancel()
+    try:
+        await arduino_task
+    except asyncio.CancelledError:
+        pass
+
+
+# Create the FastAPI app with lifespan
+app: FastAPI = FastAPI(lifespan=lifespan)
+
+
+@app.get("/")
+async def root():
+    return {"message": "Arduino Controller API"}
+
+
+async def run_server():
+    """
+    Run the FastAPI server
+    """
+    logging.basicConfig(level=logging.DEBUG)
+    logging.info(
+        "Starting the FastAPI app and handling Arduino communication in background"
+    )
+
+    config = uvicorn.Config(app, host="0.0.0.0", port=8000, log_level="info")
+    server = uvicorn.Server(config)
+    await server.serve()
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    # asyncio.run(main())
+    asyncio.run(run_server())

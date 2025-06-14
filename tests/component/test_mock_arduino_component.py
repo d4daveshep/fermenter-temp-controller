@@ -4,8 +4,6 @@ from typing import Any
 import pytest
 import serial_asyncio
 
-from mock_arduino_controller.mock_temperature import mock_arduino_output_generator
-
 
 @pytest.mark.asyncio
 async def test_mock_arduino_serial_output_generator(mock_serial_connection):
