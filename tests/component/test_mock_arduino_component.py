@@ -58,7 +58,7 @@ async def test_mock_arduino_serial_write_target_temp(mock_serial_connection):
     if decoded_str:
         arduino_json: dict[str, Any] = json.loads(decoded_str)
         assert "target" in arduino_json
-        assert arduino_json["target"] == "20.0"
+        assert arduino_json["target"] == "20.0"  # this is the default target temp
 
     # write the command to the serial port
     command_bytes: bytes = new_target_temp_command.encode()
@@ -77,4 +77,6 @@ async def test_mock_arduino_serial_write_target_temp(mock_serial_connection):
     if decoded_str:
         arduino_json: dict[str, Any] = json.loads(decoded_str)
         assert "target" in arduino_json
-        assert arduino_json["target"] == "12.3"
+        assert (
+            arduino_json["target"] == "12.3"
+        )  # check our updated target temp is returned
