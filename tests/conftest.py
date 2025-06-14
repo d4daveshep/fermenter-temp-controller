@@ -19,9 +19,6 @@ def mock_serial_connection():
         AsyncMock()
     )  # drain() is async and waits for write buffer to empty
 
-    # Configure readline to return different responses
-    mock_reader.readline.side_effect = mock_arduino_output_generator()
-
     # Configure the writer to store data written
     written_data: list[bytes] = []
 
@@ -30,6 +27,19 @@ def mock_serial_connection():
         return MagicMock.return_value
 
     mock_writer.write.side_effect = store_writes
+
+    # convert the float value from the last written data
+    def latest_target_temp() -> float:
+        temp: float = 20.0
+        if written_data:
+            temp_str: str = written_data[-1].decode()
+            temp = float(temp_str[1:-1])
+        return temp
+
+    # Configure readline to return different responses
+    mock_reader.readline.side_effect = mock_arduino_output_generator(
+        get_target=latest_target_temp
+    )
 
     # Patch the serial connection
     patcher = patch("serial_asyncio.open_serial_connection", new=AsyncMock())

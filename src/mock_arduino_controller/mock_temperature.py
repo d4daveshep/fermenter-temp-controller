@@ -59,7 +59,7 @@ def mock_arduino_output(interval: int, target: float = 0.0) -> str:
 
 
 def mock_arduino_output_generator(
-    start_interval: int = 0, get_target: Callable = (lambda: 20.0)
+    start_interval: int = 0, get_target: Callable[[], float] = (lambda: 20.0)
 ) -> Generator:
     """
     Generator that creates mock arduino temperature readings as json responses encoded to a byte array
