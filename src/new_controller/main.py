@@ -81,7 +81,7 @@ async def arduino_serial_handler() -> None:
         writer: StreamWriter
         reader, writer = await serial_asyncio.open_serial_connection(
             url="/dev/ttyACM0",  # Adjust for your Arduino port
-            baudrate=9600,
+            baudrate=115200,
         )
     except Exception as e:
         logger.error(f"Failed to connect to Arduino: {e}")
