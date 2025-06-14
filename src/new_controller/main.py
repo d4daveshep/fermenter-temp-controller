@@ -1,11 +1,15 @@
 # main.py
-import logging
 import asyncio
+import logging
+from asyncio import Queue, StreamReader, StreamWriter, Task
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from typing import Any
+
 import serial_asyncio
 import uvicorn
-from asyncio import Queue, StreamReader, StreamWriter, Task
+from fastapi import FastAPI
+
+from mock_arduino_controller.mock_serial_connection import patch_serial_connection
 
 # Define global queues for inter-task communication
 db_queue: Queue
@@ -74,6 +78,9 @@ async def arduino_serial_handler() -> None:
     # Create queues for inter-task communication
     db_queue = Queue()
     command_queue = Queue()
+
+    # Patch the serial connection to use mocked serial connection
+    patched: dict[str, Any] = patch_serial_connection()
 
     # Open serial connection to Arduino
     try:
