@@ -53,6 +53,7 @@ async def write_to_database(db_queue: Queue) -> None:
     """Process database writes from the queue"""
     while True:
         try:
+            # FIXME: think this should be a TemperatureReading object
             data: str = await db_queue.get()
             # Your database write logic here
             await write_data_to_db(data)
