@@ -23,5 +23,5 @@ class TemperatureReading(BaseModel):
     rest: Optional[bool] = None
     heat: Optional[bool] = None
     cool: Optional[bool] = None
-    reason_code: str = Field(alias="reason-code")
+    reason_code: Optional[str] = Field(alias="reason-code")
     json_size: int = Field(alias="json-size")
