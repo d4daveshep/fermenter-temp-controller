@@ -1,16 +1,17 @@
 # main.py
 import asyncio
+import json
 import logging
 from asyncio import Queue, StreamReader, StreamWriter, Task
 from contextlib import asynccontextmanager
 from typing import Any
 
-from pydantic_core import ValidationError
 import serial_asyncio
-from controller.temperature import TemperatureReading
 import uvicorn
 from fastapi import FastAPI
+from pydantic_core import ValidationError
 
+from controller.temperature import TemperatureReading
 from mock_arduino_controller.mock_serial_connection import patch_serial_connection
 
 # TODO: Move mocking flag into a config or environment variable
@@ -33,11 +34,12 @@ async def read_from_arduino(
         try:
             data: bytes = await reader.readline()
             decoded_data: str = data.decode("utf-8").strip()
-            logging.info(f"Read from Arduino: {decoded_data}")
+            logging.debug(f"Data read from Arduino: {decoded_data}")
             if decoded_data:
                 temp_reading: TemperatureReading = (
                     TemperatureReading.model_validate_json(decoded_data)
                 )
+                logging.info(f"TemperatureReading: {temp_reading}")
                 await db_queue.put(temp_reading)
                 await asyncio.sleep(sleep_interval)
         except ValidationError as e:
@@ -173,5 +175,5 @@ async def run_server():
 
 
 if __name__ == "__main__":
-    # MOCK_SERIAL_CONNECTION = True
+    MOCK_SERIAL_CONNECTION = True
     asyncio.run(run_server())
