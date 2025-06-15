@@ -5,7 +5,9 @@ from asyncio import Queue, StreamReader, StreamWriter, Task
 from contextlib import asynccontextmanager
 from typing import Any
 
+from pydantic_core import ValidationError
 import serial_asyncio
+from controller.temperature import TemperatureReading
 import uvicorn
 from fastapi import FastAPI
 
@@ -33,8 +35,13 @@ async def read_from_arduino(
             decoded_data: str = data.decode("utf-8").strip()
             logging.info(f"Read from Arduino: {decoded_data}")
             if decoded_data:
-                await db_queue.put(decoded_data)
+                temp_reading: TemperatureReading = (
+                    TemperatureReading.model_validate_json(decoded_data)
+                )
+                await db_queue.put(temp_reading)
                 await asyncio.sleep(sleep_interval)
+        except ValidationError as e:
+            logging.warning(f"ValidationError in data from Arduino: {e}")
         except Exception as e:
             logging.error(f"Error reading from Arduino: {e}")
             await asyncio.sleep(sleep_interval)
@@ -88,7 +95,8 @@ async def arduino_serial_handler() -> None:
     if MOCK_SERIAL_CONNECTION:
         # Patch the serial connection to use mocked serial connection
         patched: dict[str, Any] = patch_serial_connection()
-        sleep_interval = 10.0  # to simulate the physical Arduino
+        # sleep_interval = 10.0  # to simulate the physical Arduino
+        pass
 
     # Open serial connection to Arduino
     try:
@@ -125,7 +133,8 @@ async def arduino_serial_handler() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # wait for Arduino connection to establish
-    await asyncio.sleep(10)
+    if not MOCK_SERIAL_CONNECTION:
+        await asyncio.sleep(10)
 
     # Start Arduino handler as background task
     arduino_task: Task = asyncio.create_task(arduino_serial_handler())
