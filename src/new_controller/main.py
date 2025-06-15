@@ -11,6 +11,9 @@ from fastapi import FastAPI
 
 from mock_arduino_controller.mock_serial_connection import patch_serial_connection
 
+# TODO: Move mocking flag into a config or environment variable
+MOCK_SERIAL_CONNECTION: bool = False
+
 # Define global queues for inter-task communication
 db_queue: Queue
 command_queue: Queue
@@ -19,7 +22,9 @@ command_queue: Queue
 logger = logging.getLogger(__name__)
 
 
-async def read_from_arduino(reader: StreamReader, db_queue: Queue) -> None:
+async def read_from_arduino(
+    reader: StreamReader, db_queue: Queue, sleep_interval: float = 0.1
+) -> None:
     """Continuously read from Arduino serial port and queue data for database"""
     logging.debug("Starting read_from_arduino task")
     while True:
@@ -29,10 +34,10 @@ async def read_from_arduino(reader: StreamReader, db_queue: Queue) -> None:
             logging.info(f"Read from Arduino: {decoded_data}")
             if decoded_data:
                 await db_queue.put(decoded_data)
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(sleep_interval)
         except Exception as e:
             logging.error(f"Error reading from Arduino: {e}")
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(sleep_interval)
 
 
 async def write_to_database(db_queue: Queue) -> None:
@@ -79,8 +84,10 @@ async def arduino_serial_handler() -> None:
     db_queue = Queue()
     command_queue = Queue()
 
-    # Patch the serial connection to use mocked serial connection
-    patched: dict[str, Any] = patch_serial_connection()
+    if MOCK_SERIAL_CONNECTION:
+        # Patch the serial connection to use mocked serial connection
+        patched: dict[str, Any] = patch_serial_connection()
+        sleep_interval: float = 10.0  # to simulate the physical Arduino
 
     # Open serial connection to Arduino
     try:
@@ -96,7 +103,7 @@ async def arduino_serial_handler() -> None:
 
     # Create and run all tasks concurrently
     tasks: list[Task] = [
-        asyncio.create_task(read_from_arduino(reader, db_queue)),
+        asyncio.create_task(read_from_arduino(reader, db_queue, sleep_interval)),
         asyncio.create_task(write_to_database(db_queue)),
         asyncio.create_task(handle_arduino_commands(writer, command_queue)),
     ]
@@ -116,11 +123,11 @@ async def arduino_serial_handler() -> None:
 # Lifespan manager for FastAPI
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Start Arduino handler as background task
-    arduino_task: Task = asyncio.create_task(arduino_serial_handler())
-
     # wait for Arduino connection to establish
     await asyncio.sleep(10)
+
+    # Start Arduino handler as background task
+    arduino_task: Task = asyncio.create_task(arduino_serial_handler())
 
     yield
 
@@ -156,5 +163,5 @@ async def run_server():
 
 
 if __name__ == "__main__":
-    # asyncio.run(main())
+    MOCK_SERIAL_CONNECTION = True
     asyncio.run(run_server())
