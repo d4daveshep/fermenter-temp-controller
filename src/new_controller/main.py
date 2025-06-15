@@ -49,7 +49,7 @@ async def write_to_database(db_queue: Queue) -> None:
             await write_data_to_db(data)
             db_queue.task_done()
         except Exception as e:
-            print(f"Error writing to database: {e}")
+            logging.error(f"Error writing to database: {e}")
 
 
 async def handle_arduino_commands(writer: StreamWriter, command_queue: Queue) -> None:
@@ -60,16 +60,16 @@ async def handle_arduino_commands(writer: StreamWriter, command_queue: Queue) ->
             writer.write(f"{command}\n".encode("utf-8"))
             await writer.drain()
             command_queue.task_done()
-            print(f"Sent arduino command: {command}")
+            logging.info(f"Sent arduino command: {command}")
         except Exception as e:
-            print(f"Error writing to Arduino: {e}")
+            logging.error(f"Error writing to Arduino: {e}")
 
 
 async def write_data_to_db(data: str) -> None:
     """Placeholder for your database write implementation"""
     # Your actual database code here
     await asyncio.sleep(0.01)  # Simulate async DB operation
-    print(f"Wrote to DB: {data}")
+    logging.info(f"Wrote to DB: {data}")
 
 
 async def arduino_serial_handler() -> None:
@@ -84,10 +84,11 @@ async def arduino_serial_handler() -> None:
     db_queue = Queue()
     command_queue = Queue()
 
+    sleep_interval: float = 0.1  # Default
     if MOCK_SERIAL_CONNECTION:
         # Patch the serial connection to use mocked serial connection
         patched: dict[str, Any] = patch_serial_connection()
-        sleep_interval: float = 10.0  # to simulate the physical Arduino
+        sleep_interval = 10.0  # to simulate the physical Arduino
 
     # Open serial connection to Arduino
     try:
@@ -113,7 +114,7 @@ async def arduino_serial_handler() -> None:
         await asyncio.gather(*tasks)
 
     except asyncio.CancelledError:
-        print("Arduino tasks cancelled")
+        logging.info("Arduino tasks cancelled")
         for task in tasks:
             task.cancel()
         writer.close()
@@ -163,5 +164,5 @@ async def run_server():
 
 
 if __name__ == "__main__":
-    MOCK_SERIAL_CONNECTION = True
+    # MOCK_SERIAL_CONNECTION = True
     asyncio.run(run_server())
