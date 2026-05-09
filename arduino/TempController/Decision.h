@@ -9,16 +9,16 @@ enum Action { NO_ACTION, REST, HEAT, COOL, ACTION_ERROR };
 class Decision {
 private:
 	Action action;
-	String reasonCode;
+	const char* reasonCode;
 	
 public:
 	Action getNextAction();
 	void setNextAction(Action nextAction);
     
-    String getActionText();
+    const char* getActionText();
 	
-	String getReasonCode();
-	void setReasonCode(String reasonCode);
+	const char* getReasonCode();
+	void setReasonCode(const char* reasonCode);
 	
 	boolean isMade();
 	void clear();

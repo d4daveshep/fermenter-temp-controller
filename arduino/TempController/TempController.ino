@@ -140,20 +140,20 @@ void loop(void) {
 test(WriteJsonString) {
 	StaticJsonDocument<100> jsonDoc;
 
-	jsonDoc["now"] = 12.34;
-	jsonDoc["avg"] = 23.45;
-	jsonDoc["override"] = true;
+	jsonDoc[F("now")] = 12.34;
+	jsonDoc[F("avg")] = 23.45;
+	jsonDoc[F("override")] = true;
 	Decision decision;
 	decision.setNextAction(REST);
 	decision.setReasonCode("RC3.1");
-	jsonDoc["action"] = decision.getActionText();
-	jsonDoc["rest"] = true;
-	jsonDoc["reason-code"] = decision.getReasonCode();
+	jsonDoc[F("action")] = decision.getActionText();
+	jsonDoc[F("rest")] = true;
+	jsonDoc[F("reason-code")] = decision.getReasonCode();
 
 	Serial.println(jsonDoc.memoryUsage());
 
-	String output = "";
-	serializeJson(jsonDoc, output);
+	char output[150];
+	serializeJson(jsonDoc, output, sizeof(output));
 	assertEqual("{\"now\":12.34,\"avg\":23.45,\"override\":true,\"action\":\"Rest\",\"rest\":true,\"reason-code\":\"RC3.1\"}",output);
 }
 #else
@@ -172,33 +172,33 @@ Print Json format to Serial port
 void printJson() {
 	
 	jsonDoc.clear();
-	jsonDoc["instant"] = fermenterTemperatureReadings.getLatestTemperatureReading();
-	jsonDoc["average"] = fermenterTemperatureReadings.getCurrentAverageTemperature();
-	jsonDoc["min"] = fermenterTemperatureReadings.getMinimumTemperature();
-	jsonDoc["max"] = fermenterTemperatureReadings.getMaximumTemperature();
-	jsonDoc["target"] = controller.getTargetTemp();
-	jsonDoc["ambient"] = ambientTemperatureReadings.getCurrentAverageTemperature();
+	jsonDoc[F("instant")] = fermenterTemperatureReadings.getLatestTemperatureReading();
+	jsonDoc[F("average")] = fermenterTemperatureReadings.getCurrentAverageTemperature();
+	jsonDoc[F("min")] = fermenterTemperatureReadings.getMinimumTemperature();
+	jsonDoc[F("max")] = fermenterTemperatureReadings.getMaximumTemperature();
+	jsonDoc[F("target")] = controller.getTargetTemp();
+	jsonDoc[F("ambient")] = ambientTemperatureReadings.getCurrentAverageTemperature();
 	
-	jsonDoc["action"] = decision.getActionText();
+	jsonDoc[F("action")] = decision.getActionText();
 
 	// add booleans for Grafana to use
 	switch ( decision.getNextAction() ) {
 		case REST:
-			jsonDoc["rest"] = true;
+			jsonDoc[F("rest")] = true;
 			break;
 		case HEAT:
-			jsonDoc["heat"] = true;
+			jsonDoc[F("heat")] = true;
 			break;
 		case COOL:
-			jsonDoc["cool"] = true;
+			jsonDoc[F("cool")] = true;
 			break;
 		default:
 			break;
 	}
 
-	jsonDoc["reason-code"] = decision.getReasonCode();
+	jsonDoc[F("reason-code")] = decision.getReasonCode();
 //	jsonDoc["timestamp"] = millis();
-	jsonDoc["json-size"] = jsonDoc.memoryUsage();
+	jsonDoc[F("json-size")] = jsonDoc.memoryUsage();
 
 	serializeJson(jsonDoc, Serial);
 	Serial.println();
@@ -285,19 +285,19 @@ void updateLCD() {
 	// print LINE 1
 	lcd.setCursor(0, 0);
 	// current fermenter temp
-	lcd.print("N");
+	lcd.print('N');
 	lcd.print( dtostrf(fermenterTemperatureReadings.getCurrentAverageTemperature(), 4, 1, buf) );
-	lcd.print(" ");
+	lcd.print(' ');
 
 	// target temp
-	lcd.print("T");
+	lcd.print('T');
 	lcd.print( dtostrf(controller.getTargetTemp(), 2, 0, buf) );
-	lcd.print(" ");
+	lcd.print(' ');
 
 	// current ambient temp
-	lcd.print("A");
+	lcd.print('A');
 	lcd.print( dtostrf(ambientTemperatureReadings.getCurrentAverageTemperature(), 4, 1, buf) );
-	lcd.print(" ");
+	lcd.print(' ');
 
 	// print LINE 2
 	lcd.setCursor(0, 1);
@@ -307,9 +307,9 @@ void updateLCD() {
 	lcd.print(decision.getActionText());
 
 	// min & max
-	lcd.print(" ");
+	lcd.print(' ');
 	lcd.print( dtostrf(fermenterTemperatureReadings.getMinimumTemperature(), 4, 1, buf) );
-	lcd.print("-");
+	lcd.print('-');
 	lcd.print( dtostrf(fermenterTemperatureReadings.getMaximumTemperature(), 4, 1, buf) );
 
 }

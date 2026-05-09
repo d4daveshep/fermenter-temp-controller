@@ -10,7 +10,7 @@ void Decision::setNextAction(Action nextAction) {
 	this->action = nextAction;
 }
 
-String Decision::getActionText() {
+const char* Decision::getActionText() {
     switch( action ) {
         case NO_ACTION:
             return "No Action";
@@ -27,11 +27,11 @@ String Decision::getActionText() {
 	}
 }
 
-String Decision::getReasonCode(){
+const char* Decision::getReasonCode(){
 	return this->reasonCode;
 }
 
-void Decision::setReasonCode(String reasonCode) {
+void Decision::setReasonCode(const char* reasonCode) {
 	this->reasonCode = reasonCode;
 }
 

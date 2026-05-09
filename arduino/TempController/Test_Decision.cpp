@@ -11,7 +11,7 @@
  */
 test(StoresActionAndReason) {
     Action action = HEAT;
-	String code = "RC_TEST";
+	const char* code = "RC_TEST";
 	Decision decision;
 	decision.setNextAction(action);
 	decision.setReasonCode(code);
