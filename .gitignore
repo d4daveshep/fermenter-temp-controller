@@ -1,3 +1,19 @@
-virtualenv
+# Editor backups
 *.*~
+
+# Python
+virtualenv
+**/__pycache__/
+**/*.egg-info/
+src/
+
+# Secrets and local config
+.env
+
+# InfluxDB runtime data
+influxdb/data/
+influx_data/
+controller/influxdb/
+
+# Python package manager
 uv.lock

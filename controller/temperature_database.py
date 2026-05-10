@@ -62,7 +62,7 @@ class TemperatureDatabase:
         return write_api.write(self.config.influxdb_bucket, self.config.influxdb_org, point)
 
     def get_last_record(self) -> dict:
-        query_string = 'from(bucket: "temp-test") |> range(start: -1h) |> last()'
+        query_string = f'from(bucket: "{self.config.influxdb_bucket}") |> range(start: -1h) |> last()'
         client = self.get_database_client()
         query_api = client.query_api()
 

@@ -1,5 +1,6 @@
 import configparser
 import logging
+import os
 from os import getcwd
 from os.path import exists
 
@@ -113,12 +114,16 @@ class ControllerConfig:
     def _get_influxdb_auth_token_from_config(
         self, config: configparser.ConfigParser
     ) -> str:
+        env_token = os.environ.get("INFLUXDB_TOKEN", "").strip()
+        if env_token:
+            return env_token
         try:
             influxdb_section = self._get_influxdb_section_from_config(config)
             return influxdb_section["auth_token"]
         except KeyError:
             raise ConfigError(
-                "'auth_token' not found in influxdb section in config file"
+                "'auth_token' not found in influxdb section in config file and "
+                "INFLUXDB_TOKEN environment variable is not set"
             )
 
     def _get_influxdb_org_from_config(self, config: configparser.ConfigParser) -> str:
@@ -141,6 +146,7 @@ class ControllerConfig:
         try:
             influxdb_section = self._get_influxdb_section_from_config(config)
             url = influxdb_section["url"]
+            print(f"InfluxDB URL={url}")
             # if not validators.url(url):
             #     raise ConfigError(
             #         f"URL '{url}' is not valid URL in influxdb section in config file"

@@ -1,22 +1,30 @@
-version: "3.4"
+# version: "3.4"
 services:
   influxdb:
-    image: influxdb:alpine
+    image: influxdb:2.7-alpine
     volumes:
-      - $PWD/influxdb/config:/etc/influxdb2:rw
       - $PWD/influxdb/data:/var/lib/influxdb2:rw
     ports:
       - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: my-user
+      DOCKER_INFLUXDB_INIT_PASSWORD: my-password
+      DOCKER_INFLUXDB_INIT_ORG: daveshep.net
+      DOCKER_INFLUXDB_INIT_BUCKET: temp-test
+      DOCKER_INFLUXDB_INIT_RETENTION: 1w
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
 
   controller:
     environment:
-      DAVE: "me"
       PYTHONPATH: "./"
+      PYTHONUNBUFFERED: "1"
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
     build:
       context: .
       dockerfile: Dockerfile.controller
     command: python3 controller/temp_controller.py
-#    command: echo $DAVE
+    #    command: echo $DAVE
     depends_on:
       - influxdb
     network_mode: "host"
@@ -33,5 +41,5 @@ services:
     ports:
       - "8080:8080"
     network_mode: "host"
-
-
+    environment:
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
