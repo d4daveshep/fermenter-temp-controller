@@ -67,7 +67,7 @@ class TempController:
                 self.fermenter_temp_max = data_dict["max"]
                 self.ambient_temp_now = data_dict["ambient"]
                 self.current_action = data_dict["action"]
-                self.action_reason_code = data_dict["reason-code"]
+                self.action_reason_code = data_dict.get("reason-code", "")
 
                 point = self.temperature_database.create_point_from_fermenter_json_dict(json_dict)
                 self.temperature_database.write_temperature_record(point)
@@ -75,7 +75,7 @@ class TempController:
                 await asyncio.sleep(0)
 
             except Exception as err_info:
-                print(err_info)
+                self.config.logger.error(f"Error processing serial data: {err_info}")
 
     async def write_target_temp_to_serial_port_if_updated(self):
 
