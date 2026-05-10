@@ -9,7 +9,6 @@ src/
 
 # Secrets and local config
 .env
-config/
 
 # InfluxDB runtime data
 influxdb/data/

@@ -1,9 +1,8 @@
 # version: "3.4"
 services:
   influxdb:
-    image: influxdb:alpine
+    image: influxdb:2.7-alpine
     volumes:
-      - $PWD/influxdb/config:/etc/influxdb2:rw
       - $PWD/influxdb/data:/var/lib/influxdb2:rw
     ports:
       - "8086:8086"
