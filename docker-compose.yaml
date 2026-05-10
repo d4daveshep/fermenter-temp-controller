@@ -1,4 +1,4 @@
-version: "3.4"
+# version: "3.4"
 services:
   influxdb:
     image: influxdb:alpine
@@ -16,7 +16,7 @@ services:
       context: .
       dockerfile: Dockerfile.controller
     command: python3 controller/temp_controller.py
-#    command: echo $DAVE
+    #    command: echo $DAVE
     depends_on:
       - influxdb
     network_mode: "host"
@@ -33,5 +33,3 @@ services:
     ports:
       - "8080:8080"
     network_mode: "host"
-
-
