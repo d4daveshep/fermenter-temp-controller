@@ -141,6 +141,7 @@ class ControllerConfig:
         try:
             influxdb_section = self._get_influxdb_section_from_config(config)
             url = influxdb_section["url"]
+            print(f"InfluxDB URL={url}")
             # if not validators.url(url):
             #     raise ConfigError(
             #         f"URL '{url}' is not valid URL in influxdb section in config file"

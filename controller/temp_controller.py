@@ -127,7 +127,8 @@ class TempController:
 
     def run(self):
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
         try:
             self.serial_port_reader, self.serial_port_writer = loop.run_until_complete(
