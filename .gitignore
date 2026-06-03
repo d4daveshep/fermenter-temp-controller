@@ -5,7 +5,7 @@
 virtualenv
 **/__pycache__/
 **/*.egg-info/
-src/
+/src/
 
 # Secrets and local config
 .env
