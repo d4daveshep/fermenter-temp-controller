@@ -1,13 +1,45 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Project: Fermentation temperature controller (home brewing). A Raspberry Pi
+  reads temperature readings from an Arduino over USB serial, persists them, and
+  serves a web UI for monitoring and runtime control. Currently being rewritten
+  from Python/InfluxDB to Rust. See docs/rewrite-plan.md and
+  docs/openspec-rewrite-management.md for the full plan.
+
+  Tech stack (target Rust rewrite):
+    - Single Rust binary on the Tokio async runtime
+    - Web: Axum + HTMX + MiniJinja templating (Jinja2-compatible)
+    - Storage: Redis 8 Time Series (replacing InfluxDB)
+    - Serial: tokio-serial; mock SerialSource trait for hardware-free dev/test
+    - Config: env vars + .env (12-factor)
+    - Logging/errors: tracing (structured), thiserror (typed), anyhow (top-level)
+    - Deploy: multi-stage cross-compiled Docker image for linux/arm64; Redis +
+      app via docker compose; serial device passthrough (not privileged)
+
+  Arduino firmware is NOT being rewritten. The serial contract is fixed and
+  sacred: newline-delimited JSON readings in @115200 baud; target temperature
+  written out as a "<float>" framed string.
+
+  Development conventions:
+    - TDD red->green->refactor. Tests first. Trait-abstract the three external
+      boundaries (SerialSource, TimeStore, HTTP) so most behaviour is testable
+      without hardware or network.
+    - Test tooling: cargo test, rstest (parametrized), insta (HTML snapshots),
+      testcontainers (real redis:8), tower oneshot (Axum). Hardware e2e tests
+      are #[ignore]'d.
+
+  Capability library (behavior-named, NOT module- or milestone-named):
+    device-connection, temperature-monitoring, temperature-control,
+    reading-history, brew-session, web-dashboard, system-configuration,
+    operational-health, deployment-packaging.
+
+  Change/proposal conventions:
+    - Work proceeds as fast vertical slices. Change folders are named
+      slice-N-verb-noun (e.g. slice-1-ingest-readings) for legible ordering.
+    - When a slice changes how an existing capability behaves, its proposal
+      carries an explicit MODIFIED delta against that capability's spec — never
+      a silent redefinition.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.
