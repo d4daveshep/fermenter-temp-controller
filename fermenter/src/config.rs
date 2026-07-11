@@ -45,11 +45,27 @@ impl Config {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Mutex, OnceLock};
+
     use super::*;
 
-    // Safety: tests run sequentially (single-threaded test harness for this
-    // module) so mutating env vars is safe here.
+    /// `Config::from_env` reads process-wide environment variables, and
+    /// `cargo test` runs `#[test]` functions concurrently across threads
+    /// within a single binary. Without serialising access, tests that set or
+    /// clear `SERIAL_PORT`/`SERIAL_BAUD`/`MOCK_SERIAL`/`RUST_LOG` race each
+    /// other and intermittently observe a sibling test's env state. This
+    /// mutex ensures only one env-mutating test body runs at a time.
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    const ALL_VARS: &[&str] = &["SERIAL_PORT", "SERIAL_BAUD", "MOCK_SERIAL", "RUST_LOG"];
+
+    // Safety: callers hold `env_lock()` for the duration of `f`, so no other
+    // test thread can observe or mutate these vars concurrently.
     fn with_env<F: FnOnce()>(vars: &[(&str, &str)], f: F) {
+        let _guard = env_lock().lock().unwrap_or_else(|e| e.into_inner());
         for (k, v) in vars {
             unsafe { std::env::set_var(k, v) };
         }
@@ -80,11 +96,9 @@ mod tests {
 
     #[test]
     fn defaults_applied_when_optional_vars_absent() {
-        unsafe {
-            std::env::remove_var("SERIAL_PORT");
-            std::env::remove_var("SERIAL_BAUD");
-            std::env::remove_var("MOCK_SERIAL");
-            std::env::remove_var("RUST_LOG");
+        let _guard = env_lock().lock().unwrap_or_else(|e| e.into_inner());
+        for var in ALL_VARS {
+            unsafe { std::env::remove_var(var) };
         }
         let config = Config::from_env().expect("should use defaults");
         assert_eq!(config.serial_port, "/dev/ttyACM0");
