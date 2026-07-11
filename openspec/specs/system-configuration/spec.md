@@ -10,8 +10,10 @@ fail-fast semantics.
 ### Requirement: Load configuration from environment
 
 The system SHALL load its configuration from environment variables at startup
-into a typed configuration value, supporting at minimum the serial port, serial
-baud rate, a mock-serial toggle, and the log level.
+into a typed configuration value, supporting at minimum the serial port,
+serial baud rate, a mock-serial toggle, the log level, the time-series storage
+connection URL, the time-series retention period, and the default brew
+identifier.
 
 #### Scenario: Configuration loaded from environment
 
@@ -22,7 +24,15 @@ baud rate, a mock-serial toggle, and the log level.
 #### Scenario: Mock-serial toggle selects the source
 
 - **WHEN** the mock-serial environment variable is enabled
-- **THEN** the application uses the mock serial source instead of real hardware
+- **THEN** the application uses the mock serial source instead of real
+  hardware
+
+#### Scenario: Time-series storage configuration is loaded
+
+- **WHEN** the application starts with the time-series storage connection URL,
+  retention period, and default brew identifier set in the environment
+- **THEN** it parses them into the typed configuration alongside the serial
+  and logging settings
 
 ### Requirement: Fail fast on invalid configuration
 
