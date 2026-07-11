@@ -43,6 +43,18 @@ than redefine it.
 - Range/history queries beyond "most recent" (no query API is exposed yet;
   only what rehydration needs).
 - Docker packaging (slice-7).
+- **Wiring `save_state`/`load_state` into the running application.** The
+  `TimeStore` trait methods are implemented and verified against real Redis
+  (`tests/store_redis.rs`) and via `FakeTimeStore` unit tests, but `main.rs`
+  never calls them this slice. There is no natural call site yet: `Config`
+  has no `target_temp` concept (no `DEFAULT_TARGET_TEMP`), and `brew_id` is a
+  static config value with nothing that "establishes" it at runtime. This
+  slice deliberately only rehydrates the *reading* (`last_reading`) into
+  current state; persisting/restoring `ControllerState` end-to-end lands with
+  `temperature-control` (slice-4), once a target temperature actually
+  originates from the application rather than only being echoed by the
+  Arduino. The trait methods exist now so slice-4/5 extend a proven contract
+  rather than adding new `TimeStore` surface under time pressure.
 
 ## Decisions
 
@@ -144,3 +156,17 @@ and `load_state` returning `None` on an empty DB. Matches
 - **[Default brew id is static this slice]** → No risk to correctness (it's
   just a config value), but flagged as a Non-Goal so it isn't mistaken for
   `brew-session` functionality landing early.
+- **[Connection resilience relies on library behaviour, unverified by this
+  project's own tests]** → The "Time-series storage connection resilience"
+  requirement (reconnect + backoff) is satisfied by using
+  `redis::aio::ConnectionManager`, but no test here stops/restarts the Redis
+  container mid-test to prove reconnection actually happens for this app's
+  usage of the client — `tests/store_redis.rs` only exercises the happy path
+  against a continuously-running container. This is a deliberate choice: the
+  `redis` crate has its own test coverage for `ConnectionManager`'s
+  reconnect/backoff behaviour, and duplicating that here (stopping/restarting
+  a `testcontainers` container mid-test, waiting out backoff timers) would
+  add slow, timing-sensitive tests for a well-established third-party
+  guarantee. Accepted risk: if a future `redis` crate upgrade changed or
+  weakened that guarantee, nothing in this project's suite would catch it
+  before it reached production.

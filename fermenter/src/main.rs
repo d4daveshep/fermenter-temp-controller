@@ -1,3 +1,11 @@
+//! Thin binary entry point — all logic lives in the `fermenter` library
+//! (`src/lib.rs`) so it's usable from `tests/` integration tests. Module
+//! unit tests (config, model, ingest, serial, store) live in the library
+//! and run via `cargo test --lib` (or plain `cargo test`, which also runs
+//! this binary's own tests and the `tests/` integration suite).
+//! `cargo test --bin fermenter` only runs this file's tests, which is
+//! currently none — use `--lib` for unit tests.
+
 use std::sync::{Arc, Mutex};
 
 use tracing::info;
@@ -33,6 +41,12 @@ async fn main() {
     // connection is established lazily, and write/read failures are logged
     // and skipped by the ingest loop rather than stopping startup (design.md
     // decision 5). Only invalid *config values* are fail-fast, handled above.
+    //
+    // The exit path below is reached only if `redis_url` fails to *parse* as
+    // a URL (`redis::Client::open`) — a malformed config value, not a
+    // connectivity problem. An unreachable-but-well-formed Redis URL never
+    // hits this branch; it's handled by the lazy connection manager's
+    // reconnect/backoff instead, per decision 5.
     let store = RedisTimeStore::connect(&config.redis_url, config.ts_retention_days)
         .unwrap_or_else(|e| {
             eprintln!("Redis configuration error: {e}");
