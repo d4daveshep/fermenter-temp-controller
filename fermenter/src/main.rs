@@ -1,16 +1,12 @@
-mod config;
-mod error;
-mod ingest;
-mod model;
-mod serial;
-
 use std::sync::{Arc, Mutex};
 
 use tracing::info;
 
-use crate::config::Config;
-use crate::model::Reading;
-use crate::serial::mock::MockSerialSource;
+use fermenter::config::Config;
+use fermenter::ingest;
+use fermenter::model::Reading;
+use fermenter::serial::mock::MockSerialSource;
+use fermenter::store::redis::RedisTimeStore;
 
 #[tokio::main]
 async fn main() {
@@ -28,10 +24,25 @@ async fn main() {
     info!(
         serial_port = %config.serial_port,
         mock = config.mock_serial,
+        redis_url = %config.redis_url,
+        brew_id = %config.default_brew_id,
         "fermenter controller starting"
     );
 
-    let latest_reading: Arc<Mutex<Option<Reading>>> = Arc::new(Mutex::new(None));
+    // Building the store never blocks on Redis being reachable — the
+    // connection is established lazily, and write/read failures are logged
+    // and skipped by the ingest loop rather than stopping startup (design.md
+    // decision 5). Only invalid *config values* are fail-fast, handled above.
+    let store = RedisTimeStore::connect(&config.redis_url, config.ts_retention_days)
+        .unwrap_or_else(|e| {
+            eprintln!("Redis configuration error: {e}");
+            std::process::exit(1);
+        });
+
+    // Rehydrate current state from persisted storage, if any, before the
+    // ingest loop starts (temperature-monitoring: rehydration on startup).
+    let rehydrated = ingest::rehydrate_latest_reading(&store, &config.default_brew_id).await;
+    let latest_reading: Arc<Mutex<Option<Reading>>> = Arc::new(Mutex::new(rehydrated));
 
     if config.mock_serial {
         let lines = vec![
@@ -41,7 +52,13 @@ async fn main() {
             Ok(r#"{"target":19.5,"average":19.5,"min":19.4,"max":19.6,"ambient":20.0,"action":"idle","json-size":42}"#.to_string()),
         ];
         let mut source = MockSerialSource::new(lines);
-        ingest::ingest_loop(&mut source, Arc::clone(&latest_reading)).await;
+        ingest::ingest_loop(
+            &mut source,
+            Arc::clone(&latest_reading),
+            &store,
+            &config.default_brew_id,
+        )
+        .await;
     } else {
         // Real serial source — deferred to slice-6
         eprintln!(

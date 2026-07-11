@@ -12,4 +12,7 @@ pub enum AppError {
 
     #[error("configuration error: {0}")]
     Config(String),
+
+    #[error("time-series storage error: {0}")]
+    Store(String),
 }

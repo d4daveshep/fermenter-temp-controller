@@ -15,6 +15,17 @@ pub struct Reading {
     pub json_size: Option<u32>,
 }
 
+/// Minimal persisted controller state — the values that don't originate from
+/// the Arduino and so must be saved/restored independently of the reading
+/// time series. `latest` is deliberately not carried here; it's reconstructed
+/// on startup via `TimeStore::last_reading`, avoiding a redundant, possibly
+/// stale copy.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ControllerState {
+    pub target_temp: f64,
+    pub brew_id: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

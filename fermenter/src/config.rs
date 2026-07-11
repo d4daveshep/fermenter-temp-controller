@@ -21,6 +21,20 @@ pub struct Config {
     /// Log level filter string, e.g. "info", "debug"
     #[serde(default = "default_log_level")]
     pub rust_log: String,
+
+    /// Time-series storage connection URL, e.g. redis://localhost:6379
+    #[serde(default = "default_redis_url")]
+    pub redis_url: String,
+
+    /// Retention period (days) for time-series data, matching the old
+    /// InfluxDB default.
+    #[serde(default = "default_ts_retention_days")]
+    pub ts_retention_days: u32,
+
+    /// Brew identifier used to tag persisted readings/state. Static for this
+    /// slice — runtime relabeling arrives with the brew-session capability.
+    #[serde(default = "default_brew_id")]
+    pub default_brew_id: String,
 }
 
 fn default_serial_port() -> String {
@@ -33,6 +47,18 @@ fn default_serial_baud() -> u32 {
 
 fn default_log_level() -> String {
     "info".to_string()
+}
+
+fn default_redis_url() -> String {
+    "redis://localhost:6379".to_string()
+}
+
+fn default_ts_retention_days() -> u32 {
+    7
+}
+
+fn default_brew_id() -> String {
+    "00-TEST-v00".to_string()
 }
 
 impl Config {
@@ -60,7 +86,15 @@ mod tests {
         LOCK.get_or_init(|| Mutex::new(()))
     }
 
-    const ALL_VARS: &[&str] = &["SERIAL_PORT", "SERIAL_BAUD", "MOCK_SERIAL", "RUST_LOG"];
+    const ALL_VARS: &[&str] = &[
+        "SERIAL_PORT",
+        "SERIAL_BAUD",
+        "MOCK_SERIAL",
+        "RUST_LOG",
+        "REDIS_URL",
+        "TS_RETENTION_DAYS",
+        "DEFAULT_BREW_ID",
+    ];
 
     // Safety: callers hold `env_lock()` for the duration of `f`, so no other
     // test thread can observe or mutate these vars concurrently.
@@ -105,6 +139,9 @@ mod tests {
         assert_eq!(config.serial_baud, 115_200);
         assert!(!config.mock_serial);
         assert_eq!(config.rust_log, "info");
+        assert_eq!(config.redis_url, "redis://localhost:6379");
+        assert_eq!(config.ts_retention_days, 7);
+        assert_eq!(config.default_brew_id, "00-TEST-v00");
     }
 
     #[test]
@@ -124,6 +161,31 @@ mod tests {
         with_env(&[("MOCK_SERIAL", "false")], || {
             let config = Config::from_env().unwrap();
             assert!(!config.mock_serial);
+        });
+    }
+
+    #[test]
+    fn redis_config_parses_from_env() {
+        with_env(
+            &[
+                ("REDIS_URL", "redis://redis-host:6380"),
+                ("TS_RETENTION_DAYS", "14"),
+                ("DEFAULT_BREW_ID", "01-IPA-v02"),
+            ],
+            || {
+                let config = Config::from_env().expect("should parse valid env");
+                assert_eq!(config.redis_url, "redis://redis-host:6380");
+                assert_eq!(config.ts_retention_days, 14);
+                assert_eq!(config.default_brew_id, "01-IPA-v02");
+            },
+        );
+    }
+
+    #[test]
+    fn invalid_retention_days_yields_error() {
+        with_env(&[("TS_RETENTION_DAYS", "not_a_number")], || {
+            let result = Config::from_env();
+            assert!(result.is_err(), "expected error for invalid retention days");
         });
     }
 }

@@ -13,6 +13,9 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 thiserror = "2"
 anyhow = "1"
 envy = "0.4"
+redis = { version = "1.3.0", features = ["tokio-comp", "connection-manager"] }
 
 [dev-dependencies]
 rstest = "0.23"
+testcontainers = "0.27.3"
+testcontainers-modules = { version = "0.15.0", features = ["redis"] }

@@ -67,12 +67,27 @@ crash happens between writing the series point and the state hash.
 
 **3. Raw `TS.*` commands, one series per field.**
 The `redis` crate has no first-class Time Series API, so `TS.CREATE` /
-`TS.ADD` / `TS.GET` are issued as raw commands. One series per
-`(brew_id, field)` pair — `temp:{brew_id}:fermenter`, `temp:{brew_id}:ambient`,
-`temp:{brew_id}:target` — labeled `brew={brew_id}`, `field={name}`, matching
-`rewrite-plan.md` §8. Rationale: matches the documented schema so later
-slices (querying history, charts) build on a stable layout; per-field series
-keep `TS.RANGE` queries simple later.
+`TS.ADD` are issued as raw commands. One series per `(brew_id, field)` pair —
+`temp:{brew_id}:fermenter`, `temp:{brew_id}:ambient`, `temp:{brew_id}:target`
+— labeled `brew={brew_id}`, `field={name}`, matching `rewrite-plan.md` §8.
+Rationale: matches the documented schema so later slices (querying history,
+charts) build on a stable layout; per-field series keep `TS.RANGE` queries
+simple later.
+
+**3a. A full-fidelity "latest reading" cache key alongside the series.**
+The three numeric series (`average`/`ambient`/`target`) cannot losslessly
+reconstruct a full `Reading` — `min`, `max`, `action`, and `reason_code` are
+never written to any series. Reconstructing `last_reading` purely from
+`TS.GET` on the three series would need lossy placeholders (e.g. an empty
+`action`), which could mislead anything showing rehydrated state. Instead,
+`write_reading` also stores the complete `Reading` as a serialized JSON
+string under `reading:{brew_id}:latest` (`SET`), and `last_reading` reads and
+deserializes that key (`GET`) rather than reconstructing from the series.
+The per-field series remain solely for future range/chart queries; this key
+exists solely to make "most recent reading" full-fidelity. Alternative
+(reconstruct from `TS.GET` with placeholder fields) rejected — it produces a
+`Reading` that silently misrepresents `action`/`reason_code` after a restart,
+which is worse than the redundancy of a second small write.
 
 **4. Lazy, idempotent series creation.**
 On the first write for a `(brew_id, field)` pair, attempt `TS.CREATE ...
