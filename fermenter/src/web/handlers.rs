@@ -6,7 +6,9 @@ use axum::{Form, Json};
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
 
+use crate::brew_session::{persist_brew, validate_brew_id};
 use crate::error::Result;
+use crate::ingest;
 use crate::model::Reading;
 use crate::temperature_control::{persist_target, validate_target};
 
@@ -27,7 +29,7 @@ fn status_context(state: &AppState) -> StatusContext {
     let reading = state.latest.lock().unwrap().clone();
     StatusContext {
         reading,
-        brew_id: state.brew_id.clone(),
+        brew_id: state.brew_tx.borrow().clone(),
     }
 }
 
@@ -90,7 +92,8 @@ pub(crate) async fn set_target(
             if let Err(e) = state.target_tx.send(value) {
                 warn!(error = %e, "no ingest receiver listening for target updates");
             }
-            if let Err(e) = persist_target(state.store.as_ref(), value, &state.brew_id).await {
+            let current_brew_id = state.brew_tx.borrow().clone();
+            if let Err(e) = persist_target(state.store.as_ref(), value, &current_brew_id).await {
                 warn!(error = %e, "failed to persist target temperature — continuing");
             }
             render(
@@ -110,6 +113,95 @@ pub(crate) async fn set_target(
                 "target_form.html",
                 TargetFormContext {
                     target: current,
+                    error: Some(message),
+                    confirmed: false,
+                },
+            )
+        }
+    }
+}
+
+/// Context for `brew_form.html`, shared by the `GET` (display) and `POST`
+/// (re-render on validation failure, or confirm on success) handlers.
+#[derive(Serialize)]
+pub(crate) struct BrewFormContext {
+    brew_id: String,
+    error: Option<String>,
+    confirmed: bool,
+}
+
+/// `GET /brew` — brew-identifier form pre-filled with the current brew
+/// identifier (web-dashboard spec: "Form displays the current brew
+/// identifier").
+pub(crate) async fn brew_form(State(state): State<AppState>) -> Result<Html<String>> {
+    let current = state.brew_tx.borrow().clone();
+    render(
+        &state.env,
+        "brew_form.html",
+        BrewFormContext {
+            brew_id: current,
+            error: None,
+            confirmed: false,
+        },
+    )
+}
+
+#[derive(Deserialize)]
+pub(crate) struct BrewForm {
+    brew_id: String,
+}
+
+/// `POST /brew` — validate and apply a new brew identifier
+/// (brew-session spec: "Accept a new brew identifier at runtime"). On
+/// success: updates the shared `watch` channel (read by the ingest side's
+/// per-reading tagging), persists the new `ControllerState` sourcing the
+/// paired `target_temp` from the live `target_tx` channel (design.md
+/// decision 2), and immediately rehydrates `state.latest` from the new
+/// brew's most recently persisted reading — or clears it to no-data if none
+/// exists — so the dashboard never shows the previous brew's reading
+/// mislabeled under the new identifier (design.md decision 4; brew-session:
+/// "Rehydrate current state when the active brew changes"). A persistence
+/// failure is logged and does not prevent confirming the in-memory update,
+/// matching `/target`'s existing log-and-continue treatment. On validation
+/// failure, the form is redisplayed with an error and neither the watch
+/// channel, storage, nor current state is touched.
+pub(crate) async fn set_brew(
+    State(state): State<AppState>,
+    Form(form): Form<BrewForm>,
+) -> Result<Html<String>> {
+    match validate_brew_id(&form.brew_id) {
+        Ok(value) => {
+            let previous = state.brew_tx.borrow().clone();
+            info!(previous, brew_id = %value, "brew identifier accepted");
+            if let Err(e) = state.brew_tx.send(value.clone()) {
+                warn!(error = %e, "no ingest receiver listening for brew updates");
+            }
+
+            let current_target_temp = *state.target_tx.borrow();
+            if let Err(e) = persist_brew(state.store.as_ref(), &value, current_target_temp).await {
+                warn!(error = %e, "failed to persist brew identifier — continuing");
+            }
+
+            let rehydrated = ingest::rehydrate_latest_reading(state.store.as_ref(), &value).await;
+            *state.latest.lock().unwrap() = rehydrated;
+
+            render(
+                &state.env,
+                "brew_form.html",
+                BrewFormContext {
+                    brew_id: value,
+                    error: None,
+                    confirmed: true,
+                },
+            )
+        }
+        Err(message) => {
+            let current = state.brew_tx.borrow().clone();
+            render(
+                &state.env,
+                "brew_form.html",
+                BrewFormContext {
+                    brew_id: current,
                     error: Some(message),
                     confirmed: false,
                 },
@@ -195,6 +287,30 @@ mod tests {
             confirmed: false,
         };
         let html = render(&env, "target_form.html", ctx).unwrap();
+        insta::assert_snapshot!(html.0);
+    }
+
+    #[test]
+    fn brew_form_with_current_brew_snapshot() {
+        let env = build_environment();
+        let ctx = BrewFormContext {
+            brew_id: "00-TEST-v00".to_string(),
+            error: None,
+            confirmed: false,
+        };
+        let html = render(&env, "brew_form.html", ctx).unwrap();
+        insta::assert_snapshot!(html.0);
+    }
+
+    #[test]
+    fn brew_form_with_error_snapshot() {
+        let env = build_environment();
+        let ctx = BrewFormContext {
+            brew_id: "00-TEST-v00".to_string(),
+            error: Some("brew identifier must not be empty".to_string()),
+            confirmed: false,
+        };
+        let html = render(&env, "brew_form.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
     }
 }

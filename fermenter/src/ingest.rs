@@ -41,19 +41,24 @@ pub async fn rehydrate_latest_reading(store: &dyn TimeStore, brew_id: &str) -> O
 /// Ingest loop: reads lines from `source`, parses them as `Reading` values,
 /// updates `latest_reading` on success, logs a warning and continues on
 /// failure. Each successfully parsed reading is also written to `store`
-/// tagged with `brew_id`; a persistence failure is logged and does not stop
-/// the loop (reading-history: "Persist readings..." scenario). After each
-/// successfully parsed reading, the current desired target (`target_rx`) is
-/// compared against the reading's self-reported target and written to the
-/// device if they differ (temperature-control: "Reconcile the target
-/// temperature to the device" — reconcile piggybacks on the reading cadence
-/// rather than a separate concurrent listener; see design.md decision 2).
-/// Runs until the source is exhausted or returns a terminal error.
+/// tagged with the brew identifier currently held by `brew_rx` — read once
+/// per reading via `.borrow().clone()` and dropped before any `.await`
+/// (design.md decision 3) — so a runtime brew switch only affects readings
+/// persisted after it (brew-session: "Tag subsequent readings with the
+/// newly active brew identifier"); a persistence failure is logged and does
+/// not stop the loop (reading-history: "Persist readings..." scenario).
+/// After each successfully parsed reading, the current desired target
+/// (`target_rx`) is compared against the reading's self-reported target and
+/// written to the device if they differ (temperature-control: "Reconcile
+/// the target temperature to the device" — reconcile piggybacks on the
+/// reading cadence rather than a separate concurrent listener; see
+/// design.md decision 2). Runs until the source is exhausted or returns a
+/// terminal error.
 pub async fn ingest_loop(
     source: &mut dyn SerialSource,
     latest_reading: Arc<Mutex<Option<Reading>>>,
     store: &dyn TimeStore,
-    brew_id: &str,
+    brew_rx: &watch::Receiver<String>,
     target_rx: &watch::Receiver<f64>,
 ) {
     loop {
@@ -79,7 +84,8 @@ pub async fn ingest_loop(
                     *lock = Some(reading.clone());
                 }
 
-                if let Err(e) = store.write_reading(brew_id, &reading).await {
+                let brew_id = brew_rx.borrow().clone();
+                if let Err(e) = store.write_reading(&brew_id, &reading).await {
                     warn!(error = %e, brew_id, "failed to persist reading — continuing");
                 }
 
@@ -117,6 +123,13 @@ mod tests {
         watch::channel(19.5).1
     }
 
+    /// A `watch::Receiver<String>` fixed at `id` for the duration of the
+    /// test — used by tests that predate dynamic brew tagging and don't
+    /// exercise a runtime brew-identifier change.
+    fn fixed_brew_rx(id: &str) -> watch::Receiver<String> {
+        watch::channel(id.to_string()).1
+    }
+
     fn valid_line(target: f64, average: f64) -> String {
         format!(
             r#"{{"target":{target},"average":{average},"min":18.0,"max":19.0,"ambient":20.0,"action":"idle"}}"#
@@ -134,7 +147,7 @@ mod tests {
             &mut source,
             Arc::clone(&latest),
             &store,
-            BREW_ID,
+            &fixed_brew_rx(BREW_ID),
             &no_op_target_rx(),
         )
         .await;
@@ -163,7 +176,7 @@ mod tests {
             &mut source,
             Arc::clone(&latest),
             &store,
-            BREW_ID,
+            &fixed_brew_rx(BREW_ID),
             &no_op_target_rx(),
         )
         .await;
@@ -192,7 +205,7 @@ mod tests {
             &mut source,
             Arc::clone(&latest),
             &store,
-            BREW_ID,
+            &fixed_brew_rx(BREW_ID),
             &no_op_target_rx(),
         )
         .await;
@@ -216,7 +229,7 @@ mod tests {
             &mut source,
             Arc::clone(&latest),
             &store,
-            BREW_ID,
+            &fixed_brew_rx(BREW_ID),
             &no_op_target_rx(),
         )
         .await;
@@ -306,7 +319,7 @@ mod tests {
             &mut source,
             Arc::clone(&latest),
             &store,
-            BREW_ID,
+            &fixed_brew_rx(BREW_ID),
             &no_op_target_rx(),
         )
         .await;
@@ -331,7 +344,14 @@ mod tests {
         let store = FakeTimeStore::new();
         let (_tx, rx) = watch::channel(20.0);
 
-        ingest_loop(&mut source, Arc::clone(&latest), &store, BREW_ID, &rx).await;
+        ingest_loop(
+            &mut source,
+            Arc::clone(&latest),
+            &store,
+            &fixed_brew_rx(BREW_ID),
+            &rx,
+        )
+        .await;
 
         assert_eq!(source.written_targets, vec![20.0]);
     }
@@ -346,7 +366,14 @@ mod tests {
         let store = FakeTimeStore::new();
         let (_tx, rx) = watch::channel(19.5);
 
-        ingest_loop(&mut source, Arc::clone(&latest), &store, BREW_ID, &rx).await;
+        ingest_loop(
+            &mut source,
+            Arc::clone(&latest),
+            &store,
+            &fixed_brew_rx(BREW_ID),
+            &rx,
+        )
+        .await;
 
         assert!(source.written_targets.is_empty());
     }
@@ -363,7 +390,14 @@ mod tests {
         let (tx, rx) = watch::channel(19.5);
 
         let mut first_batch = MockSerialSource::new(vec![Ok(valid_line(19.5, 18.2))]);
-        ingest_loop(&mut first_batch, Arc::clone(&latest), &store, BREW_ID, &rx).await;
+        ingest_loop(
+            &mut first_batch,
+            Arc::clone(&latest),
+            &store,
+            &fixed_brew_rx(BREW_ID),
+            &rx,
+        )
+        .await;
         assert!(
             first_batch.written_targets.is_empty(),
             "no write expected before the target changes"
@@ -372,11 +406,94 @@ mod tests {
         tx.send(21.0).unwrap();
 
         let mut second_batch = MockSerialSource::new(vec![Ok(valid_line(19.5, 18.5))]);
-        ingest_loop(&mut second_batch, Arc::clone(&latest), &store, BREW_ID, &rx).await;
+        ingest_loop(
+            &mut second_batch,
+            Arc::clone(&latest),
+            &store,
+            &fixed_brew_rx(BREW_ID),
+            &rx,
+        )
+        .await;
         assert_eq!(
             second_batch.written_targets,
             vec![21.0],
             "write expected once the desired target changed"
         );
+    }
+
+    #[tokio::test]
+    async fn valid_readings_are_written_to_the_store_under_the_watch_channels_brew_id() {
+        // brew-session: "Tag subsequent readings with the newly active brew
+        // identifier" — the ingest loop tags persisted readings with
+        // whatever brew id the watch channel currently holds, not a fixed
+        // parameter.
+        let lines = vec![Ok(valid_line(19.5, 18.2))];
+        let mut source = MockSerialSource::new(lines);
+        let latest = Arc::new(Mutex::new(None));
+        let store = FakeTimeStore::new();
+        let brew_rx = fixed_brew_rx("dynamic-brew");
+
+        ingest_loop(
+            &mut source,
+            Arc::clone(&latest),
+            &store,
+            &brew_rx,
+            &no_op_target_rx(),
+        )
+        .await;
+
+        let persisted = store
+            .last_reading("dynamic-brew")
+            .await
+            .unwrap()
+            .expect("reading should have been persisted under the watch channel's brew id");
+        assert_eq!(persisted.average, 18.2);
+    }
+
+    #[tokio::test]
+    async fn brew_switch_between_batches_only_affects_readings_processed_after_it() {
+        // Mirrors reconcile_reflects_the_desired_target_updated_between_reading_batches:
+        // a reading processed before the brew id changes is tagged with the
+        // old id; a reading processed after the change is tagged with the
+        // new one, and the old id's persisted data is unaffected.
+        let latest = Arc::new(Mutex::new(None));
+        let store = FakeTimeStore::new();
+        let (brew_tx, brew_rx) = watch::channel("brew-a".to_string());
+
+        let mut first_batch = MockSerialSource::new(vec![Ok(valid_line(19.5, 18.0))]);
+        ingest_loop(
+            &mut first_batch,
+            Arc::clone(&latest),
+            &store,
+            &brew_rx,
+            &no_op_target_rx(),
+        )
+        .await;
+
+        brew_tx.send("brew-b".to_string()).unwrap();
+
+        let mut second_batch = MockSerialSource::new(vec![Ok(valid_line(19.5, 19.0))]);
+        ingest_loop(
+            &mut second_batch,
+            Arc::clone(&latest),
+            &store,
+            &brew_rx,
+            &no_op_target_rx(),
+        )
+        .await;
+
+        let brew_a = store
+            .last_reading("brew-a")
+            .await
+            .unwrap()
+            .expect("brew-a should still have its reading persisted");
+        assert_eq!(brew_a.average, 18.0);
+
+        let brew_b = store
+            .last_reading("brew-b")
+            .await
+            .unwrap()
+            .expect("brew-b should have the reading persisted after the switch");
+        assert_eq!(brew_b.average, 19.0);
     }
 }

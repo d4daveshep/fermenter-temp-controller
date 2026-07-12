@@ -12,6 +12,7 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::watch;
 use tracing::info;
 
+use fermenter::brew_session;
 use fermenter::config::Config;
 use fermenter::ingest;
 use fermenter::model::Reading;
@@ -59,10 +60,21 @@ async fn main() {
         }),
     );
 
+    // Seed the active brew identifier from persisted controller state,
+    // falling back to the configured default (brew-session: "Persist and
+    // restore the brew identifier across restarts").
+    let initial_brew_id =
+        brew_session::initial_brew_id(store.as_ref(), &config.default_brew_id).await;
+    let (brew_tx, brew_rx) = watch::channel(initial_brew_id.clone());
+
     // Rehydrate current state from persisted storage, if any, before the
-    // ingest loop starts (temperature-monitoring: rehydrate on start).
-    let rehydrated =
-        ingest::rehydrate_latest_reading(store.as_ref(), &config.default_brew_id).await;
+    // ingest loop starts (temperature-monitoring: rehydrate on start). Uses
+    // the resolved `initial_brew_id` — not the static `config.default_brew_id`
+    // — so a persisted brew identifier that differs from the configured
+    // default is honoured on startup (design.md decision 5's correctness
+    // fix; previously this always rehydrated against `config.default_brew_id`
+    // regardless of what had actually been persisted).
+    let rehydrated = ingest::rehydrate_latest_reading(store.as_ref(), &initial_brew_id).await;
     let latest_reading: Arc<Mutex<Option<Reading>>> = Arc::new(Mutex::new(rehydrated));
 
     // Seed the desired target temperature from persisted controller state,
@@ -86,10 +98,10 @@ async fn main() {
 
     let app_state = AppState {
         latest: Arc::clone(&latest_reading),
-        brew_id: config.default_brew_id.clone(),
         env: Arc::new(web::build_environment()),
         ingest_alive: Arc::clone(&ingest_alive),
         target_tx,
+        brew_tx,
         store: Arc::clone(&store),
     };
     let router = web::build_router(app_state);
@@ -134,7 +146,7 @@ async fn main() {
                 &mut source,
                 Arc::clone(&latest_reading),
                 store.as_ref(),
-                &config.default_brew_id,
+                &brew_rx,
                 &target_rx,
             )
             .await;
