@@ -9,9 +9,8 @@ pub struct Config {
     pub serial_port: String,
 
     /// Serial baud rate (default 115200 to match Arduino firmware).
-    /// Used by the real tokio-serial impl in slice-6.
+    /// Used by `ArduinoSerialSource`, the real `tokio-serial` transport.
     #[serde(default = "default_serial_baud")]
-    #[allow(dead_code)]
     pub serial_baud: u32,
 
     /// When true, use the mock serial source instead of real hardware

@@ -16,6 +16,8 @@ use fermenter::brew_session;
 use fermenter::config::Config;
 use fermenter::ingest;
 use fermenter::model::Reading;
+use fermenter::serial::SerialSource;
+use fermenter::serial::arduino::ArduinoSerialSource;
 use fermenter::serial::mock::MockSerialSource;
 use fermenter::store::TimeStore;
 use fermenter::store::redis::RedisTimeStore;
@@ -84,14 +86,6 @@ async fn main() {
         temperature_control::initial_target(store.as_ref(), config.default_target_temp).await;
     let (target_tx, target_rx) = watch::channel(initial_target);
 
-    if !config.mock_serial {
-        // Real serial source — deferred to slice-6
-        eprintln!(
-            "Real serial source not yet implemented. Set MOCK_SERIAL=true to run without hardware."
-        );
-        std::process::exit(1);
-    }
-
     // Liveness flag for `/healthz` (operational-health): set once the
     // ingest task actually starts running, read by the web layer.
     let ingest_alive = Arc::new(AtomicBool::new(false));
@@ -117,11 +111,12 @@ async fn main() {
     // A scripted, static demo feed — `MockSerialSource` has no notion of a
     // device that updates its own reported state in response to a written
     // target, so `reading.target` here always stays `19.5` regardless of
-    // what an operator sets via `/target`; only the real `arduino.rs`
-    // transport (slice-6) reports a changed target back. Cycling this
-    // finite script indefinitely (rather than exhausting once) keeps the
-    // ingest loop alive so target reconcile keeps running and the
-    // dashboard's other fields visibly tick over during manual testing.
+    // what an operator sets via `/target`; only the real
+    // `ArduinoSerialSource` transport (slice-6) reports a changed target
+    // back. Cycling this finite script indefinitely (rather than exhausting
+    // once) keeps the ingest loop alive so target reconcile keeps running
+    // and the dashboard's other fields visibly tick over during manual
+    // testing.
     fn mock_lines() -> Vec<std::result::Result<String, String>> {
         vec![
             Ok(r#"{"target":19.5,"average":18.2,"min":18.0,"max":18.4,"ambient":20.1,"action":"heating","reason-code":"below-target"}"#.to_string()),
@@ -133,24 +128,50 @@ async fn main() {
 
     // Run the ingest loop and the web server concurrently in the same
     // process (rewrite-plan.md §2 single-binary decision). `axum::serve`
-    // never completes on its own; the mock feed is re-scripted and
-    // re-processed in a cycle (with a pause between cycles, mimicking the
-    // Arduino's periodic reporting cadence) so the process keeps ingesting
-    // — and reconciling the target — for the process's lifetime rather
-    // than exhausting once at startup.
+    // never completes on its own.
+    //
+    // `MOCK_SERIAL=true` (hardware-free dev/test): the scripted mock feed is
+    // re-scripted and re-processed in a cycle (with a pause between cycles,
+    // mimicking the Arduino's periodic reporting cadence) so the process
+    // keeps ingesting — and reconciling the target — for the process's
+    // lifetime rather than exhausting once at startup.
+    //
+    // `MOCK_SERIAL=false` (default, real hardware — slice-6):
+    // `ArduinoSerialSource` opens `config.serial_port` at
+    // `config.serial_baud` lazily on first use and reconnects with backoff
+    // on any failure (see `serial::arduino`), so a single `ingest_loop` call
+    // runs for the process's lifetime without an outer restart loop — it
+    // never returns (real `read_line` errors are retried internally, never
+    // the "mock source exhausted" sentinel `ingest_loop` treats as
+    // terminal).
     let ingest_future = async {
         ingest_alive.store(true, Ordering::Relaxed);
-        loop {
-            let mut source = MockSerialSource::new(mock_lines());
+        if config.mock_serial {
+            loop {
+                let mut source = MockSerialSource::new(mock_lines());
+                ingest::ingest_loop(
+                    &mut source,
+                    Arc::clone(&latest_reading),
+                    store.as_ref(),
+                    &brew_rx,
+                    &target_rx,
+                )
+                .await;
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            }
+        } else {
+            let mut source: Box<dyn SerialSource> = Box::new(ArduinoSerialSource::new(
+                config.serial_port.clone(),
+                config.serial_baud,
+            ));
             ingest::ingest_loop(
-                &mut source,
+                source.as_mut(),
                 Arc::clone(&latest_reading),
                 store.as_ref(),
                 &brew_rx,
                 &target_rx,
             )
             .await;
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
         }
     };
 
