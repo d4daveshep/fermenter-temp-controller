@@ -1,0 +1,10 @@
+---
+source: src/web/handlers.rs
+expression: html.0
+---
+<div id="status" class="status">
+    <p class="brew-id">Brew: <strong>00-TEST-v00</strong></p>
+    
+    <p class="no-data">No reading available yet.</p>
+    
+</div>

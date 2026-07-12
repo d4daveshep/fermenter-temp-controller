@@ -14,8 +14,14 @@ thiserror = "2"
 anyhow = "1"
 envy = "0.4"
 redis = { version = "1.3.0", features = ["tokio-comp", "connection-manager"] }
+axum = "0.8"
+tower-http = { version = "0.6", features = ["fs"] }
+minijinja = "2"
 
 [dev-dependencies]
 rstest = "0.23"
 testcontainers = "0.27.3"
 testcontainers-modules = { version = "0.15.0", features = ["redis"] }
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+insta = "1"

@@ -35,6 +35,10 @@ pub struct Config {
     /// slice — runtime relabeling arrives with the brew-session capability.
     #[serde(default = "default_brew_id")]
     pub default_brew_id: String,
+
+    /// TCP port the Axum web server binds to.
+    #[serde(default = "default_http_port")]
+    pub http_port: u16,
 }
 
 fn default_serial_port() -> String {
@@ -59,6 +63,10 @@ fn default_ts_retention_days() -> u32 {
 
 fn default_brew_id() -> String {
     "00-TEST-v00".to_string()
+}
+
+fn default_http_port() -> u16 {
+    8080
 }
 
 impl Config {
@@ -94,6 +102,7 @@ mod tests {
         "REDIS_URL",
         "TS_RETENTION_DAYS",
         "DEFAULT_BREW_ID",
+        "HTTP_PORT",
     ];
 
     // Safety: callers hold `env_lock()` for the duration of `f`, so no other
@@ -142,6 +151,7 @@ mod tests {
         assert_eq!(config.redis_url, "redis://localhost:6379");
         assert_eq!(config.ts_retention_days, 7);
         assert_eq!(config.default_brew_id, "00-TEST-v00");
+        assert_eq!(config.http_port, 8080);
     }
 
     #[test]
@@ -186,6 +196,22 @@ mod tests {
         with_env(&[("TS_RETENTION_DAYS", "not_a_number")], || {
             let result = Config::from_env();
             assert!(result.is_err(), "expected error for invalid retention days");
+        });
+    }
+
+    #[test]
+    fn http_port_parses_from_env() {
+        with_env(&[("HTTP_PORT", "9090")], || {
+            let config = Config::from_env().expect("should parse valid env");
+            assert_eq!(config.http_port, 9090);
+        });
+    }
+
+    #[test]
+    fn invalid_http_port_yields_error() {
+        with_env(&[("HTTP_PORT", "not_a_number")], || {
+            let result = Config::from_env();
+            assert!(result.is_err(), "expected error for invalid http port");
         });
     }
 }

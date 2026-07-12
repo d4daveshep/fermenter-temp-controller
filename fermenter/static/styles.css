@@ -1,0 +1,38 @@
+body {
+    font-family: system-ui, sans-serif;
+    margin: 2rem;
+    color: #222;
+    background: #fafafa;
+}
+
+header h1 {
+    margin-bottom: 1rem;
+}
+
+.status {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 1rem;
+    max-width: 24rem;
+    background: #fff;
+}
+
+.reading {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 0.25rem 1rem;
+}
+
+.reading dt {
+    font-weight: 600;
+}
+
+.no-data {
+    color: #888;
+    font-style: italic;
+}
+
+.updated-at {
+    color: #666;
+    font-size: 0.85rem;
+}

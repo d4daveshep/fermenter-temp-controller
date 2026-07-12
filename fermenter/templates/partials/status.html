@@ -1,0 +1,18 @@
+<div id="status" class="status">
+    <p class="brew-id">Brew: <strong>{{ brew_id }}</strong></p>
+    {% if reading %}
+    <dl class="reading">
+        <dt>Action</dt><dd>{{ reading.action }}</dd>
+        <dt>Target</dt><dd>{{ reading.target }}&deg;</dd>
+        <dt>Average</dt><dd>{{ reading.average }}&deg;</dd>
+        <dt>Min</dt><dd>{{ reading.min }}&deg;</dd>
+        <dt>Max</dt><dd>{{ reading.max }}&deg;</dd>
+        <dt>Ambient</dt><dd>{{ reading.ambient }}&deg;</dd>
+    </dl>
+    {% if updated_at %}
+    <p class="updated-at">Last updated: {{ updated_at }}</p>
+    {% endif %}
+    {% else %}
+    <p class="no-data">No reading available yet.</p>
+    {% endif %}
+</div>
