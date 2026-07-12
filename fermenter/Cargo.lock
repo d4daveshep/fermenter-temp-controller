@@ -553,6 +553,7 @@ dependencies = [
  "http-body-util",
  "insta",
  "minijinja",
+ "minijinja-embed",
  "redis",
  "rstest",
  "serde",
@@ -1242,6 +1243,12 @@ dependencies = [
  "memo-map",
  "serde",
 ]
+
+[[package]]
+name = "minijinja-embed"
+version = "2.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf74fd3b5645c9aeaddb3ddb0d7fc2055a70682c40a5cb0b930781f13b2a009b"
 
 [[package]]
 name = "mio"

@@ -58,12 +58,27 @@ pub fn build_router(state: AppState) -> Router {
         .with_state(state)
 }
 
-/// Build the MiniJinja `Environment` used to render templates, loading from
-/// the `templates/` directory at the crate root via a path loader
-/// (design.md decision 2 — dev-mode only; embedding is a slice-7 concern).
+/// Build the MiniJinja `Environment` used to render templates.
+///
+/// Without the `embed` cargo feature (the default — plain `cargo run`/`cargo
+/// test`): loads from the `templates/` directory at the crate root via a
+/// path loader (design.md decision 2 of slice-3 — dev-mode only).
+///
+/// With `--features embed` (slice-7: deployment-packaging, used by the
+/// release Docker image): templates are loaded eagerly from the bundle
+/// baked into the binary at compile time by `build.rs`
+/// (`minijinja_embed::embed_templates!`), so no `templates/` directory needs
+/// to exist at runtime.
 pub fn build_environment() -> Environment<'static> {
     let mut env = Environment::new();
-    env.set_loader(minijinja::path_loader("templates"));
+    #[cfg(feature = "embed")]
+    {
+        minijinja_embed::load_templates!(env);
+    }
+    #[cfg(not(feature = "embed"))]
+    {
+        env.set_loader(minijinja::path_loader("templates"));
+    }
     env
 }
 

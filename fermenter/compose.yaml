@@ -1,0 +1,47 @@
+# Rust stack (slice-7: deployment-packaging) — 2 containers (fermenter +
+# redis), replacing the old 3-container Python/InfluxDB stack
+# (../docker-compose.yaml) for this new implementation. Lives alongside
+# the Dockerfile in fermenter/ (its own env file, `.env`, is separate from
+# the repo-root `.env` used by the old Python stack — no collision).
+#
+# Usage:
+#   cp .env.example .env   # then edit SERIAL_PORT etc. for this host
+#   docker compose up
+#
+# Note: if the old Python stack's `controller` service (../docker-compose.yaml,
+# privileged, network_mode: host) is running on the same host, it will hold
+# the serial device open and block this stack from acquiring it — stop it
+# first (see design.md's port-contention risk, first observed in slice-6).
+services:
+  redis:
+    image: redis:8
+    volumes:
+      - redis-data:/data
+    command: redis-server --save 60 1
+
+  fermenter:
+    build:
+      context: .
+      # `docker compose build` targets the host's own platform by default
+      # (e.g. amd64 on the dev machine); for the real arm64 deployment
+      # artifact use `docker buildx build --platform linux/arm64` directly
+      # (see Dockerfile header / tasks.md), then `docker compose up` just to
+      # run the already-built image via `image:`, or deploy compose.yaml
+      # itself onto the arm64 Pi where `build:` naturally targets arm64.
+    env_file: .env
+    devices:
+      - "${SERIAL_PORT:-/dev/ttyACM0}:${SERIAL_PORT:-/dev/ttyACM0}"
+    depends_on:
+      - redis
+    ports:
+      - "${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${HTTP_PORT:-8080}/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  redis-data:
