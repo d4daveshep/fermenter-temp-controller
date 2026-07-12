@@ -9,13 +9,16 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
+use tokio::sync::watch;
 use tracing::info;
 
 use fermenter::config::Config;
 use fermenter::ingest;
 use fermenter::model::Reading;
 use fermenter::serial::mock::MockSerialSource;
+use fermenter::store::TimeStore;
 use fermenter::store::redis::RedisTimeStore;
+use fermenter::temperature_control;
 use fermenter::web::{self, AppState};
 
 #[tokio::main]
@@ -49,16 +52,25 @@ async fn main() {
     // connectivity problem. An unreachable-but-well-formed Redis URL never
     // hits this branch; it's handled by the lazy connection manager's
     // reconnect/backoff instead, per decision 5.
-    let store = RedisTimeStore::connect(&config.redis_url, config.ts_retention_days)
-        .unwrap_or_else(|e| {
+    let store: Arc<dyn TimeStore> = Arc::new(
+        RedisTimeStore::connect(&config.redis_url, config.ts_retention_days).unwrap_or_else(|e| {
             eprintln!("Redis configuration error: {e}");
             std::process::exit(1);
-        });
+        }),
+    );
 
     // Rehydrate current state from persisted storage, if any, before the
     // ingest loop starts (temperature-monitoring: rehydrate on start).
-    let rehydrated = ingest::rehydrate_latest_reading(&store, &config.default_brew_id).await;
+    let rehydrated =
+        ingest::rehydrate_latest_reading(store.as_ref(), &config.default_brew_id).await;
     let latest_reading: Arc<Mutex<Option<Reading>>> = Arc::new(Mutex::new(rehydrated));
+
+    // Seed the desired target temperature from persisted controller state,
+    // falling back to the configured default (temperature-control:
+    // "Persist and restore the target temperature across restarts").
+    let initial_target =
+        temperature_control::initial_target(store.as_ref(), config.default_target_temp).await;
+    let (target_tx, target_rx) = watch::channel(initial_target);
 
     if !config.mock_serial {
         // Real serial source — deferred to slice-6
@@ -77,6 +89,8 @@ async fn main() {
         brew_id: config.default_brew_id.clone(),
         env: Arc::new(web::build_environment()),
         ingest_alive: Arc::clone(&ingest_alive),
+        target_tx,
+        store: Arc::clone(&store),
     };
     let router = web::build_router(app_state);
 
@@ -88,30 +102,44 @@ async fn main() {
         });
     info!(port = config.http_port, "web server listening");
 
-    let lines = vec![
-        Ok(r#"{"target":19.5,"average":18.2,"min":18.0,"max":18.4,"ambient":20.1,"action":"heating","reason-code":"below-target"}"#.to_string()),
-        Ok(r#"{"target":19.5,"average":19.0,"min":18.9,"max":19.1,"ambient":20.0,"action":"idle"}"#.to_string()),
-        Ok(r#"not valid json"#.to_string()),
-        Ok(r#"{"target":19.5,"average":19.5,"min":19.4,"max":19.6,"ambient":20.0,"action":"idle","json-size":42}"#.to_string()),
-    ];
-    let mut source = MockSerialSource::new(lines);
+    // A scripted, static demo feed — `MockSerialSource` has no notion of a
+    // device that updates its own reported state in response to a written
+    // target, so `reading.target` here always stays `19.5` regardless of
+    // what an operator sets via `/target`; only the real `arduino.rs`
+    // transport (slice-6) reports a changed target back. Cycling this
+    // finite script indefinitely (rather than exhausting once) keeps the
+    // ingest loop alive so target reconcile keeps running and the
+    // dashboard's other fields visibly tick over during manual testing.
+    fn mock_lines() -> Vec<std::result::Result<String, String>> {
+        vec![
+            Ok(r#"{"target":19.5,"average":18.2,"min":18.0,"max":18.4,"ambient":20.1,"action":"heating","reason-code":"below-target"}"#.to_string()),
+            Ok(r#"{"target":19.5,"average":19.0,"min":18.9,"max":19.1,"ambient":20.0,"action":"idle"}"#.to_string()),
+            Ok(r#"not valid json"#.to_string()),
+            Ok(r#"{"target":19.5,"average":19.5,"min":19.4,"max":19.6,"ambient":20.0,"action":"idle","json-size":42}"#.to_string()),
+        ]
+    }
 
     // Run the ingest loop and the web server concurrently in the same
     // process (rewrite-plan.md §2 single-binary decision). `axum::serve`
-    // never completes on its own, so once the (currently finite, mock)
-    // ingest feed is exhausted the server keeps the process alive rather
-    // than letting it exit — the behaviour this slice adds over slice-1/2,
-    // where the process exited once ingestion finished.
+    // never completes on its own; the mock feed is re-scripted and
+    // re-processed in a cycle (with a pause between cycles, mimicking the
+    // Arduino's periodic reporting cadence) so the process keeps ingesting
+    // — and reconciling the target — for the process's lifetime rather
+    // than exhausting once at startup.
     let ingest_future = async {
         ingest_alive.store(true, Ordering::Relaxed);
-        ingest::ingest_loop(
-            &mut source,
-            Arc::clone(&latest_reading),
-            &store,
-            &config.default_brew_id,
-        )
-        .await;
-        info!("ingest loop finished (mock source exhausted) — web server keeps running");
+        loop {
+            let mut source = MockSerialSource::new(mock_lines());
+            ingest::ingest_loop(
+                &mut source,
+                Arc::clone(&latest_reading),
+                store.as_ref(),
+                &config.default_brew_id,
+                &target_rx,
+            )
+            .await;
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        }
     };
 
     let server_future = async { axum::serve(listener, router).await };

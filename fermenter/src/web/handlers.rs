@@ -1,12 +1,14 @@
 use std::sync::atomic::Ordering;
 
-use axum::Json;
 use axum::extract::State;
 use axum::response::Html;
-use serde::Serialize;
+use axum::{Form, Json};
+use serde::{Deserialize, Serialize};
+use tracing::{info, warn};
 
 use crate::error::Result;
 use crate::model::Reading;
+use crate::temperature_control::{persist_target, validate_target};
 
 use super::AppState;
 use super::render::render;
@@ -37,6 +39,83 @@ pub(crate) async fn dashboard(State(state): State<AppState>) -> Result<Html<Stri
 /// `GET /status` — HTMX-polled current-state fragment.
 pub(crate) async fn status(State(state): State<AppState>) -> Result<Html<String>> {
     render(&state.env, "partials/status.html", status_context(&state))
+}
+
+/// Context for `target_form.html`, shared by the `GET` (display) and `POST`
+/// (re-render on validation failure, or confirm on success) handlers.
+#[derive(Serialize)]
+pub(crate) struct TargetFormContext {
+    target: f64,
+    error: Option<String>,
+    confirmed: bool,
+}
+
+/// `GET /target` — target-setpoint form pre-filled with the current target
+/// (web-dashboard spec: "Form displays the current target temperature").
+pub(crate) async fn target_form(State(state): State<AppState>) -> Result<Html<String>> {
+    let current = *state.target_tx.borrow();
+    render(
+        &state.env,
+        "target_form.html",
+        TargetFormContext {
+            target: current,
+            error: None,
+            confirmed: false,
+        },
+    )
+}
+
+#[derive(Deserialize)]
+pub(crate) struct TargetForm {
+    target: String,
+}
+
+/// `POST /target` — validate and apply a new target temperature
+/// (temperature-control spec: "Accept a new target temperature setpoint").
+/// On success, updates the shared `watch` channel (read by the ingest
+/// side's reconcile check) and persists the new `ControllerState`; a
+/// persistence failure is logged and does not prevent confirming the
+/// in-memory update, matching the ingest loop's existing
+/// log-and-continue treatment of storage failures. On validation failure,
+/// the form is redisplayed with an error and neither the watch channel nor
+/// storage is touched.
+pub(crate) async fn set_target(
+    State(state): State<AppState>,
+    Form(form): Form<TargetForm>,
+) -> Result<Html<String>> {
+    match validate_target(&form.target) {
+        Ok(value) => {
+            let previous = *state.target_tx.borrow();
+            info!(previous, target = value, "target temperature accepted");
+            if let Err(e) = state.target_tx.send(value) {
+                warn!(error = %e, "no ingest receiver listening for target updates");
+            }
+            if let Err(e) = persist_target(state.store.as_ref(), value, &state.brew_id).await {
+                warn!(error = %e, "failed to persist target temperature — continuing");
+            }
+            render(
+                &state.env,
+                "target_form.html",
+                TargetFormContext {
+                    target: value,
+                    error: None,
+                    confirmed: true,
+                },
+            )
+        }
+        Err(message) => {
+            let current = *state.target_tx.borrow();
+            render(
+                &state.env,
+                "target_form.html",
+                TargetFormContext {
+                    target: current,
+                    error: Some(message),
+                    confirmed: false,
+                },
+            )
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -92,6 +171,30 @@ mod tests {
             brew_id: "00-TEST-v00".to_string(),
         };
         let html = render(&env, "partials/status.html", ctx).unwrap();
+        insta::assert_snapshot!(html.0);
+    }
+
+    #[test]
+    fn target_form_with_current_target_snapshot() {
+        let env = build_environment();
+        let ctx = TargetFormContext {
+            target: 19.5,
+            error: None,
+            confirmed: false,
+        };
+        let html = render(&env, "target_form.html", ctx).unwrap();
+        insta::assert_snapshot!(html.0);
+    }
+
+    #[test]
+    fn target_form_with_error_snapshot() {
+        let env = build_environment();
+        let ctx = TargetFormContext {
+            target: 19.5,
+            error: Some("'abc' is not a valid number".to_string()),
+            confirmed: false,
+        };
+        let html = render(&env, "target_form.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
     }
 }

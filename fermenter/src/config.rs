@@ -39,6 +39,11 @@ pub struct Config {
     /// TCP port the Axum web server binds to.
     #[serde(default = "default_http_port")]
     pub http_port: u16,
+
+    /// Fallback target temperature (°C) used to seed the current target
+    /// when no persisted `ControllerState` exists yet.
+    #[serde(default = "default_target_temp")]
+    pub default_target_temp: f64,
 }
 
 fn default_serial_port() -> String {
@@ -67,6 +72,10 @@ fn default_brew_id() -> String {
 
 fn default_http_port() -> u16 {
     8080
+}
+
+fn default_target_temp() -> f64 {
+    19.5
 }
 
 impl Config {
@@ -103,6 +112,7 @@ mod tests {
         "TS_RETENTION_DAYS",
         "DEFAULT_BREW_ID",
         "HTTP_PORT",
+        "DEFAULT_TARGET_TEMP",
     ];
 
     // Safety: callers hold `env_lock()` for the duration of `f`, so no other
@@ -152,6 +162,7 @@ mod tests {
         assert_eq!(config.ts_retention_days, 7);
         assert_eq!(config.default_brew_id, "00-TEST-v00");
         assert_eq!(config.http_port, 8080);
+        assert_eq!(config.default_target_temp, 19.5);
     }
 
     #[test]
@@ -212,6 +223,25 @@ mod tests {
         with_env(&[("HTTP_PORT", "not_a_number")], || {
             let result = Config::from_env();
             assert!(result.is_err(), "expected error for invalid http port");
+        });
+    }
+
+    #[test]
+    fn default_target_temp_parses_from_env() {
+        with_env(&[("DEFAULT_TARGET_TEMP", "20.5")], || {
+            let config = Config::from_env().expect("should parse valid env");
+            assert_eq!(config.default_target_temp, 20.5);
+        });
+    }
+
+    #[test]
+    fn invalid_default_target_temp_yields_error() {
+        with_env(&[("DEFAULT_TARGET_TEMP", "not_a_number")], || {
+            let result = Config::from_env();
+            assert!(
+                result.is_err(),
+                "expected error for invalid default target temp"
+            );
         });
     }
 }

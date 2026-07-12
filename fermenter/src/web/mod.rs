@@ -4,18 +4,21 @@ use std::sync::{Arc, Mutex};
 use axum::Router;
 use axum::routing::get;
 use minijinja::Environment;
+use tokio::sync::watch;
 use tower_http::services::ServeDir;
 
 use crate::model::Reading;
+use crate::store::TimeStore;
 
 pub mod handlers;
 pub mod render;
 
-/// Shared state for the web layer. Deliberately minimal for this slice
-/// (design.md decision 1): reuses the same `Arc<Mutex<Option<Reading>>>`
-/// already passed to the ingest loop rather than building the full
-/// `watch`/`mpsc`-channel `AppState` sketched in `rewrite-plan.md` §5, which
-/// has no consumer until slice-4 introduces `SetTarget`.
+/// Shared state for the web layer. Grew by exactly one field this slice
+/// (design.md decision 1): a `target_tx: watch::Sender<f64>` for the web
+/// layer to push a new desired target into the ingest side, plus a shared
+/// `store` handle so the `/target` handler can persist accepted changes —
+/// still short of the full `Command`/`mpsc` `AppState` `rewrite-plan.md` §5
+/// sketches, which slice-5's `SetBrewId` may justify building.
 #[derive(Clone)]
 pub struct AppState {
     pub latest: Arc<Mutex<Option<Reading>>>,
@@ -24,15 +27,26 @@ pub struct AppState {
     /// Set by the ingest task once it starts running; read by `/healthz`
     /// as a liveness signal (design.md decision 4).
     pub ingest_alive: Arc<AtomicBool>,
+    /// Sends the operator-accepted desired target temperature to the
+    /// ingest side's reconcile check (temperature-control capability).
+    pub target_tx: watch::Sender<f64>,
+    /// Shared store handle so `/target` can persist an accepted change
+    /// (temperature-control: "Persist and restore the target temperature").
+    pub store: Arc<dyn TimeStore>,
 }
 
-/// Build the Axum router for the dashboard, status fragment, health check,
-/// and static assets. Read-only this slice — no mutating routes (web-dashboard
-/// spec: "Dashboard rendering is read-only in this capability").
+/// Build the Axum router for the dashboard, status fragment, target-setpoint
+/// form, health check, and static assets. The dashboard (`/`) and status
+/// fragment (`/status`) remain read-only; `/target` is this slice's first
+/// mutating route (web-dashboard spec: narrowed "read-only" requirement).
 pub fn build_router(state: AppState) -> Router {
     Router::new()
         .route("/", get(handlers::dashboard))
         .route("/status", get(handlers::status))
+        .route(
+            "/target",
+            get(handlers::target_form).post(handlers::set_target),
+        )
         .route("/healthz", get(handlers::healthz))
         .nest_service("/static", ServeDir::new("static"))
         .with_state(state)
@@ -57,11 +71,18 @@ mod tests {
     use super::*;
 
     fn test_state(reading: Option<Reading>) -> AppState {
+        test_state_with_target(reading, 19.5)
+    }
+
+    fn test_state_with_target(reading: Option<Reading>, target: f64) -> AppState {
+        let (target_tx, _target_rx) = watch::channel(target);
         AppState {
             latest: Arc::new(Mutex::new(reading)),
             brew_id: "00-TEST-v00".to_string(),
             env: Arc::new(build_environment()),
             ingest_alive: Arc::new(AtomicBool::new(true)),
+            target_tx,
+            store: Arc::new(crate::store::fake::FakeTimeStore::new()),
         }
     }
 
@@ -216,5 +237,99 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let body = body_string(response).await;
         assert!(body.contains("font-family"));
+    }
+
+    fn post_form(path: &str, body: &str) -> Request<Body> {
+        Request::builder()
+            .method(Method::POST)
+            .uri(path)
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(Body::from(body.to_string()))
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn target_form_returns_ok_with_current_target() {
+        let router = build_router(test_state_with_target(None, 19.5));
+
+        let response = router
+            .oneshot(
+                Request::builder()
+                    .uri("/target")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = body_string(response).await;
+        assert!(body.contains("19.5"));
+    }
+
+    #[tokio::test]
+    async fn valid_post_target_updates_state_and_confirms() {
+        let state = test_state_with_target(None, 19.5);
+        let target_rx = state.target_tx.subscribe();
+        let router = build_router(state);
+
+        let response = router
+            .oneshot(post_form("/target", "target=21.0"))
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = body_string(response).await;
+        assert!(body.contains("21"));
+        assert_eq!(*target_rx.borrow(), 21.0);
+    }
+
+    #[tokio::test]
+    async fn non_numeric_post_target_is_rejected_and_state_unchanged() {
+        let state = test_state_with_target(None, 19.5);
+        let target_rx = state.target_tx.subscribe();
+        let router = build_router(state);
+
+        let response = router
+            .oneshot(post_form("/target", "target=not-a-number"))
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = body_string(response).await;
+        assert!(body.to_lowercase().contains("not a valid number"));
+        assert_eq!(*target_rx.borrow(), 19.5);
+    }
+
+    #[tokio::test]
+    async fn out_of_range_post_target_is_rejected_and_state_unchanged() {
+        let state = test_state_with_target(None, 19.5);
+        let target_rx = state.target_tx.subscribe();
+        let router = build_router(state);
+
+        let response = router
+            .oneshot(post_form("/target", "target=100"))
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = body_string(response).await;
+        assert!(body.contains("must be between"));
+        assert_eq!(*target_rx.borrow(), 19.5);
+    }
+
+    #[tokio::test]
+    async fn post_target_is_a_deliberate_exception_to_the_read_only_guarantee() {
+        // web-dashboard spec: the dashboard/status read-only requirement is
+        // narrowed to those two routes; `/target` is explicitly permitted
+        // to mutate state.
+        let router = build_router(test_state_with_target(None, 19.5));
+
+        let response = router
+            .oneshot(post_form("/target", "target=20.0"))
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
     }
 }
