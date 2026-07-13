@@ -23,6 +23,7 @@ use std::time::Duration;
 use fermenter::model::Reading;
 use fermenter::serial::SerialSource;
 use fermenter::serial::arduino::ArduinoSerialSource;
+use tokio::sync::Mutex;
 
 /// The firmware prints a JSON reading roughly every 10s
 /// (`TempController.ino`'s `printJsonEvery10Secs`). Opening the port also
@@ -45,9 +46,29 @@ fn test_baud() -> u32 {
         .unwrap_or(115_200)
 }
 
+/// All three tests in this file open the *same physical* serial device.
+/// `serialport` (via `tokio-serial`) opens ports in exclusive mode by
+/// default (`TIOCEXCL` + `flock`), and `cargo test` runs tests across
+/// multiple threads concurrently unless `--test-threads=1` is passed. Without
+/// this guard, two tests racing for the same exclusive-lock device produces
+/// exactly the flaky failures this was built to prevent: the loser's
+/// `ensure_connected()` fails "busy", backs off, and by the time it
+/// acquires the lock the Arduino has often *just* been DTR-reset by
+/// whichever test grabbed it last — so the first bytes read can be
+/// boot-time noise/a truncated fragment rather than a clean JSON line,
+/// causing spurious parse failures or an apparently-never-observed target
+/// (mirrors `config.rs`'s `env_lock()` pattern for the same class of
+/// problem — serializing access to a single shared external resource —
+/// but uses a `tokio::sync::Mutex` rather than `std::sync::Mutex` since the
+/// guard needs to stay held across `.await` points for a test's whole
+/// duration; clippy's `await_holding_lock` correctly flags a std mutex used
+/// this way).
+static HARDWARE_LOCK: Mutex<()> = Mutex::const_new(());
+
 #[tokio::test]
 #[ignore]
 async fn opens_real_port() {
+    let _guard = HARDWARE_LOCK.lock().await;
     let mut source = ArduinoSerialSource::new(test_port(), test_baud());
 
     // The port opens lazily on first use; a successful read implies the
@@ -71,30 +92,50 @@ async fn opens_real_port() {
 #[tokio::test]
 #[ignore]
 async fn reads_a_real_line() {
+    let _guard = HARDWARE_LOCK.lock().await;
     let mut source = ArduinoSerialSource::new(test_port(), test_baud());
 
-    let line = tokio::time::timeout(READ_TIMEOUT, source.read_line())
-        .await
-        .expect("timed out waiting for a line from the device")
-        .expect("read_line should succeed");
+    // The very first line read right after a fresh connection can
+    // occasionally be truncated/corrupted — the same real-world artifact
+    // `ingest_loop` is deliberately built to tolerate ("malformed reading
+    // skipped", logged and continued, not fatal; observed directly during
+    // slice-7's manual container verification). This test mirrors that
+    // same tolerance: retry within the round-trip budget rather than
+    // asserting the very first line read is always well-formed, which is a
+    // stricter contract than production actually relies on.
+    let deadline = tokio::time::Instant::now() + ROUNDTRIP_TIMEOUT;
+    let mut parsed: Option<Reading> = None;
+    let mut last_line = String::new();
 
-    assert!(!line.is_empty(), "expected a non-empty line");
-    assert!(
-        !line.contains('\n'),
-        "read_line should strip the trailing newline, matching the mock's contract"
-    );
+    while tokio::time::Instant::now() < deadline {
+        let Ok(Ok(line)) = tokio::time::timeout(READ_TIMEOUT, source.read_line()).await else {
+            continue;
+        };
+        assert!(!line.is_empty(), "expected a non-empty line");
+        assert!(
+            !line.contains('\n'),
+            "read_line should strip the trailing newline, matching the mock's contract"
+        );
+        last_line = line.clone();
+        if let Ok(reading) = serde_json::from_str::<Reading>(&line) {
+            parsed = Some(reading);
+            break;
+        }
+    }
 
     // Don't assert on field values — no sensors attached, so
     // instant/average/min/max/ambient may read ~-127 (DEVICE_DISCONNECTED_C).
     // Only the shape of the contract matters here.
-    let reading: Reading =
-        serde_json::from_str(&line).expect("line should parse as a well-formed Reading");
+    let reading = parsed.unwrap_or_else(|| {
+        panic!("no line parsed as a well-formed Reading within {ROUNDTRIP_TIMEOUT:?}; last line seen: {last_line:?}")
+    });
     assert!(!reading.action.is_empty(), "action should be present");
 }
 
 #[tokio::test]
 #[ignore]
 async fn write_target_roundtrips() {
+    let _guard = HARDWARE_LOCK.lock().await;
     let mut source = ArduinoSerialSource::new(test_port(), test_baud());
 
     // A value distinct enough from common defaults (20.0) to make the
@@ -102,15 +143,26 @@ async fn write_target_roundtrips() {
     // `getUpdatedTargetTemp` treats a parsed `0.0` as "no update".
     let target = 21.3;
 
-    source
-        .write_target(target)
-        .await
-        .expect("write_target should succeed");
-
     let deadline = tokio::time::Instant::now() + ROUNDTRIP_TIMEOUT;
     let mut observed_target = None;
 
     while tokio::time::Instant::now() < deadline {
+        // Retry the write every iteration (i.e. roughly once per received
+        // line) rather than writing once up front, mirroring how the real
+        // `ingest_loop` reconciles: it re-checks and rewrites the desired
+        // target on every reading until the device confirms it, rather
+        // than writing exactly once. This matters here because opening a
+        // fresh connection resets a genuine Arduino Uno via DTR, and the
+        // bootloader silently discards serial bytes received during its
+        // ~1-2s post-reset window before the sketch's `loop()` starts — a
+        // single write issued immediately after open can be lost entirely.
+        // Retrying on each iteration guarantees at least one write lands
+        // once the sketch is actually listening.
+        source
+            .write_target(target)
+            .await
+            .expect("write_target should succeed");
+
         let Ok(Ok(line)) = tokio::time::timeout(READ_TIMEOUT, source.read_line()).await else {
             continue;
         };
