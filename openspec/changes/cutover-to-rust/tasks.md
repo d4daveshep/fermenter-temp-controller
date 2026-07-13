@@ -142,14 +142,17 @@
 
 ## 6. Commit and open the cutover PR
 
-- [ ] 6.1 Commit task groups 2-4 together as one dedicated "cutover:
+- [x] 6.1 Commit task groups 2-4 together as one dedicated "cutover:
       remove Python/InfluxDB stack, promote compose.yaml to repo root"
       commit on `rewrite/rust` (per design.md's delete-then-merge
       decision).
-- [ ] 6.2 Push `rewrite/rust`.
-- [ ] 6.3 On `master`: tag the current tip `v1-python` (`git tag -a
+      **Committed:** `043bed0`.
+- [x] 6.2 Push `rewrite/rust`.
+- [x] 6.3 On `master`: tag the current tip `v1-python` (`git tag -a
       v1-python <sha> -m "Final Python/InfluxDB system before Rust
       rewrite"`); push the tag (`git push origin v1-python`).
+      **Done:** tagged `4bc862a` (confirmed matching `origin/master`
+      before tagging) and pushed.
 - [ ] 6.4 Open a PR `rewrite/rust → master`.
 - [ ] 6.5 Review the full diff (not just the latest commit) — confirm it
       matches the intended deletions/moves and nothing unrelated slipped
