@@ -161,33 +161,51 @@
 
 ## 5. Pi deployment + verification (milestone 8)
 
-- [ ] 5.1 Get the cross-compiled image onto the Raspberry Pi (transfer via
+- [x] 5.1 Get the cross-compiled image onto the Raspberry Pi (transfer via
       `docker save`/`scp`/`docker load`, or push/pull through a registry —
       whichever is more convenient; see design.md open question).
-- [ ] 5.2 Configure `.env` on the Pi (`SERIAL_PORT` etc. matching the Pi's
+      **Done by you:** transferred the `docker save`-d `fermenter:arm64`
+      image to the Pi and loaded it.
+- [x] 5.2 Configure `.env` on the Pi (`SERIAL_PORT` etc. matching the Pi's
       actual device path — may differ from the dev machine's
       `/dev/ttyACM0`, see design.md risk).
-- [ ] 5.3 Stop the old Python stack on the Pi if it's running (same
+      **Done by you:** repo was already cloned on the Pi; pulled
+      `rewrite/rust`, edited `.env` for the Pi.
+- [x] 5.3 Stop the old Python stack on the Pi if it's running (same
       port-contention consideration as the dev machine, see design.md).
-- [ ] 5.4 `docker compose up` the new stack on the Pi; confirm the
+      **Confirmed by you:** the old Python stack *was* running on the Pi
+      (holding the serial device, same contention as slice-6/this slice's
+      dev-machine verification) — stopped it first.
+- [x] 5.4 `docker compose up` the new stack on the Pi; confirm the
       `fermenter` container reports healthy (`/healthz` via the Compose
       `healthcheck:`).
-- [ ] 5.5 Confirm end-to-end on real hardware: readings from the Pi's
+      **Confirmed by you:** ran `docker compose up` on the Pi.
+- [x] 5.5 Confirm end-to-end on real hardware: readings from the Pi's
       attached (sensored) Arduino flow into the dashboard, target/brew
       forms round-trip through the real device, values are physically
       plausible (unlike slice-6's sensorless dev-machine verification).
+      **Confirmed by you:** dashboard working as expected, logs consistent
+      with the dev-machine verification (task 3.3); also explicitly tested
+      the target/brew forms round-tripping through the real device on the
+      Pi.
 - [ ] 5.6 Run `cargo test -- --ignored` on the Pi against its attached
       Arduino, confirming the slice-6 hardware tests also pass on the
       actual target hardware (per `docs/rewrite-plan.md` §12.7's milestone
       8 row: "run `cargo test -- --ignored` on Pi").
+      **Deferred:** not run this session, per your choice — left as a
+      follow-up you can run on the Pi whenever convenient
+      (`cd fermenter && cargo test -- --ignored --test-threads=1`, same
+      command used in slice-6). Not blocking archive of this slice.
 
 ## 6. Spec & docs
 
-- [ ] 6.1 `openspec validate slice-7-deployment` passes.
+- [x] 6.1 `openspec validate slice-7-deployment` passes. **Verified.**
 - [ ] 6.2 Archive the change once 1-5 are complete and verified, folding the
       new `deployment-packaging` capability into `openspec/specs/`.
-- [ ] 6.3 Note in the repo (e.g. `docs/rewrite-plan.md` or a follow-up) that
+- [x] 6.3 Note in the repo (e.g. `docs/rewrite-plan.md` or a follow-up) that
       the Rust stack is now deployable, and that the old Python stack
       removal (cutover, `rewrite-plan.md` §15 Phase 3) is the next
       available step whenever desired — not performed as part of this
       slice.
+      **Added** a "Status" bullet to `docs/rewrite-plan.md` §16 (Notes &
+      open items).

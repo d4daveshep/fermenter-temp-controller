@@ -460,3 +460,13 @@ temperature controller deployable at every point until cutover.
   range-query chart endpoint later with no data migration.
 - `RedisTimeSeries` standalone images are deprecated; Redis 8+ includes Time
   Series built in (64-bit only — fine for a modern Pi).
+- **Status (milestones 7+8 / `slice-7-deployment`, complete):** the Rust
+  stack is now packaged (self-contained cross-compiled ARM64 Docker image,
+  `embed`-baked templates, `fermenter/compose.yaml` with scoped device
+  passthrough) and deployed to the Raspberry Pi — dashboard, ingestion, and
+  target/brew round-trips all verified against the Pi's real, sensored
+  Arduino. The old Python/InfluxDB stack (`docker-compose.yaml` at the repo
+  root) is left in place, untouched, alongside it. The §15 Phase 3 cutover
+  (removing the Python stack, tagging `v1-python`, merging `rewrite/rust` →
+  `master`) is now available as the next step whenever desired — it is a
+  deliberate, separate decision, not performed as part of this slice.
