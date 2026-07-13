@@ -10,6 +10,9 @@ virtualenv
 # Secrets and local config
 .env
 
+# Built image tarballs (scripts/build_and_ship_image.sh output)
+/dist/
+
 # InfluxDB runtime data
 influxdb/data/
 influx_data/
