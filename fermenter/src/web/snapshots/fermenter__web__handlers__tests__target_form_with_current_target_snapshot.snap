@@ -1,0 +1,36 @@
+---
+source: src/web/handlers.rs
+expression: html.0
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fermenter — Target Temperature</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://unpkg.com/htmx.org@2"></script>
+</head>
+<body>
+    <header>
+        <h1>Fermenter</h1>
+    </header>
+    <main>
+        
+<h2>Target Temperature</h2>
+
+
+
+
+
+<form method="post" action="/target">
+    <label for="target">Target temperature (&deg;C)</label>
+    <input type="text" id="target" name="target" value="19.5">
+    <button type="submit">Update</button>
+</form>
+
+<p><a href="/">Back to dashboard</a></p>
+
+    </main>
+</body>
+</html>

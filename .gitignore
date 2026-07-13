@@ -5,7 +5,7 @@
 virtualenv
 **/__pycache__/
 **/*.egg-info/
-src/
+/src/
 
 # Secrets and local config
 .env
@@ -13,7 +13,6 @@ src/
 # InfluxDB runtime data
 influxdb/data/
 influx_data/
-controller/influxdb/
 
 # Python package manager
 uv.lock

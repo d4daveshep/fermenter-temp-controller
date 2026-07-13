@@ -1,23 +1,20 @@
 # OpenCode Agent Instructions
 
 ## Repository Boundaries & Source of Truth
-- **Ignore the `src/` directory.** It is an untracked artifact containing only `__pycache__` and old `.egg-info` files. The actual source code lives in `controller/` (the IoT background service), `web/` (the FastAPI frontend), and `arduino/` (firmware).
-- **Arduino Firmware:** The `arduino/TempController/` directory contains the C++ firmware for the Arduino. It uses the older `arduino` CLI (not `arduino-cli`) for building and uploading via `compile_arduino.sh` and `upload_arduino.sh`. Dependencies are bundled as zips in `arduino/install/` (like AUnit, ArduinoJson, DallasTemperature).
-- **Ignore `tests/component/` and `tests/unit/`.** These are untracked cache directories. The active test suite is directly under `tests/`.
-- **Dependencies:** The `pyproject.toml` (and `uv.lock`) is **incomplete**. It misses `fastapi`, `uvicorn`, and `pytest` dependencies. The true source of truth for dependencies are `controller/requirements.txt`, `web/requirements.txt`, and `tests/requirements.txt`.
+- **The Rust application lives in `fermenter/`.** This is the single Tokio-based binary (serial ingest + Axum web server) that replaced the old Python/InfluxDB stack at cutover (see `docs/rewrite-plan.md`).
+- **Ignore the `src/` directory.** It is an untracked artifact left over from the pre-rewrite Python stack (`__pycache__`, old `.egg-info` files) and is not part of the current source code.
+- **Arduino Firmware:** The `arduino/TempController/` directory contains the C++ firmware for the Arduino. It uses the older `arduino` CLI (not `arduino-cli`) for building and uploading via `compile_arduino.sh` and `upload_arduino.sh`. Dependencies are bundled as zips in `arduino/install/` (like AUnit, ArduinoJson, DallasTemperature). The firmware and serial contract are unchanged by the rewrite.
+- **`docs/`** contains the rewrite's planning history (`rewrite-plan.md`, `system-analysis.md`, `openspec-rewrite-management.md`) — useful background, not live operational instructions.
+- **OpenSpec** (`openspec/`) drives ongoing feature work: proposals, specs, and archived changes documenting the capability library.
 
 ## Architecture & Quirks
-- **Pydantic v1:** `controller/config.py` uses Pydantic v1 (`from pydantic import BaseSettings`). Do NOT use Pydantic v2 conventions (`pydantic-settings`) unless explicitly migrating the codebase.
-- **Docker Path Flattening:** The `Dockerfile.web_apis` copies `web/fastapi_app.py`, `web/templates/`, and `web/static/` to the *same root directory* inside the container (`/`). 
-  - Because of this, `web/fastapi_app.py` resolves paths assuming it is in the project root alongside `static/` (e.g., `Path(__file__).parent.parent.absolute() / "static"`).
-  - If you run tests or the web API locally (outside Docker), this path resolution will throw a `RuntimeError: Directory .../static does not exist`. Do not "fix" this path logic unless requested, as it is required for the Docker deployment.
+- **Templating:** MiniJinja templates live in `fermenter/templates/`, loaded from disk in dev builds (`cargo run`/`cargo test`) and baked into the binary at compile time when built with `--features embed` (used for the release Docker image). Don't assume templates are always on-disk relative to the binary.
+- **Serial contract is fixed:** newline-delimited JSON readings at 115200 baud; the app writes the target temperature back as a `<float>` framed string. This is shared with the Arduino firmware and must not change without a corresponding firmware change.
+- **State store:** Redis 8 Time Series (`fermenter/src/store/`), not a SQL/InfluxDB store. In-memory state is authoritative; Redis is a durability mirror.
 
 ## Execution & Testing
-- The primary way to run the application is via Docker Compose: `docker-compose up` orchestrates `controller`, `web`, and `influxdb`.
-- **Running tests locally:** 
-  - If running tests outside Docker, you must manually install missing web/test dependencies: `uv pip install fastapi httpx pytest-asyncio uvicorn jinja2 python-multipart`.
-  - Local `pytest` runs will fail on `test_web_api.py` due to the local vs. Docker path flattening mentioned above.
-- **Running tests via Docker:** 
-  - Use `./build_run_docker_for_testing.sh` to run tests exactly as the project intended.
-  - *Note:* The Docker test script only tests `tests/test_config_file.py` and relies on `tests/requirements.txt`. It may encounter missing dependency errors (like `pydantic`) if the test environment diverges from the controller environment.
-  - Some URL validation tests fail on `master` because URL validation is currently commented out in `controller/config.py`. Do not proactively fix this unless requested.
+- **Local dev:** `cargo run` / `cargo test` from `fermenter/` (requires a local Redis for integration tests, or use `cargo test` which spins up `redis:8` via `testcontainers` — needs Docker on the test host).
+- **Full stack:** `docker compose up` from the repo root orchestrates `fermenter` + `redis` via the repo-root `compose.yaml`. Copy `fermenter/.env.example` to `fermenter/.env` first.
+- **CI:** `.github/workflows/rust.yml` runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`, and a build-only cross-compiled `docker buildx build --platform linux/arm64` job.
+- **Hardware tests:** `fermenter/tests/serial_hardware.rs` is `#[ignore]`'d by default — only run with `cargo test -- --ignored` on a machine with a real Arduino attached.
+</content>

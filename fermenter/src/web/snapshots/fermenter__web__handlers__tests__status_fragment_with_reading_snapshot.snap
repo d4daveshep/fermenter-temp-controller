@@ -1,0 +1,18 @@
+---
+source: src/web/handlers.rs
+expression: html.0
+---
+<div id="status" class="status">
+    <p class="brew-id">Brew: <strong>00-TEST-v00</strong></p>
+    
+    <dl class="reading">
+        <dt>Action</dt><dd>heating</dd>
+        <dt>Target</dt><dd>19.5&deg;</dd>
+        <dt>Average</dt><dd>18.7&deg;</dd>
+        <dt>Min</dt><dd>18.0&deg;</dd>
+        <dt>Max</dt><dd>19.0&deg;</dd>
+        <dt>Ambient</dt><dd>20.1&deg;</dd>
+    </dl>
+    
+    
+</div>

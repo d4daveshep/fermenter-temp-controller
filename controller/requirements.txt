@@ -1,8 +1,0 @@
-pytz
-pyserial
-pyserial_asyncio
-requests
-validators
-influxdb_client
-pyzmq
-pydantic>=1.0,<2.0

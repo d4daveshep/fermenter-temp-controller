@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Fermenter — Dashboard{% endblock %}
+
+{% block content %}
+<div hx-get="/status" hx-trigger="every 5s" hx-swap="innerHTML">
+    {% include "partials/status.html" %}
+</div>
+<p><a href="/target">Set target temperature</a></p>
+<p><a href="/brew">Change brew identifier</a></p>
+{% endblock %}
