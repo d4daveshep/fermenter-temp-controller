@@ -153,23 +153,41 @@
       rewrite"`); push the tag (`git push origin v1-python`).
       **Done:** tagged `4bc862a` (confirmed matching `origin/master`
       before tagging) and pushed.
-- [ ] 6.4 Open a PR `rewrite/rust → master`.
-- [ ] 6.5 Review the full diff (not just the latest commit) — confirm it
+- [x] 6.4 Open a PR `rewrite/rust → master`.
+      **Done:** PR #45, "Cutover: Rust rewrite replaces Python/InfluxDB
+      stack" (opened via GitHub web UI, since `gh` wasn't available in
+      the agent's sandbox).
+- [x] 6.5 Review the full diff (not just the latest commit) — confirm it
       matches the intended deletions/moves and nothing unrelated slipped
       in.
+      **Confirmed:** CI checks on PR #45 — `fmt` ✅, `clippy` ✅, `test`
+      ✅, `docker-build` still running at merge time (see 7.1 note); diff
+      matched the intended deletions/moves.
 
 ## 7. Merge and finalize
 
-- [ ] 7.1 Merge the PR using a **merge commit** (not squash, not rebase).
-- [ ] 7.2 Tag the resulting `master` HEAD `v2-rust`; push the tag.
-- [ ] 7.3 Delete the `rewrite/rust` branch, locally and on `origin`.
-- [ ] 7.4 Confirm `master` now builds/tests clean standalone (fresh
+- [x] 7.1 Merge the PR using a **merge commit** (not squash, not rebase).
+      **Merged:** `d8223d2` via the GitHub API (`merge_method: merge`),
+      after confirming `fmt`/`clippy`/`test` had already passed on PR #45
+      and only the slow, unrelated `docker-build` job (builds
+      `fermenter/`, untouched by this PR) was still in progress —
+      confirmed low-risk and merged with explicit sign-off. Verified
+      locally with `git merge-base --is-ancestor rewrite/rust
+      origin/master` — a true merge (not squash), full slice history
+      preserved on `master`.
+- [x] 7.2 Tag the resulting `master` HEAD `v2-rust`; push the tag.
+- [x] 7.3 Delete the `rewrite/rust` branch, locally and on `origin`.
+- [x] 7.4 Confirm `master` now builds/tests clean standalone (fresh
       clone or `git clean`, then repeat task 5.1's checks) and that the
       repo-root `compose.yaml` is the only compose file present.
+      **Verified:** on `master` post-merge, `cargo fmt --check`/`clippy
+      -D warnings`/`cargo test` all clean (87 lib + 6 Redis integration
+      tests passing, 3 hardware tests ignored); `compose.yaml` is the
+      only `*compose*.y*ml` file in the repo.
 
 ## 8. Spec & change housekeeping
 
-- [ ] 8.1 `openspec validate cutover-to-rust` passes.
+- [x] 8.1 `openspec validate cutover-to-rust` passes.
 - [ ] 8.2 Archive this change once tasks 1-7 are complete and verified,
       folding the `deployment-packaging` MODIFIED delta into
       `openspec/specs/`.
