@@ -188,7 +188,11 @@
 ## 8. Spec & change housekeeping
 
 - [x] 8.1 `openspec validate cutover-to-rust` passes.
-- [ ] 8.2 Archive this change once tasks 1-7 are complete and verified,
+- [x] 8.2 Archive this change once tasks 1-7 are complete and verified,
       folding the `deployment-packaging` MODIFIED delta into
       `openspec/specs/`.
+      **Done:** synced the MODIFIED "Compose orchestration" requirement's
+      new scenario into `openspec/specs/deployment-packaging/spec.md`,
+      then archived to
+      `openspec/changes/archive/2026-07-13-cutover-to-rust/`.
 </content>
