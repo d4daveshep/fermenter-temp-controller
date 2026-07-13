@@ -188,20 +188,35 @@
       with the dev-machine verification (task 3.3); also explicitly tested
       the target/brew forms round-tripping through the real device on the
       Pi.
-- [ ] 5.6 Run `cargo test -- --ignored` on the Pi against its attached
+- [x] 5.6 Run `cargo test -- --ignored` on the Pi against its attached
       Arduino, confirming the slice-6 hardware tests also pass on the
       actual target hardware (per `docs/rewrite-plan.md` §12.7's milestone
       8 row: "run `cargo test -- --ignored` on Pi").
-      **Deferred:** not run this session, per your choice — left as a
-      follow-up you can run on the Pi whenever convenient
-      (`cd fermenter && cargo test -- --ignored --test-threads=1`, same
-      command used in slice-6). Not blocking archive of this slice.
+      **Done — confirmed by you:** all `serial_hardware.rs` tests pass on
+      the Pi against its real, sensored, production Arduino. Along the
+      way, the tests themselves needed hardening (see
+      `fermenter/tests/serial_hardware.rs` and commit `1f38a5a`): a
+      concurrency race over the shared exclusive-lock serial device
+      (fixed with a `tokio::sync::Mutex` serializing all three tests
+      regardless of `--test-threads`), a target write that could be lost
+      if sent during a genuine Uno's post-reset bootloader window (fixed
+      by retrying the write every loop iteration, mirroring the real
+      `ingest_loop`'s reconcile behavior), and an overly strict
+      first-line-must-parse assumption (fixed by retrying within the
+      round-trip budget, matching `ingest_loop`'s own tolerance for an
+      occasional malformed line). Verified passing twice in a row in
+      `cargo test`'s default parallel mode against the dev machine's
+      Arduino too, not just the Pi's.
 
 ## 6. Spec & docs
 
 - [x] 6.1 `openspec validate slice-7-deployment` passes. **Verified.**
-- [ ] 6.2 Archive the change once 1-5 are complete and verified, folding the
+- [x] 6.2 Archive the change once 1-5 are complete and verified, folding the
       new `deployment-packaging` capability into `openspec/specs/`.
+      **Done:** archived to
+      `openspec/changes/archive/2026-07-13-slice-7-deployment/`,
+      `openspec/specs/deployment-packaging/spec.md` created (4
+      requirements, 9 scenarios), all 9 capability specs validate clean.
 - [x] 6.3 Note in the repo (e.g. `docs/rewrite-plan.md` or a follow-up) that
       the Rust stack is now deployable, and that the old Python stack
       removal (cutover, `rewrite-plan.md` §15 Phase 3) is the next
