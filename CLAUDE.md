@@ -4,67 +4,61 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Arduino + Raspberry Pi fermentation temperature controller. The Arduino reads temperature sensors and controls heating/cooling relays; a Raspberry Pi service reads the Arduino over serial, writes data to InfluxDB, and serves a FastAPI web UI.
+Arduino + Raspberry Pi fermentation temperature controller. The Arduino reads temperature sensors and controls heating/cooling relays; a single Rust binary on the Raspberry Pi reads the Arduino over serial, persists readings to Redis Time Series, and serves an Axum + MiniJinja + HTMX web dashboard. This replaced an earlier Python/InfluxDB implementation at cutover — see `docs/rewrite-plan.md` for the full rewrite history and design.
 
 ## Repository Boundaries
 
-- **`src/`** — untracked artifact (`__pycache__`, old `.egg-info`). Ignore it; it is not source code.
-- **`tests/component/` and `tests/unit/`** — untracked cache directories. The active test suite lives directly under `tests/`.
-- **`pyproject.toml`** — incomplete: it is missing `fastapi`, `uvicorn`, and `pytest`. The authoritative dependency lists are `controller/requirements.txt`, `web/requirements.txt`, and `tests/requirements.txt`.
+- **`fermenter/`** — the Rust application: source of truth for all runtime behavior.
+- **`src/`** — untracked artifact left over from the pre-rewrite Python stack (`__pycache__`, old `.egg-info`). Ignore it; it is not source code.
+- **`arduino/TempController/`** — the Arduino firmware (C++), unchanged by the rewrite.
+- **`docs/`** — planning history for the rewrite (`rewrite-plan.md`, `system-analysis.md`, `openspec-rewrite-management.md`); background, not live operational instructions.
+- **`openspec/`** — drives ongoing feature work: proposals, specs, and archived changes documenting the capability library.
 
 ## Running the Application
 
-The primary runtime is Docker Compose:
-
 ```bash
-docker-compose up          # starts influxdb, controller, and web services
+cp fermenter/.env.example fermenter/.env   # edit SERIAL_PORT etc. for this host
+docker compose up                          # from the repo root: starts fermenter + redis
 ```
 
-Individual Docker builds:
+For local development without Docker:
 
 ```bash
-./build_and_run_web_docker_image.sh   # build and run the web service only
+cd fermenter
+cargo run
 ```
 
 ## Running Tests
 
-**Preferred (via Docker, matches CI):**
 ```bash
-./build_run_docker_for_testing.sh     # builds Dockerfile.pytests and runs pytest
-```
-The Docker test run only executes `tests/test_config_file.py` (see `Dockerfile.pytests`).
-
-**Locally (outside Docker):**
-```bash
-uv pip install fastapi httpx pytest-asyncio uvicorn jinja2 python-multipart
-python -m pytest tests/                        # all tests
-python -m pytest tests/test_config_file.py     # single test file
-python -m pytest tests/test_config_file.py::TestClassName::test_method  # single test
+cd fermenter
+cargo test                    # unit + integration (spins up redis:8 via testcontainers; needs Docker)
+cargo test -- --ignored       # also run hardware tests (needs a real Arduino attached)
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
 ```
 
-Local runs of `test_web_api.py` **will fail** due to the Docker path-flattening issue described below. Do not attempt to fix this unless explicitly requested.
-
-URL validation tests fail on `master` because URL validation is intentionally commented out in `controller/config.py`. Do not proactively restore it.
+CI (`.github/workflows/rust.yml`) runs `fmt`, `clippy`, `test`, and a build-only cross-compiled `docker buildx build --platform linux/arm64 --features embed` job. Hardware tests are `#[ignore]`'d and never run in CI.
 
 ## Architecture
 
-### Python services (Raspberry Pi)
+### Rust application (`fermenter/`)
 
-- **`controller/temp_controller.py`** — asyncio service that reads JSON from the Arduino over serial (`serial_asyncio`), writes temperature records to InfluxDB, and listens for ZMQ PULL messages to update `target_temp` or `brew_id` at runtime.
-- **`controller/config.py`** — parses an INI config file (`config.ini` by default, overridden by `$config_file` env var). Uses **Pydantic v1** (`from pydantic import BaseSettings`). Do NOT use Pydantic v2 / `pydantic-settings` conventions.
-- **`controller/temperature_database.py`** — InfluxDB v2 client wrapper.
-- **`controller/zmq_receiver.py`** / **`controller/zmq_sender.py`** — ZMQ PUSH/PULL pair. The web API (`ZmqSender`) pushes commands; the controller (`ZmqReceiver`) pulls them. This is the IPC channel between the two services.
-- **`web/fastapi_app.py`** — FastAPI app with Jinja2 templates. Displays live temperature data and provides forms to update `target_temp` and `brew_id`.
+- **`src/serial/`** — `SerialSource` trait; `arduino.rs` (real `tokio-serial` transport) and `mock.rs` (hardware-free dev/test feed).
+- **`src/store/`** — `TimeStore` trait; Redis Time Series implementation (`redis.rs`). In-memory state is authoritative; Redis is a durability mirror.
+- **`src/web/`** — Axum router, handlers, MiniJinja rendering. Templates live in `fermenter/templates/`, loaded from disk in dev builds and baked into the binary at compile time with `--features embed` (used for the release Docker image).
+- **`src/model.rs`** — `Reading`, `ControllerState`, and related types shared across serial, store, and web layers.
+- **`src/ingest.rs`**, **`src/temperature_control.rs`**, **`src/brew_session.rs`** — ingest loop, target-temperature reconcile, and brew-id relabeling logic.
+- **`src/config.rs`** — env-var configuration (`envy`), fail-fast on invalid config.
 
-### Docker path flattening (web service)
+### Serial contract (fixed, shared with firmware)
 
-`Dockerfile.web_apis` copies `web/fastapi_app.py`, `web/templates/`, and `web/static/` all into the container root. As a result, `fastapi_app.py` resolves the `static/` directory via `Path(__file__).parent.parent.absolute() / "static"` — which works inside the container but raises `RuntimeError: Directory .../static does not exist` when run locally. Do not change this path logic.
+Newline-delimited JSON readings at 115200 baud (`instant`, `average`, `min`, `max`, `target`, `ambient`, `action`, `reason-code`); the app writes the target temperature back as a `<float>` framed string (e.g. `<20.5>`). This contract must not change without a corresponding Arduino firmware change.
 
 ### Arduino firmware (`arduino/TempController/`)
 
 C++ sketch targeting an Arduino Mega/Uno with:
 - **`TempController.ino`** — main sketch; toggles between unit-test mode (`#define _DO_UNIT_TESTING`) and production mode.
-- **Serial protocol** — Arduino emits JSON every 10 s (`instant`, `average`, `min`, `max`, `target`, `ambient`, `action`, `reason-code`). The Pi writes a float wrapped in `<` `>` markers (e.g. `<20.5>`) to update the target temperature.
 - **Libraries** bundled as zips in `arduino/install/`: AUnit, ArduinoJson, DallasTemperature, OneWire.
 
 **Build / upload Arduino firmware** (uses legacy `arduino` CLI, not `arduino-cli`):
@@ -74,27 +68,19 @@ cd arduino/TempController
 ./upload_arduino.sh
 ```
 
-### Config file format
+### Configuration (env vars)
 
-Required INI sections and keys for `ControllerConfig`:
+Recognised variables (all have in-code defaults except where noted), documented in `fermenter/.env.example`:
 
-```ini
-[general]
-timezone = Pacific/Auckland   # optional, defaults to Pacific/Auckland
-
-[fermenter]
-target_temp = 20.0
-brew_id = my-brew
-
-[influxdb]
-url = http://localhost:8086
-auth_token = <token>
-org = <org>
-bucket = <bucket>
-
-[arduino]
-serial_port = /dev/ttyACM0
-
-[zmq]
-url = tcp://127.0.0.1:5555
 ```
+SERIAL_PORT=/dev/ttyACM0
+SERIAL_BAUD=115200
+MOCK_SERIAL=false
+REDIS_URL=redis://redis:6379
+TS_RETENTION_DAYS=7
+DEFAULT_BREW_ID=00-TEST-v00
+HTTP_PORT=8080
+DEFAULT_TARGET_TEMP=19.5
+RUST_LOG=info
+```
+</content>

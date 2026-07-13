@@ -1,6 +1,6 @@
 # Installation Guide
 
-Step-by-step setup for a fresh Raspberry Pi running the full fermentation temperature controller stack.
+Step-by-step setup for a fresh Raspberry Pi running the fermentation temperature controller stack (Rust app + Redis).
 
 ## Hardware required
 
@@ -66,40 +66,27 @@ cd fermenter-temp-controller
 
 ## 4. Configure the application
 
-### 4a. Set the InfluxDB token
-
-Generate a secure random token and save it to `.env`:
+The Rust app is configured entirely via environment variables (12-factor style), read by the `fermenter` container from `fermenter/.env`.
 
 ```bash
-echo "INFLUXDB_TOKEN=$(openssl rand -hex 32)" > .env
+cp fermenter/.env.example fermenter/.env
 ```
 
-This token is used by both InfluxDB (on first boot) and the controller/web services. It is gitignored and never leaves this machine.
+Edit `fermenter/.env` for your setup:
 
-### 4b. Edit the application config
-
-Open `controller/config-test.ini` and update the values for your setup:
-
-```ini
-[fermenter]
-target_temp = 20.0        # starting target temperature in °C
-brew_id = my-first-brew   # identifier recorded in the database
-
-[influxdb]
-url = http://localhost:8086
-org = daveshep.net
-bucket = temp-test
-
-[arduino]
-serial_port = /dev/ttyACM0   # confirm this after plugging in the Arduino (see step 5)
-
-[general]
-timezone = Pacific/Auckland   # IANA timezone name
+```bash
+SERIAL_PORT=/dev/ttyACM0     # confirm this after plugging in the Arduino (see step 5)
+SERIAL_BAUD=115200           # matches the fixed Arduino firmware contract, leave as-is
+MOCK_SERIAL=false            # real deployment: leave false
+REDIS_URL=redis://redis:6379 # `redis` is the Compose service name, not localhost
+TS_RETENTION_DAYS=7
+DEFAULT_BREW_ID=my-first-brew
+HTTP_PORT=8080
+DEFAULT_TARGET_TEMP=20.0     # starting target temperature in °C, only used if no persisted state exists yet
+RUST_LOG=info
 ```
 
-Leave `auth_token` as-is — the token comes from the `INFLUXDB_TOKEN` env var set in step 4a.
-
-After editing the config you must rebuild the Docker images for the change to take effect (step 6).
+`fermenter/.env` is gitignored and never leaves this machine. After editing it you must restart the `fermenter` container for changes to take effect (step 6) — no rebuild needed, since it's plain environment configuration.
 
 ---
 
@@ -143,7 +130,7 @@ Plug the Arduino into the Pi via USB, then run:
 ls /dev/ttyACM*
 ```
 
-It will typically be `/dev/ttyACM0`. If it differs, update `serial_port` in `controller/config-test.ini` accordingly.
+It will typically be `/dev/ttyACM0`. If it differs, update `SERIAL_PORT` in `fermenter/.env` accordingly (see step 4).
 
 ### 5d. Compile and upload the firmware
 
@@ -172,9 +159,7 @@ docker compose build
 docker compose up -d
 ```
 
-On first boot, InfluxDB automatically initialises itself using the token from `.env` — no manual database setup required.
-
-Check that all three services started cleanly:
+Check that both services (`fermenter` and `redis`) started cleanly:
 
 ```bash
 docker compose logs -f
@@ -186,10 +171,10 @@ docker compose logs -f
 
 | Check | How |
 |---|---|
-| Controller reading Arduino | `docker compose logs controller` — look for `read ... from serial` lines |
-| Data writing to InfluxDB | `docker compose logs controller` — look for `Writing point to database` lines |
-| Web UI | Open `http://<pi-ip>:8080` in a browser |
-| InfluxDB UI | Open `http://<pi-ip>:8086` — log in with username `my-user`, password `my-password` |
+| App reading Arduino | `docker compose logs fermenter` — look for `serial port opened` / reading-ingest log lines |
+| Data writing to Redis | `docker compose logs fermenter` — no write-error/warn lines |
+| Web dashboard | Open `http://<pi-ip>:8080` in a browser |
+| Health check | `curl http://<pi-ip>:8080/healthz` — reports `serial_connected` |
 
 ---
 
@@ -198,9 +183,10 @@ docker compose logs -f
 ```bash
 docker compose stop          # stop all services
 docker compose start         # start again without rebuilding
-docker compose up -d --build # rebuild images after config changes and restart
+docker compose up -d --build # rebuild images after code changes and restart
 docker compose logs -f       # tail all logs
-docker compose logs controller -f  # tail controller only
+docker compose logs fermenter -f  # tail the app only
 ```
 
-To change the target temperature or brew ID at runtime, use the web UI at `http://<pi-ip>:8080` rather than editing the config file — changes made through the UI take effect immediately without a restart.
+To change the target temperature or brew ID at runtime, use the web dashboard at `http://<pi-ip>:8080` rather than editing `fermenter/.env` — changes made through the dashboard take effect immediately without a restart.
+</content>

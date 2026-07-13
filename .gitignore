@@ -13,7 +13,6 @@ virtualenv
 # InfluxDB runtime data
 influxdb/data/
 influx_data/
-controller/influxdb/
 
 # Python package manager
 uv.lock

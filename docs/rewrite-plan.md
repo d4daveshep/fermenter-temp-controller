@@ -470,3 +470,12 @@ temperature controller deployable at every point until cutover.
   (removing the Python stack, tagging `v1-python`, merging `rewrite/rust` →
   `master`) is now available as the next step whenever desired — it is a
   deliberate, separate decision, not performed as part of this slice.
+- **Status (§15 Phase 3 cutover, `cutover-to-rust`):** on this branch, the
+  old Python/InfluxDB stack has been deleted, and `compose.yaml` (formerly
+  `fermenter/compose.yaml`) is now the sole repo-root orchestration file —
+  the 2-container Rust + Redis stack is the only deployable system
+  described in the repository. The remaining steps in this section's
+  numbered sequence — tagging `master` `v1-python`, merging
+  `rewrite/rust → master` via a merge commit, tagging the result
+  `v2-rust`, and deleting `rewrite/rust` — are the immediate next actions
+  to actually complete the cutover.

@@ -1,3 +1,0 @@
-[fermenter]
-brew_id = 64-Kolsch-v12
-target_temp = 17.0
