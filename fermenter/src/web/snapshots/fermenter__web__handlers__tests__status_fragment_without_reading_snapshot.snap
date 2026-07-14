@@ -4,6 +4,7 @@ expression: html.0
 ---
 <div id="status" class="status">
     <p class="brew-id">Brew: <strong>00-TEST-v00</strong></p>
+    <p class="server-time">Server time: 14-Jul-2026 14:30:45</p>
     
     <p class="no-data">No reading available yet.</p>
     

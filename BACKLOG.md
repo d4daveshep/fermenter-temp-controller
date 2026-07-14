@@ -2,14 +2,13 @@
 
 ## UI Enhancements
 
-- Add timestamp to dashboard (date DD-MMM-YYYY, time HH:MM:SS)
 - Add Reason Code to dashboard (in brackets after Action)
 - Change from URL links to buttons for updating target temp and brew ID
 
 ## Functionality
 
-- Retrieve Reason Code associated to current action (should already be available
-  in the JSON)
+- Retrieve Reason Code associated to current action (should already be available in the JSON)
+- Build timeseries graphs for data over fixed (but configurable?) time periods
 
 ## Technical Architecture
 
