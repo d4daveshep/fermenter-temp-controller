@@ -169,6 +169,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let body = body_string(response).await;
         assert!(body.contains("18.7"));
+        assert!(body.contains("Server time:"));
     }
 
     #[tokio::test]
@@ -188,6 +189,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let body = body_string(response).await;
         assert!(body.contains("No reading available"));
+        assert!(body.contains("Server time:"));
     }
 
     #[tokio::test]
@@ -205,6 +207,7 @@ mod tests {
         // Same current-state content the /status fragment renders.
         assert!(body.contains("18.7"));
         assert!(body.contains(r#"id="status""#));
+        assert!(body.contains("Server time:"));
     }
 
     #[tokio::test]
@@ -285,6 +288,51 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let body = body_string(response).await;
         assert!(body.contains("font-family"));
+    }
+
+    #[test]
+    fn status_context_server_time_matches_dd_mmm_yyyy_hh_mm_ss() {
+        // web-dashboard spec: the fragment includes a server-local-time
+        // timestamp formatted `DD-MMM-YYYY HH:MM:SS`. Validated by hand
+        // rather than a regex dep (design.md decision 5).
+        let ctx = handlers::status_context(&test_state(None));
+        let stamped = &ctx.server_time;
+        let parts: Vec<&str> = stamped.split(' ').collect();
+        assert_eq!(parts.len(), 2, "expected '<date> <time>', got {stamped}");
+        let (date, time) = (parts[0], parts[1]);
+
+        let date_parts: Vec<&str> = date.split('-').collect();
+        assert_eq!(date_parts.len(), 3, "expected DD-MMM-YYYY, got {date}");
+        let (day, month, year) = (date_parts[0], date_parts[1], date_parts[2]);
+        assert_eq!(day.len(), 2, "day should be 2 digits, got {day}");
+        assert!(
+            day.chars().all(|c| c.is_ascii_digit()),
+            "day should be digits, got {day}",
+        );
+        assert_eq!(month.len(), 3, "month should be 3 letters, got {month}");
+        assert!(
+            month.chars().next().is_some_and(|c| c.is_uppercase()),
+            "month first letter should be uppercase, got {month}",
+        );
+        assert!(
+            month.chars().skip(1).all(|c| c.is_lowercase()),
+            "month remaining letters should be lowercase, got {month}",
+        );
+        assert_eq!(year.len(), 4, "year should be 4 digits, got {year}");
+        assert!(
+            year.chars().all(|c| c.is_ascii_digit()),
+            "year should be digits, got {year}",
+        );
+
+        let time_parts: Vec<&str> = time.split(':').collect();
+        assert_eq!(time_parts.len(), 3, "expected HH:MM:SS, got {time}");
+        for tp in time_parts {
+            assert_eq!(tp.len(), 2, "time component should be 2 digits, got {tp}");
+            assert!(
+                tp.chars().all(|c| c.is_ascii_digit()),
+                "time component should be digits, got {tp}",
+            );
+        }
     }
 
     fn post_form(path: &str, body: &str) -> Request<Body> {

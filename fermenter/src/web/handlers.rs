@@ -3,6 +3,7 @@ use std::sync::atomic::Ordering;
 use axum::extract::State;
 use axum::response::Html;
 use axum::{Form, Json};
+use chrono::Local;
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
 
@@ -23,13 +24,15 @@ use super::render::render;
 pub(crate) struct StatusContext {
     reading: Option<Reading>,
     brew_id: String,
+    pub(crate) server_time: String,
 }
 
-fn status_context(state: &AppState) -> StatusContext {
+pub(crate) fn status_context(state: &AppState) -> StatusContext {
     let reading = state.latest.lock().unwrap().clone();
     StatusContext {
         reading,
         brew_id: state.brew_tx.borrow().clone(),
+        server_time: Local::now().format("%d-%b-%Y %H:%M:%S").to_string(),
     }
 }
 
@@ -250,6 +253,7 @@ mod tests {
         let ctx = StatusContext {
             reading: Some(sample_reading()),
             brew_id: "00-TEST-v00".to_string(),
+            server_time: "14-Jul-2026 14:30:45".to_string(),
         };
         let html = render(&env, "partials/status.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
@@ -261,6 +265,7 @@ mod tests {
         let ctx = StatusContext {
             reading: None,
             brew_id: "00-TEST-v00".to_string(),
+            server_time: "14-Jul-2026 14:30:45".to_string(),
         };
         let html = render(&env, "partials/status.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
