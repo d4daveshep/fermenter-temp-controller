@@ -2,7 +2,6 @@
 
 ## UI Enhancements
 
-- Add timestamp to dashboard (date DD-MMM-YYYY, time HH:MM:SS)
 - Add Reason Code to dashboard (in brackets after Action)
 - Change from URL links to buttons for updating target temp and brew ID
 
