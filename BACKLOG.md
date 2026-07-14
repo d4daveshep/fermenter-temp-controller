@@ -8,8 +8,8 @@
 
 ## Functionality
 
-- Retrieve Reason Code associated to current action (should already be available
-  in the JSON)
+- Retrieve Reason Code associated to current action (should already be available in the JSON)
+- Build timeseries graphs for data over fixed (but configurable?) time periods
 
 ## Technical Architecture
 
