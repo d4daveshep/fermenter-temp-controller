@@ -120,9 +120,9 @@ async fn main() {
     fn mock_lines() -> Vec<std::result::Result<String, String>> {
         vec![
             Ok(r#"{"target":19.5,"average":18.2,"min":18.0,"max":18.4,"ambient":20.1,"action":"heating","reason-code":"below-target"}"#.to_string()),
-            Ok(r#"{"target":19.5,"average":19.0,"min":18.9,"max":19.1,"ambient":20.0,"action":"idle"}"#.to_string()),
+            Ok(r#"{"target":19.5,"average":19.0,"min":18.9,"max":19.1,"ambient":20.0,"action":"idle","reason-code":"RC3.1"}"#.to_string()),
             Ok(r#"not valid json"#.to_string()),
-            Ok(r#"{"target":19.5,"average":19.5,"min":19.4,"max":19.6,"ambient":20.0,"action":"idle","json-size":42}"#.to_string()),
+            Ok(r#"{"target":19.5,"average":19.5,"min":19.4,"max":19.6,"ambient":20.0,"action":"idle","reason-code":"RC1","json-size":42}"#.to_string()),
         ]
     }
 

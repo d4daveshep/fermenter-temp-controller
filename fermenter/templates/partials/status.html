@@ -4,6 +4,7 @@
     {% if reading %}
     <dl class="reading">
         <dt>Action</dt><dd>{{ reading.action }}</dd>
+        <dt>Reason</dt><dd>{{ reading["reason-code"] }}</dd>
         <dt>Target</dt><dd>{{ reading.target }}&deg;</dd>
         <dt>Average</dt><dd>{{ reading.average }}&deg;</dd>
         <dt>Min</dt><dd>{{ reading.min }}&deg;</dd>
