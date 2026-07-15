@@ -1,0 +1,42 @@
+---
+source: src/web/handlers.rs
+expression: html.0
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fermenter — Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://unpkg.com/htmx.org@2"></script>
+</head>
+<body>
+    <header>
+        <h1>Fermenter</h1>
+    </header>
+    <main>
+        
+<div hx-get="/status" hx-trigger="every 5s" hx-swap="innerHTML">
+    <div id="status" class="status">
+    <p class="brew-id">Brew: <strong>00-TEST-v00</strong></p>
+    <p class="server-time">Server time: 14-Jul-2026 14:30:45</p>
+    
+    <dl class="reading">
+        <dt>Action</dt><dd>heating</dd>
+        <dt>Reason</dt><dd>below-target</dd>
+        <dt>Target</dt><dd>19.5&deg;</dd>
+        <dt>Average</dt><dd>18.7&deg;</dd>
+        <dt>Min</dt><dd>18.0&deg;</dd>
+        <dt>Max</dt><dd>19.0&deg;</dd>
+        <dt>Ambient</dt><dd>20.1&deg;</dd>
+    </dl>
+    
+</div>
+</div>
+<form method="get" action="/target"><button type="submit">Set target temperature</button></form>
+<form method="get" action="/brew"><button type="submit">Change brew identifier</button></form>
+
+    </main>
+</body>
+</html>
