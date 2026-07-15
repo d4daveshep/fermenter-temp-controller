@@ -51,8 +51,8 @@
 
 ## 8. OpenSpec validation
 
-- [ ] 8.1 Run `openspec validate ui-links-to-buttons --strict` — passes (confirms the MODIFIED delta against `web-dashboard` is well-formed, requirement names match exactly, scenarios use `####` headers)
-- [ ] 8.2 Run `openspec status --change "ui-links-to-buttons"` — `isComplete: true` (all `applyRequires` artifacts done)
+- [x] 8.1 Run `openspec validate ui-links-to-buttons --strict` — passes (confirms the MODIFIED delta against `web-dashboard` is well-formed, requirement names match exactly, scenarios use `####` headers)
+- [x] 8.2 Run `openspec status --change "ui-links-to-buttons"` — `isComplete: true` (all `applyRequires` artifacts done)
 
 ## 9. Manual smoke test
 
