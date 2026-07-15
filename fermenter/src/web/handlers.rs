@@ -342,8 +342,8 @@ mod tests {
         )
         .unwrap();
         assert!(
-            !html.0.contains("Back to dashboard"),
-            "target form must not contain back link"
+            html.0.contains("<button type=\"submit\">Cancel</button>"),
+            "target form must contain cancel button"
         );
         assert!(
             !html.0.contains(r#"class="confirmed""#),
@@ -359,8 +359,8 @@ mod tests {
         )
         .unwrap();
         assert!(
-            !html.0.contains("Back to dashboard"),
-            "brew form must not contain back link"
+            html.0.contains("<button type=\"submit\">Cancel</button>"),
+            "brew form must contain cancel button"
         );
         assert!(
             !html.0.contains(r#"class="confirmed""#),

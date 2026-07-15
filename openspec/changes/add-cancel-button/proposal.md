@@ -20,7 +20,7 @@ The target-temperature and brew-identifier forms have no way to exit without sub
 
 ## Impact
 
-- **Templates**: `target_form.html` and `brew_form.html` — each gets a Cancel button with a link to `/`.
+- **Templates**: `target_form.html` and `brew_form.html` — each gets a Cancel `<button>` inside a `<form method="get" action="/">`, matching the dashboard's navigation button pattern.
 - **Handlers**: Unchanged.
 - **Routes**: Unchanged.
 - **Tests**: Snapshot tests for both form templates will need updating (insta accepts). The existing test `form_templates_do_not_contain_back_link_or_confirmed_block` will need to be relaxed or removed since the cancel button replaces the previous assertion.
