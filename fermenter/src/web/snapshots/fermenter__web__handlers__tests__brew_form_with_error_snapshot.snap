@@ -1,6 +1,5 @@
 ---
 source: src/web/handlers.rs
-assertion_line: 344
 expression: html.0
 ---
 <!DOCTYPE html>
@@ -29,6 +28,7 @@ expression: html.0
     <input type="text" id="brew_id" name="brew_id" value="00-TEST-v00">
     <button type="submit">Update</button>
 </form>
+<form method="get" action="/"><button type="submit">Cancel</button></form>
 
     </main>
 </body>
