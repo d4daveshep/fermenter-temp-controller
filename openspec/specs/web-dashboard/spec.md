@@ -12,8 +12,10 @@ displayed state stays current without a full page reload.
 
 The system SHALL serve an HTML dashboard page over HTTP showing the current
 brew identifier and the most recently observed reading (average, min, max,
-ambient, target, and action), or an explicit no-data indication when no
-reading has been observed yet. The page SHALL also display a timestamp
+ambient, target, action, and reason code), or an explicit no-data indication
+when no reading has been observed yet. The reason code SHALL be displayed
+immediately after the action, so the operator can see the controller's
+decision rationale. The page SHALL also display a timestamp
 reflecting the server's local wall-clock time at render time, formatted
 `DD-MMM-YYYY HH:MM:SS` (e.g. `14-Jul-2026 14:30:45`), so an operator can
 distinguish a live server from a stale or frozen view. The timestamp SHALL
@@ -24,8 +26,8 @@ render even when no reading has been observed yet.
 - **WHEN** a browser requests the dashboard page and a reading has been
   observed
 - **THEN** the response is an HTML page displaying the current brew
-  identifier and the latest reading's average, min, max, ambient, target, and
-  action values
+  identifier and the latest reading's average, min, max, ambient, target,
+  action, and reason code values
 
 #### Scenario: Dashboard shows a no-data state before any reading arrives
 
@@ -55,13 +57,16 @@ dashboard page, containing only the current-state markup, so a browser can
 periodically re-fetch it and refresh the displayed state without a full page
 reload. The fragment SHALL include a timestamp reflecting the server's local
 wall-clock time at render time, formatted `DD-MMM-YYYY HH:MM:SS`, so the
-displayed time advances on each poll without a full page reload.
+displayed time advances on each poll without a full page reload. When a
+reading has been observed, the fragment SHALL include the reason code
+immediately after the action value.
 
 #### Scenario: Fragment reflects the latest state on each poll
 
 - **WHEN** a browser requests the status fragment after a new reading has
   been observed since the previous request
-- **THEN** the fragment reflects the newly observed reading
+- **THEN** the fragment reflects the newly observed reading, including its
+  reason code
 
 #### Scenario: Fragment content matches the dashboard's embedded status block
 
