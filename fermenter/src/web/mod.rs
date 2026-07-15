@@ -366,7 +366,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn valid_post_target_updates_state_and_confirms() {
+    async fn valid_post_target_updates_state_and_redirects() {
         let state = test_state_with_target(None, 19.5);
         let target_rx = state.target_tx.subscribe();
         let router = build_router(state);
@@ -376,9 +376,16 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
-        let body = body_string(response).await;
-        assert!(body.contains("21"));
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(
+            response
+                .headers()
+                .get("location")
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            "/"
+        );
         assert_eq!(*target_rx.borrow(), 21.0);
     }
 
@@ -428,7 +435,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
     }
 
     #[tokio::test]
@@ -446,7 +453,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn valid_post_brew_updates_state_and_confirms() {
+    async fn valid_post_brew_updates_state_and_redirects() {
         let state = test_state_with_brew(None, "00-TEST-v00");
         let brew_rx = state.brew_tx.subscribe();
         let router = build_router(state);
@@ -456,9 +463,16 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
-        let body = body_string(response).await;
-        assert!(body.contains("01-IPA-v02"));
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(
+            response
+                .headers()
+                .get("location")
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            "/"
+        );
         assert_eq!(*brew_rx.borrow(), "01-IPA-v02");
     }
 

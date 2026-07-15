@@ -9,15 +9,9 @@
 <p class="error">{{ error }}</p>
 {% endif %}
 
-{% if confirmed %}
-<p class="confirmed">Brew identifier updated to {{ brew_id }}.</p>
-{% endif %}
-
 <form method="post" action="/brew">
     <label for="brew_id">Brew identifier</label>
     <input type="text" id="brew_id" name="brew_id" value="{{ brew_id }}">
     <button type="submit">Update</button>
 </form>
-
-<p><a href="/">Back to dashboard</a></p>
 {% endblock %}

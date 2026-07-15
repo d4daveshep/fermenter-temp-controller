@@ -1,5 +1,6 @@
 ---
 source: src/web/handlers.rs
+assertion_line: 344
 expression: html.0
 ---
 <!DOCTYPE html>
@@ -23,15 +24,11 @@ expression: html.0
 <p class="error">brew identifier must not be empty</p>
 
 
-
-
 <form method="post" action="/brew">
     <label for="brew_id">Brew identifier</label>
     <input type="text" id="brew_id" name="brew_id" value="00-TEST-v00">
     <button type="submit">Update</button>
 </form>
-
-<p><a href="/">Back to dashboard</a></p>
 
     </main>
 </body>

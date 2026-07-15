@@ -1,5 +1,6 @@
 ---
 source: src/web/handlers.rs
+assertion_line: 320
 expression: html.0
 ---
 <!DOCTYPE html>
@@ -23,15 +24,11 @@ expression: html.0
 <p class="error">&#x27;abc&#x27; is not a valid number</p>
 
 
-
-
 <form method="post" action="/target">
     <label for="target">Target temperature (&deg;C)</label>
     <input type="text" id="target" name="target" value="19.5">
     <button type="submit">Update</button>
 </form>
-
-<p><a href="/">Back to dashboard</a></p>
 
     </main>
 </body>

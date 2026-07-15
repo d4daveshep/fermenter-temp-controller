@@ -1,7 +1,7 @@
 use std::sync::atomic::Ordering;
 
 use axum::extract::State;
-use axum::response::Html;
+use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::{Form, Json};
 use chrono::Local;
 use serde::{Deserialize, Serialize};
@@ -47,12 +47,11 @@ pub(crate) async fn status(State(state): State<AppState>) -> Result<Html<String>
 }
 
 /// Context for `target_form.html`, shared by the `GET` (display) and `POST`
-/// (re-render on validation failure, or confirm on success) handlers.
+/// (re-render on validation failure) handlers.
 #[derive(Serialize)]
 pub(crate) struct TargetFormContext {
     target: f64,
     error: Option<String>,
-    confirmed: bool,
 }
 
 /// `GET /target` — target-setpoint form pre-filled with the current target
@@ -65,7 +64,6 @@ pub(crate) async fn target_form(State(state): State<AppState>) -> Result<Html<St
         TargetFormContext {
             target: current,
             error: None,
-            confirmed: false,
         },
     )
 }
@@ -87,7 +85,7 @@ pub(crate) struct TargetForm {
 pub(crate) async fn set_target(
     State(state): State<AppState>,
     Form(form): Form<TargetForm>,
-) -> Result<Html<String>> {
+) -> Result<Response> {
     match validate_target(&form.target) {
         Ok(value) => {
             let previous = *state.target_tx.borrow();
@@ -99,15 +97,7 @@ pub(crate) async fn set_target(
             if let Err(e) = persist_target(state.store.as_ref(), value, &current_brew_id).await {
                 warn!(error = %e, "failed to persist target temperature — continuing");
             }
-            render(
-                &state.env,
-                "target_form.html",
-                TargetFormContext {
-                    target: value,
-                    error: None,
-                    confirmed: true,
-                },
-            )
+            Ok(Redirect::to("/").into_response())
         }
         Err(message) => {
             let current = *state.target_tx.borrow();
@@ -117,20 +107,19 @@ pub(crate) async fn set_target(
                 TargetFormContext {
                     target: current,
                     error: Some(message),
-                    confirmed: false,
                 },
             )
+            .map(|h| h.into_response())
         }
     }
 }
 
 /// Context for `brew_form.html`, shared by the `GET` (display) and `POST`
-/// (re-render on validation failure, or confirm on success) handlers.
+/// (re-render on validation failure) handlers.
 #[derive(Serialize)]
 pub(crate) struct BrewFormContext {
     brew_id: String,
     error: Option<String>,
-    confirmed: bool,
 }
 
 /// `GET /brew` — brew-identifier form pre-filled with the current brew
@@ -144,7 +133,6 @@ pub(crate) async fn brew_form(State(state): State<AppState>) -> Result<Html<Stri
         BrewFormContext {
             brew_id: current,
             error: None,
-            confirmed: false,
         },
     )
 }
@@ -171,7 +159,7 @@ pub(crate) struct BrewForm {
 pub(crate) async fn set_brew(
     State(state): State<AppState>,
     Form(form): Form<BrewForm>,
-) -> Result<Html<String>> {
+) -> Result<Response> {
     match validate_brew_id(&form.brew_id) {
         Ok(value) => {
             let previous = state.brew_tx.borrow().clone();
@@ -188,15 +176,7 @@ pub(crate) async fn set_brew(
             let rehydrated = ingest::rehydrate_latest_reading(state.store.as_ref(), &value).await;
             *state.latest.lock().unwrap() = rehydrated;
 
-            render(
-                &state.env,
-                "brew_form.html",
-                BrewFormContext {
-                    brew_id: value,
-                    error: None,
-                    confirmed: true,
-                },
-            )
+            Ok(Redirect::to("/").into_response())
         }
         Err(message) => {
             let current = state.brew_tx.borrow().clone();
@@ -206,9 +186,9 @@ pub(crate) async fn set_brew(
                 BrewFormContext {
                     brew_id: current,
                     error: Some(message),
-                    confirmed: false,
                 },
             )
+            .map(|h| h.into_response())
         }
     }
 }
@@ -272,6 +252,18 @@ mod tests {
     }
 
     #[test]
+    fn dashboard_renders_snapshot() {
+        let env = build_environment();
+        let ctx = StatusContext {
+            reading: Some(sample_reading()),
+            brew_id: "00-TEST-v00".to_string(),
+            server_time: "14-Jul-2026 14:30:45".to_string(),
+        };
+        let html = render(&env, "dashboard.html", ctx).unwrap();
+        insta::assert_snapshot!(html.0);
+    }
+
+    #[test]
     fn status_fragment_includes_reason_code() {
         let env = build_environment();
         let ctx = StatusContext {
@@ -290,7 +282,6 @@ mod tests {
         let ctx = TargetFormContext {
             target: 19.5,
             error: None,
-            confirmed: false,
         };
         let html = render(&env, "target_form.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
@@ -302,7 +293,6 @@ mod tests {
         let ctx = TargetFormContext {
             target: 19.5,
             error: Some("'abc' is not a valid number".to_string()),
-            confirmed: false,
         };
         let html = render(&env, "target_form.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
@@ -314,10 +304,68 @@ mod tests {
         let ctx = BrewFormContext {
             brew_id: "00-TEST-v00".to_string(),
             error: None,
-            confirmed: false,
         };
         let html = render(&env, "brew_form.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
+    }
+
+    #[test]
+    fn dashboard_uses_buttons_not_links_for_navigation() {
+        let env = build_environment();
+        let ctx = StatusContext {
+            reading: Some(sample_reading()),
+            brew_id: "00-TEST-v00".to_string(),
+            server_time: "14-Jul-2026 14:30:45".to_string(),
+        };
+        let html = render(&env, "dashboard.html", ctx).unwrap();
+        assert!(html.0.contains("<button"), "dashboard must use buttons");
+        assert!(
+            !html.0.contains("<a href=\"/target\">"),
+            "dashboard must not use <a> link for target navigation"
+        );
+        assert!(
+            !html.0.contains("<a href=\"/brew\">"),
+            "dashboard must not use <a> link for brew navigation"
+        );
+    }
+
+    #[test]
+    fn form_templates_do_not_contain_back_link_or_confirmed_block() {
+        let env = build_environment();
+        let html = render(
+            &env,
+            "target_form.html",
+            TargetFormContext {
+                target: 19.5,
+                error: None,
+            },
+        )
+        .unwrap();
+        assert!(
+            !html.0.contains("Back to dashboard"),
+            "target form must not contain back link"
+        );
+        assert!(
+            !html.0.contains(r#"class="confirmed""#),
+            "target form must not contain confirmed block"
+        );
+        let html = render(
+            &env,
+            "brew_form.html",
+            BrewFormContext {
+                brew_id: "00-TEST-v00".to_string(),
+                error: None,
+            },
+        )
+        .unwrap();
+        assert!(
+            !html.0.contains("Back to dashboard"),
+            "brew form must not contain back link"
+        );
+        assert!(
+            !html.0.contains(r#"class="confirmed""#),
+            "brew form must not contain confirmed block"
+        );
     }
 
     #[test]
@@ -326,7 +374,6 @@ mod tests {
         let ctx = BrewFormContext {
             brew_id: "00-TEST-v00".to_string(),
             error: Some("brew identifier must not be empty".to_string()),
-            confirmed: false,
         };
         let html = render(&env, "brew_form.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);

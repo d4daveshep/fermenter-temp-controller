@@ -9,15 +9,9 @@
 <p class="error">{{ error }}</p>
 {% endif %}
 
-{% if confirmed %}
-<p class="confirmed">Target temperature updated to {{ target }}&deg;.</p>
-{% endif %}
-
 <form method="post" action="/target">
     <label for="target">Target temperature (&deg;C)</label>
     <input type="text" id="target" name="target" value="{{ target }}">
     <button type="submit">Update</button>
 </form>
-
-<p><a href="/">Back to dashboard</a></p>
 {% endblock %}
