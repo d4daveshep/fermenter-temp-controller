@@ -170,6 +170,7 @@ mod tests {
         let body = body_string(response).await;
         assert!(body.contains("18.7"));
         assert!(body.contains("Server time:"));
+        assert!(body.contains("below-target"));
     }
 
     #[tokio::test]
@@ -208,6 +209,7 @@ mod tests {
         assert!(body.contains("18.7"));
         assert!(body.contains(r#"id="status""#));
         assert!(body.contains("Server time:"));
+        assert!(body.contains("below-target"));
     }
 
     #[tokio::test]

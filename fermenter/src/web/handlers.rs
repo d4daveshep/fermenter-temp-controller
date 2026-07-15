@@ -272,6 +272,19 @@ mod tests {
     }
 
     #[test]
+    fn status_fragment_includes_reason_code() {
+        let env = build_environment();
+        let ctx = StatusContext {
+            reading: Some(sample_reading()),
+            brew_id: "00-TEST-v00".to_string(),
+            server_time: "14-Jul-2026 14:30:45".to_string(),
+        };
+        let html = render(&env, "partials/status.html", ctx).unwrap();
+        assert!(html.0.contains("<dt>Reason</dt>"));
+        assert!(html.0.contains("<dd>below-target</dd>"));
+    }
+
+    #[test]
     fn target_form_with_current_target_snapshot() {
         let env = build_environment();
         let ctx = TargetFormContext {
