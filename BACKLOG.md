@@ -3,7 +3,7 @@
 ## UI Enhancements
 
 - Add the reason text to the dashboard (requires a static mapping from code to text)
-- Change from URL links to buttons for updating target temp and brew ID
+- Add a cancel button on set target temperature screen and change brew id screen
 
 ## Functionality
 

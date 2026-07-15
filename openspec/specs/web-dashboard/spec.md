@@ -130,7 +130,8 @@ from this requirement.
 
 The system SHALL serve an HTML form, at a distinct URL from the dashboard
 page, that displays the current target temperature and accepts a submission
-of a new target temperature.
+of a new target temperature. On successful submission, the system SHALL
+redirect the browser back to the dashboard page.
 
 #### Scenario: Form displays the current target temperature
 
@@ -138,12 +139,12 @@ of a new target temperature.
 - **THEN** the response is an HTML form pre-filled with the current target
   temperature
 
-#### Scenario: Valid submission updates the target and confirms
+#### Scenario: Valid submission updates the target and redirects to dashboard
 
 - **WHEN** an operator submits a valid new target temperature through the
   form
-- **THEN** the system applies the new target temperature and the response
-  confirms the update
+- **THEN** the system applies the new target temperature and redirects the
+  browser to the dashboard page
 
 #### Scenario: Invalid submission redisplays the form with an error
 
@@ -156,7 +157,8 @@ of a new target temperature.
 
 The system SHALL serve an HTML form, at a distinct URL from the dashboard
 page, that displays the current brew identifier and accepts a submission of
-a new brew identifier.
+a new brew identifier. On successful submission, the system SHALL redirect
+the browser back to the dashboard page.
 
 #### Scenario: Form displays the current brew identifier
 
@@ -164,11 +166,11 @@ a new brew identifier.
 - **THEN** the response is an HTML form pre-filled with the current brew
   identifier
 
-#### Scenario: Valid submission updates the brew identifier and confirms
+#### Scenario: Valid submission updates the brew identifier and redirects to dashboard
 
 - **WHEN** an operator submits a valid new brew identifier through the form
-- **THEN** the system applies the new brew identifier and the response
-  confirms the update
+- **THEN** the system applies the new brew identifier and redirects the
+  browser to the dashboard page
 
 #### Scenario: Invalid submission redisplays the form with an error
 
