@@ -28,7 +28,11 @@ COPY src ./src
 COPY templates ./templates
 COPY static ./static
 
-RUN cargo build --release --features embed
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git/db \
+    --mount=type=cache,target=/app/target \
+    cargo build --release --features embed && \
+    cp target/release/fermenter /app/fermenter
 
 # ---- Runtime ---------------------------------------------------------------
 # debian:bookworm-slim over distroless (rewrite-plan.md §11 leaves this as an
@@ -43,7 +47,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/target/release/fermenter /usr/local/bin/fermenter
+COPY --from=builder /app/fermenter /usr/local/bin/fermenter
 COPY --from=builder /app/static ./static
 
 EXPOSE 8080
