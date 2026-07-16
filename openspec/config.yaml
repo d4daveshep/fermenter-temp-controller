@@ -13,7 +13,9 @@ context: |
     - Storage: Redis 8 Time Series (replacing InfluxDB)
     - Serial: tokio-serial; mock SerialSource trait for hardware-free dev/test
     - Config: env vars + .env (12-factor)
-    - Logging/errors: tracing (structured), thiserror (typed), anyhow (top-level)
+    - Logging/errors: tracing (structured), thiserror (typed) — a single
+      `AppError` enum end-to-end; `anyhow` was planned but never adopted and
+      has been removed as an unused dependency
     - Deploy: multi-stage cross-compiled Docker image for linux/arm64; Redis +
       app via docker compose; serial device passthrough (not privileged)
 
