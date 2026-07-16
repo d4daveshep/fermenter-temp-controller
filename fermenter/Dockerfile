@@ -28,7 +28,10 @@ COPY src ./src
 COPY templates ./templates
 COPY static ./static
 
-RUN cargo build --release --features embed
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git/db \
+    --mount=type=cache,target=/app/target \
+    cargo build --release --features embed
 
 # ---- Runtime ---------------------------------------------------------------
 # debian:bookworm-slim over distroless (rewrite-plan.md §11 leaves this as an
