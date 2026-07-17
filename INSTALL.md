@@ -189,4 +189,22 @@ docker compose logs fermenter -f  # tail the app only
 ```
 
 To change the target temperature or brew ID at runtime, use the web dashboard at `http://<pi-ip>:8080` rather than editing `fermenter/.env` — changes made through the dashboard take effect immediately without a restart.
+
+### Deploy a release built elsewhere
+
+Create an annotated SemVer tag at the release commit, then run the shipping script
+from the development machine:
+
+```bash
+git tag -a v2.0.0 -m "Fermenter v2.0.0"
+git push origin v2.0.0
+./scripts/build_and_ship_image.sh pi@<pi-host>
+```
+
+On the Pi, load the transferred archive and select its exact image tag:
+
+```bash
+gunzip -c ~/fermenter-v2.0.0.tar.gz | docker load
+FERMENTER_IMAGE_TAG=v2.0.0 docker compose up -d
+```
 </content>

@@ -14,12 +14,14 @@
 # next step.
 #
 # Usage:
+#   git tag -a v2.0.0 -m "Fermenter v2.0.0"
 #   ./scripts/build_and_ship_image.sh pi@raspberrypi.local
 #   PI_HOST=pi@raspberrypi.local ./scripts/build_and_ship_image.sh
 #
 # Optional environment overrides:
 #   IMAGE_NAME    (default: fermenter)
-#   IMAGE_TAG     (default: arm64)
+#   IMAGE_TAG     (default: the annotated SemVer Git tag at HEAD; use only for
+#                  non-release/test builds, e.g. IMAGE_TAG=arm64)
 #   PLATFORM      (default: linux/arm64)
 #   BUILDER_NAME  (default: fermenter-builder)
 #   REMOTE_PATH   (default: ~/)
@@ -31,8 +33,9 @@
 
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 IMAGE_NAME="${IMAGE_NAME:-fermenter}"
-IMAGE_TAG="${IMAGE_TAG:-arm64}"
 PLATFORM="${PLATFORM:-linux/arm64}"
 BUILDER_NAME="${BUILDER_NAME:-fermenter-builder}"
 REMOTE_PATH="${REMOTE_PATH:-~/}"
@@ -44,7 +47,25 @@ if [[ -z "$PI_HOST" ]]; then
   exit 1
 fi
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ -z "${IMAGE_TAG:-}" ]]; then
+  IMAGE_TAG="$(git -C "$REPO_ROOT" describe --exact-match --tags 2>/dev/null || true)"
+  if [[ -z "$IMAGE_TAG" ]]; then
+    echo "HEAD must have an annotated SemVer Git tag (for example, v2.0.0)." >&2
+    echo "Create and check out the release tag, or set IMAGE_TAG for a non-release/test build." >&2
+    exit 1
+  fi
+
+  if [[ "$(git -C "$REPO_ROOT" for-each-ref --format='%(objecttype)' "refs/tags/$IMAGE_TAG")" != "tag" ]]; then
+    echo "Release tag '$IMAGE_TAG' must be annotated." >&2
+    exit 1
+  fi
+
+  if [[ ! "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+    echo "Release tag '$IMAGE_TAG' must use SemVer (for example, v2.0.0)." >&2
+    exit 1
+  fi
+fi
+
 IMAGE_REF="${IMAGE_NAME}:${IMAGE_TAG}"
 ARCHIVE_NAME="${IMAGE_NAME}-${IMAGE_TAG}.tar.gz"
 
@@ -78,7 +99,7 @@ cat <<EOF
 ==> Done. On the Pi, run:
 
     gunzip -c ${REMOTE_PATH%/}/${ARCHIVE_NAME} | docker load
-    cd /path/to/fermenter-temp-controller && docker compose up -d
+    cd /path/to/fermenter-temp-controller && FERMENTER_IMAGE_TAG=${IMAGE_TAG} docker compose up -d
 
 (docker compose up -d picks up the freshly loaded ${IMAGE_REF} image
 without rebuilding, since compose.yaml's fermenter service has both

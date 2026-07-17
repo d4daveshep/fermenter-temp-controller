@@ -19,5 +19,5 @@
 - **Snapshot tests:** `fermenter/src/web/handlers.rs` uses `insta::assert_snapshot!` for HTML fragments (snapshots in `fermenter/src/web/snapshots/`). After changing templates, update snapshots with `INSTA_UPDATE=always cargo test` or `cargo insta accept`.
 
 ## Deployment
-- **Cross-compile + ship to Pi:** `scripts/build_and_ship_image.sh pi@<host>` builds `fermenter:arm64` via QEMU (`docker buildx build --platform linux/arm64`), saves it to a tarball, and scp's it to the Pi. Then on the Pi: `gunzip -c fermenter-arm64.tar.gz | docker load && docker compose up -d` — Compose's `image:` + `build:` picks up the loaded image without rebuilding.
+- **Cross-compile + ship to Pi:** From an annotated SemVer Git tag, `scripts/build_and_ship_image.sh pi@<host>` builds `fermenter:<tag>` via QEMU (`docker buildx build --platform linux/arm64`), saves it to a tarball, and scp's it to the Pi. Then on the Pi: `gunzip -c fermenter-<tag>.tar.gz | docker load && FERMENTER_IMAGE_TAG=<tag> docker compose up -d` — Compose's `image:` + `build:` picks up the loaded image without rebuilding.
 </content>
