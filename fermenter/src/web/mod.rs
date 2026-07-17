@@ -147,6 +147,8 @@ mod tests {
         }
     }
 
+    const RC3_1_REASON_TEXT: &str = "REST-&gt;REST because we are in the target range";
+
     async fn body_string(response: axum::response::Response) -> String {
         let bytes = response.into_body().collect().await.unwrap().to_bytes();
         String::from_utf8(bytes.to_vec()).unwrap()
@@ -171,6 +173,7 @@ mod tests {
         assert!(body.contains("18.7"));
         assert!(body.contains("Server time:"));
         assert!(body.contains("RC3.1"));
+        assert!(body.contains(RC3_1_REASON_TEXT));
     }
 
     #[tokio::test]
@@ -210,6 +213,30 @@ mod tests {
         assert!(body.contains(r#"id="status""#));
         assert!(body.contains("Server time:"));
         assert!(body.contains("RC3.1"));
+        assert!(body.contains(RC3_1_REASON_TEXT));
+    }
+
+    #[tokio::test]
+    async fn dashboard_and_status_omit_reason_text_for_unmapped_codes() {
+        for reason_code in ["RC_FOO", "", "RC_ERR"] {
+            let mut reading = sample_reading();
+            reading.reason_code = reason_code.to_string();
+
+            for path in ["/", "/status"] {
+                let router = build_router(test_state(Some(reading.clone())));
+                let response = router
+                    .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
+                    .await
+                    .unwrap();
+
+                assert_eq!(response.status(), StatusCode::OK);
+                let body = body_string(response).await;
+                assert!(
+                    body.contains(&format!("<dt>Reason</dt><dd>{reason_code}</dd>")),
+                    "{path} did not render only {reason_code:?}: {body}"
+                );
+            }
+        }
     }
 
     #[tokio::test]

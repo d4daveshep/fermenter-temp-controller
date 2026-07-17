@@ -292,6 +292,25 @@ mod tests {
     }
 
     #[test]
+    fn status_fragment_omits_reason_text_for_unmapped_codes() {
+        let env = build_environment();
+
+        for reason_code in ["RC_FOO", "", "RC_ERR"] {
+            let mut ctx = sample_context();
+            ctx.reading.as_mut().unwrap().reason_code = reason_code.to_string();
+            ctx.reason_text = None;
+
+            let html = render(&env, "partials/status.html", ctx).unwrap();
+            assert!(
+                html.0
+                    .contains(&format!("<dt>Reason</dt><dd>{reason_code}</dd>")),
+                "reason row did not contain only {reason_code:?}: {}",
+                html.0
+            );
+        }
+    }
+
+    #[test]
     fn target_form_with_current_target_snapshot() {
         let env = build_environment();
         let ctx = TargetFormContext {

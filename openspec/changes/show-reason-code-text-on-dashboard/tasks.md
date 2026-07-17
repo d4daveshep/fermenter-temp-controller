@@ -1,42 +1,73 @@
-## 1. Reason-code mapping module (red→green)
+## Historical TDD note
 
-- [x] 1.1 Create `fermenter/src/reason_code.rs` with a top-of-file comment pointing to `arduino/TempController/TempControllerRules.md:27-58` as the source of truth
-- [x] 1.2 Add `pub fn reason_text(code: &str) -> Option<&'static str>` returning `Some(<verbatim text>)` for every documented code: `RC1`, `RC6`, `RC5`, `RC10`, and `RC2.1`–`RC4.3`, `RC7.1`–`RC9.3` (text copied verbatim from `TempControllerRules.md:27-58`)
-- [x] 1.3 Ensure `reason_text("")`, `reason_text("RC_ERR")`, and any unrecognized code (e.g. `"RC_FOO"`) all return `None`
-- [x] 1.4 Add `#[cfg(test)] mod tests` with an assertion for every documented code (verbatim text), plus `""`, `"RC_ERR"`, and an unknown code asserting `None`
-- [x] 1.5 Register the module in `fermenter/src/main.rs` (or wherever the crate's `mod` declarations live) and run `cargo test reason_code` to confirm green
+The original completed checklist did not record either pre-implementation RED
+run. Those executions cannot be verified or truthfully backfilled after the
+implementation exists. The RED checkpoints below document the required process
+for this change.
+
+## 1. Reason-code mapping module (RED -> GREEN)
+
+- [x] 1.1 Add table-driven `#[cfg(test)]` cases for every documented code, asserting its verbatim `TempControllerRules.md:27-58` text, plus `""`, `"RC_ERR"`, and unknown codes asserting `None`
+Historical RED checkpoint: before implementing the lookup table, the new
+mapping tests should have been run with `cargo test reason_code` and confirmed
+to fail. This execution was not recorded and cannot be reconstructed now.
+- [x] 1.3 Create `fermenter/src/reason_code.rs` with a source-of-truth comment pointing to `arduino/TempController/TempControllerRules.md:27-58`
+- [x] 1.4 Add `pub fn reason_text(code: &str) -> Option<&'static str>` returning verbatim text for `RC1`, `RC6`, `RC5`, `RC10`, `RC2.1`-`RC4.3`, and `RC7.1`-`RC9.3`; return `None` for unrecognized, empty, and `RC_ERR` codes
+- [x] 1.5 Register the module in `fermenter/src/main.rs` (or the crate's module declarations) and run `cargo test reason_code` to confirm GREEN
 
 ## 2. Plumb the description into the dashboard context
 
-- [x] 2.1 Add `pub reason_text: Option<String>` to `StatusContext` in `fermenter/src/web/handlers.rs:23-28`
-- [x] 2.2 In `status_context()` (`handlers.rs:30-37`), set `reason_text` from the latest reading: `reason_code::reason_text(&r.reason_code).map(str::to_owned)` when a reading exists, `None` otherwise
-- [x] 2.3 Confirm both the `dashboard` handler (`GET /`) and the `status` handler (`GET /status`) receive the new field via the shared `StatusContext`
+- [x] 2.1 Add `reason_text: Option<String>` to `StatusContext` in `fermenter/src/web/handlers.rs`
+- [x] 2.2 In `status_context()`, derive the field from the latest reading with `reason_code::reason_text(&r.reason_code).map(str::to_owned)` and use `None` when no reading exists
+- [x] 2.3 Confirm the shared `StatusContext` supplies the field to both the dashboard handler (`GET /`) and status handler (`GET /status`)
 
-## 3. Render the description in the status template
+## 3. Render the description in the status template (RED)
 
-- [x] 3.1 Edit `fermenter/templates/partials/status.html:7` to:
-  `<dt>Reason</dt><dd>{{ reading["reason-code"] }}{% if reason_text %} — {{ reason_text }}{% endif %}</dd>`
-- [x] 3.2 Verify the bracket syntax `reading["reason-code"]` is preserved (hyphenated key) and that `reason_text` uses plain dot access
+- [x] 3.1 Edit `fermenter/templates/partials/status.html` so its existing Reason `<dd>` renders `{{ reading["reason-code"] }}{% if reason_text %} — {{ reason_text }}{% endif %}`
+- [x] 3.2 Preserve bracket access for the hyphenated `reading["reason-code"]` key and use ordinary dot access for `reason_text`
+Historical RED checkpoint: after the template change and before snapshot
+acceptance, `cargo test status_fragment_with_reading_snapshot` should have
+failed because the snapshot lacked the description. This execution was not
+recorded and cannot be reconstructed now.
 
-## 4. Update test fixtures to a real firmware code
+## 4. Snapshot update (GREEN)
 
-- [x] 4.1 `grep -rn "below-target" fermenter/` to enumerate every fixture/assertion site before editing
-- [x] 4.2 Update `sample_reading()` in `fermenter/src/web/handlers.rs:225` to use `reason_code: "RC3.1".to_owned()`
-- [x] 4.3 Update `sample_reading()` in `fermenter/src/web/mod.rs:145` to use `reason_code: "RC3.1".to_owned()`
-- [x] 4.4 Update any mock-serial reason-code fixture (e.g. `fermenter/src/main.rs:122-125`) if it asserts `"below-target"` — confirm via the grep in 4.1
-- [x] 4.5 Update the literal assertion in `status_fragment_includes_reason_code` (`handlers.rs:266-277`) to assert both `"RC3.1"` and the mapped description text
-- [x] 4.6 Update the HTTP-body assertions in `fermenter/src/web/mod.rs:173, 212` to assert `"RC3.1"` (and the description where appropriate)
+- [x] 4.1 Search `fermenter/` for `"below-target"` to enumerate all fixture and assertion sites before updating them
+- [x] 4.2 Update `sample_reading()` in `fermenter/src/web/handlers.rs` and `fermenter/src/web/mod.rs` to use `reason_code: "RC3.1".to_owned()`
+- [x] 4.3 Update any asserted mock-serial `"below-target"` fixture discovered by the search
+- [x] 4.4 Regenerate `dashboard_renders_snapshot.snap` and `status_fragment_with_reading_snapshot.snap` with `INSTA_UPDATE=always cargo test`
+- [x] 4.5 Re-run the affected snapshot tests and confirm GREEN; confirm the no-reading snapshot remains unchanged
+- [x] 4.6 Review the refreshed snapshots and confirm the Reason cell contains `RC3.1` followed by its mapped description
 
-## 5. Snapshot refresh and full verification
+## 5. Format-regression unit tests
 
-- [x] 5.1 Run `INSTA_UPDATE=always cargo test` from `fermenter/` to refresh `dashboard_renders_snapshot.snap` and `status_fragment_with_reading_snapshot.snap`
-- [x] 5.2 Re-run `cargo test` from `fermenter/` and confirm all tests green (including the no-reading snapshot, which should be unaffected)
-- [x] 5.3 Run `cargo fmt --check` from `fermenter/` and fix any formatting
-- [x] 5.4 Run `cargo clippy --all-targets -- -D warnings` from `fermenter/` and fix any lints
-- [x] 5.5 Visually diff the two refreshed snapshots to confirm the `Reason` cell now reads `RC3.1 — REST->REST because we are in the target range.  There is natural heating so expect temperature to rise` (or equivalent) and that the no-reading snapshot is unchanged
+- [x] 5.1 Update `status_fragment_includes_reason_code` in `fermenter/src/web/handlers.rs` to render the status partial with `RC3.1` and assert both the Reason label/code and mapped description are present
+- [x] 5.2 Add a rendered-template regression test for an unknown code, `""`, and `"RC_ERR"`, asserting each displays the raw code without a separator or fabricated description
+- [x] 5.3 Run the format-regression unit tests and confirm GREEN
 
-## 6. Spec sync and self-check
+## 6. HTTP-level verification (web-dashboard spec scenarios)
 
-- [x] 6.1 Confirm the implementation satisfies both MODIFIED requirements in `specs/web-dashboard/spec.md` (dashboard page and `/status` fragment show code + description; unknown/empty/`RC_ERR` shows code alone)
-- [x] 6.2 Confirm no changes were made to the serial contract, `Reading` struct shape, Redis schema, API JSON shape, or any firmware file
-- [x] 6.3 Confirm the change works under both `cargo run` (disk templates) and `--features embed` (no new runtime file deps introduced)
+- [x] 6.1 In `status_returns_ok_with_latest_reading`, assert the `GET /status` body contains both `RC3.1` and its mapped description
+- [x] 6.2 In `dashboard_returns_ok_with_embedded_status_content`, assert the `GET /` body contains both `RC3.1` and its mapped description
+- [x] 6.3 Add HTTP-level coverage that an unknown, empty, or `RC_ERR` code renders the raw code alone with no trailing separator or description
+- [x] 6.4 Run the affected `tower::oneshot` tests and confirm GREEN
+
+## 7. Lint, types, and full suite
+
+- [x] 7.1 Run `cargo fmt --check` from `fermenter/` and fix formatting
+- [x] 7.2 Run `cargo clippy --all-targets -- -D warnings` from `fermenter/` and fix lints
+- [x] 7.3 Run `cargo test` from `fermenter/` and confirm the full suite is GREEN
+- [x] 7.4 Run `cargo build --features embed` from `fermenter/` to verify the baked-template build path
+
+## 8. OpenSpec validation and self-check
+
+- [x] 8.1 Run `openspec validate show-reason-code-text-on-dashboard --strict`
+- [x] 8.2 Run `openspec status --change "show-reason-code-text-on-dashboard"` and confirm `isComplete: true`
+- [x] 8.3 Confirm the implementation satisfies both MODIFIED `web-dashboard` requirements: dashboard and `/status` show code plus description, while unknown/empty/`RC_ERR` show the code alone
+- [x] 8.4 Confirm no serial-contract, `Reading` shape, Redis schema, API JSON shape, or firmware changes were made
+
+## 9. Manual smoke test
+
+- [x] 9.1 From `fermenter/`, run `MOCK_SERIAL=true cargo run` and request the dashboard in a browser or with a local HTTP client
+- [x] 9.2 Confirm the dashboard Reason cell renders the mapped terminal `RC1` mock reading during the feed's pause; deterministic tests cover the `RC3.1` fixture
+- [x] 9.3 Confirm an unknown/error/empty reason code, when injected through the test path, displays only the raw code with no dangling separator
