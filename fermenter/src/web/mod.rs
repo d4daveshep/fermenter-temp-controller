@@ -142,10 +142,12 @@ mod tests {
             max: 19.0,
             ambient: 20.1,
             action: "heating".to_string(),
-            reason_code: "below-target".to_string(),
+            reason_code: "RC3.1".to_string(),
             json_size: None,
         }
     }
+
+    const RC3_1_REASON_TEXT: &str = "REST-&gt;REST because we are in the target range";
 
     async fn body_string(response: axum::response::Response) -> String {
         let bytes = response.into_body().collect().await.unwrap().to_bytes();
@@ -170,7 +172,8 @@ mod tests {
         let body = body_string(response).await;
         assert!(body.contains("18.7"));
         assert!(body.contains("Server time:"));
-        assert!(body.contains("below-target"));
+        assert!(body.contains("RC3.1"));
+        assert!(body.contains(RC3_1_REASON_TEXT));
     }
 
     #[tokio::test]
@@ -209,7 +212,31 @@ mod tests {
         assert!(body.contains("18.7"));
         assert!(body.contains(r#"id="status""#));
         assert!(body.contains("Server time:"));
-        assert!(body.contains("below-target"));
+        assert!(body.contains("RC3.1"));
+        assert!(body.contains(RC3_1_REASON_TEXT));
+    }
+
+    #[tokio::test]
+    async fn dashboard_and_status_omit_reason_text_for_unmapped_codes() {
+        for reason_code in ["RC_FOO", "", "RC_ERR"] {
+            let mut reading = sample_reading();
+            reading.reason_code = reason_code.to_string();
+
+            for path in ["/", "/status"] {
+                let router = build_router(test_state(Some(reading.clone())));
+                let response = router
+                    .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
+                    .await
+                    .unwrap();
+
+                assert_eq!(response.status(), StatusCode::OK);
+                let body = body_string(response).await;
+                assert!(
+                    body.contains(&format!("<dt>Reason</dt><dd>{reason_code}</dd>")),
+                    "{path} did not render only {reason_code:?}: {body}"
+                );
+            }
+        }
     }
 
     #[tokio::test]

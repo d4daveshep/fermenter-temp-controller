@@ -24,7 +24,7 @@ expression: html.0
     
     <dl class="reading">
         <dt>Action</dt><dd>heating</dd>
-        <dt>Reason</dt><dd>below-target</dd>
+        <dt>Reason</dt><dd>RC3.1 — REST-&gt;REST because we are in the target range.  There is natural heating so expect temperature to rise</dd>
         <dt>Target</dt><dd>19.5&deg;</dd>
         <dt>Average</dt><dd>18.7&deg;</dd>
         <dt>Min</dt><dd>18.0&deg;</dd>
