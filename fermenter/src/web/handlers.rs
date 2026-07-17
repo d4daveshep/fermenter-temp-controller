@@ -11,6 +11,7 @@ use crate::brew_session::{persist_brew, validate_brew_id};
 use crate::error::Result;
 use crate::ingest;
 use crate::model::Reading;
+use crate::reason_code;
 use crate::temperature_control::{persist_target, validate_target};
 
 use super::AppState;
@@ -23,14 +24,20 @@ use super::render::render;
 #[derive(Serialize)]
 pub(crate) struct StatusContext {
     reading: Option<Reading>,
+    reason_text: Option<String>,
     brew_id: String,
     pub(crate) server_time: String,
 }
 
 pub(crate) fn status_context(state: &AppState) -> StatusContext {
     let reading = state.latest.lock().unwrap().clone();
+    let reason_text = reading
+        .as_ref()
+        .and_then(|r| reason_code::reason_text(&r.reason_code))
+        .map(str::to_owned);
     StatusContext {
         reading,
+        reason_text,
         brew_id: state.brew_tx.borrow().clone(),
         server_time: Local::now().format("%d-%b-%Y %H:%M:%S").to_string(),
     }
@@ -222,19 +229,35 @@ mod tests {
             max: 19.0,
             ambient: 20.1,
             action: "heating".to_string(),
-            reason_code: "below-target".to_string(),
+            reason_code: "RC3.1".to_string(),
             json_size: None,
+        }
+    }
+
+    fn sample_context() -> StatusContext {
+        let reading = sample_reading();
+        let reason_text = crate::reason_code::reason_text(&reading.reason_code).map(str::to_owned);
+        StatusContext {
+            reading: Some(reading),
+            reason_text,
+            brew_id: "00-TEST-v00".to_string(),
+            server_time: "14-Jul-2026 14:30:45".to_string(),
+        }
+    }
+
+    fn empty_context() -> StatusContext {
+        StatusContext {
+            reading: None,
+            reason_text: None,
+            brew_id: "00-TEST-v00".to_string(),
+            server_time: "14-Jul-2026 14:30:45".to_string(),
         }
     }
 
     #[test]
     fn status_fragment_with_reading_snapshot() {
         let env = build_environment();
-        let ctx = StatusContext {
-            reading: Some(sample_reading()),
-            brew_id: "00-TEST-v00".to_string(),
-            server_time: "14-Jul-2026 14:30:45".to_string(),
-        };
+        let ctx = sample_context();
         let html = render(&env, "partials/status.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
     }
@@ -242,11 +265,7 @@ mod tests {
     #[test]
     fn status_fragment_without_reading_snapshot() {
         let env = build_environment();
-        let ctx = StatusContext {
-            reading: None,
-            brew_id: "00-TEST-v00".to_string(),
-            server_time: "14-Jul-2026 14:30:45".to_string(),
-        };
+        let ctx = empty_context();
         let html = render(&env, "partials/status.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
     }
@@ -254,11 +273,7 @@ mod tests {
     #[test]
     fn dashboard_renders_snapshot() {
         let env = build_environment();
-        let ctx = StatusContext {
-            reading: Some(sample_reading()),
-            brew_id: "00-TEST-v00".to_string(),
-            server_time: "14-Jul-2026 14:30:45".to_string(),
-        };
+        let ctx = sample_context();
         let html = render(&env, "dashboard.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
     }
@@ -266,14 +281,14 @@ mod tests {
     #[test]
     fn status_fragment_includes_reason_code() {
         let env = build_environment();
-        let ctx = StatusContext {
-            reading: Some(sample_reading()),
-            brew_id: "00-TEST-v00".to_string(),
-            server_time: "14-Jul-2026 14:30:45".to_string(),
-        };
+        let ctx = sample_context();
         let html = render(&env, "partials/status.html", ctx).unwrap();
         assert!(html.0.contains("<dt>Reason</dt>"));
-        assert!(html.0.contains("<dd>below-target</dd>"));
+        assert!(html.0.contains("<dd>RC3.1"));
+        assert!(
+            html.0
+                .contains("REST-&gt;REST because we are in the target range")
+        );
     }
 
     #[test]
@@ -312,11 +327,7 @@ mod tests {
     #[test]
     fn dashboard_uses_buttons_not_links_for_navigation() {
         let env = build_environment();
-        let ctx = StatusContext {
-            reading: Some(sample_reading()),
-            brew_id: "00-TEST-v00".to_string(),
-            server_time: "14-Jul-2026 14:30:45".to_string(),
-        };
+        let ctx = sample_context();
         let html = render(&env, "dashboard.html", ctx).unwrap();
         assert!(html.0.contains("<button"), "dashboard must use buttons");
         assert!(

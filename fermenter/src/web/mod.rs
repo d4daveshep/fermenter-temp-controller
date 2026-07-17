@@ -142,7 +142,7 @@ mod tests {
             max: 19.0,
             ambient: 20.1,
             action: "heating".to_string(),
-            reason_code: "below-target".to_string(),
+            reason_code: "RC3.1".to_string(),
             json_size: None,
         }
     }
@@ -170,7 +170,7 @@ mod tests {
         let body = body_string(response).await;
         assert!(body.contains("18.7"));
         assert!(body.contains("Server time:"));
-        assert!(body.contains("below-target"));
+        assert!(body.contains("RC3.1"));
     }
 
     #[tokio::test]
@@ -209,7 +209,7 @@ mod tests {
         assert!(body.contains("18.7"));
         assert!(body.contains(r#"id="status""#));
         assert!(body.contains("Server time:"));
-        assert!(body.contains("below-target"));
+        assert!(body.contains("RC3.1"));
     }
 
     #[tokio::test]

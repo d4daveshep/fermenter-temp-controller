@@ -3,6 +3,7 @@ pub mod config;
 pub mod error;
 pub mod ingest;
 pub mod model;
+pub mod reason_code;
 pub mod serial;
 pub mod store;
 pub mod temperature_control;
