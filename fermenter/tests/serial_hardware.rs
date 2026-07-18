@@ -181,3 +181,46 @@ async fn write_target_roundtrips() {
         ROUNDTRIP_TIMEOUT
     );
 }
+
+/// The Arduino firmware prints a JSON line every ~10s. After reading one
+/// line (consuming one print cycle), the NEXT line should arrive within
+/// ~10s — proving the serial port stayed open and was not unnecessarily
+/// closed and reopened between reads. An 11s timeout comfortably fits the
+/// ~10s print interval while catching any unexpected reconnect delay (which
+/// would add ~2s of setup on top of the print cycle).
+///
+/// This validates the "keep stream alive on transient errors" behaviour:
+/// after the fix, read/write errors no longer drop the stream (only EOF
+/// does), so a second read on the same source does not trigger a
+/// DTR-reset-prone reopen.
+const CONSECUTIVE_READ_TIMEOUT: Duration = Duration::from_secs(11);
+
+#[tokio::test]
+#[ignore]
+async fn consecutive_reads_within_print_interval() {
+    let _guard = HARDWARE_LOCK.lock().await;
+    let mut source = ArduinoSerialSource::new(test_port(), test_baud());
+
+    // Read one line first to establish the connection (the first open
+    // always resets the Arduino — unavoidable kernel-level DTR assertion).
+    let Ok(Ok(first)) = tokio::time::timeout(READ_TIMEOUT, source.read_line()).await else {
+        panic!("expected first read to succeed within {READ_TIMEOUT:?}");
+    };
+    assert!(!first.is_empty(), "expected a non-empty first line");
+
+    // Now read a second line. If the stream was kept alive (no unnecessary
+    // reopen between reads), this arrives within the normal ~10s print
+    // interval. If the stream was dropped somewhere, a reopen would
+    // trigger a DTR reset and the line would take ~12-13s, missing our
+    // tight timeout.
+    let Ok(Ok(second)) = tokio::time::timeout(CONSECUTIVE_READ_TIMEOUT, source.read_line()).await
+    else {
+        panic!(
+            "second read took longer than {CONSECUTIVE_READ_TIMEOUT:?} — \
+             the stream was likely closed between reads, causing a DTR-reset \
+             on reopen.  The fix keeps the stream alive on transient errors \
+             so this should not happen."
+        );
+    };
+    assert!(!second.is_empty(), "expected a non-empty second line");
+}

@@ -2,23 +2,24 @@
 
 `ArduinoSerialSource::ensure_connected` (`fermenter/src/serial/arduino.rs`)
 opens the port with `tokio_serial::new(&self.port_path, self.baud_rate).open_native_async()`
-and no further builder configuration. `tokio-serial` (via the underlying
-`serialport` crate) asserts DTR and RTS by default when a port is opened. On
-genuine Arduino Uno/Nano/Mega boards, the USB-serial chip's DTR line is
-coupled through a capacitor to the ATmega reset pin — asserting DTR triggers
-a hardware reset of the sketch. This is a well-known Arduino IDE behavior
-(it's how the IDE auto-resets the board before uploading), not a bug in
-`tokio-serial`.
+and no further builder configuration. On genuine Arduino Uno/Nano/Mega
+boards, the USB-serial chip's DTR line is coupled through a capacitor to the
+ATmega reset pin — asserting DTR triggers a hardware reset of the sketch.
+This is a well-known Arduino IDE behavior (it's how the IDE auto-resets the
+board before uploading), not a bug in `tokio-serial`.
 
-`ArduinoSerialSource` reopens the port (calling `ensure_connected` again)
-whenever `self.stream` is set to `None`: after EOF, a read error, a write
-error, or a flush error — see `arduino.rs:101,120,148,156`. Each of these is
-a legitimate, expected occurrence in long-running USB-serial operation, not
-just at process startup. Every reopen therefore silently reboots the
-attached Arduino, resetting the firmware's monotonic min/max temperature
-tracking (`TemperatureReadings::clear()` is only called in the constructor —
-`arduino/TempController/TemperatureReadings.cpp:6-8`) and briefly halting
-temperature control while the sketch re-runs `setup()`.
+On Linux, the kernel's USB CDC ACM driver asserts DTR as a side effect of the
+`open()` syscall — this is a USB protocol requirement and cannot be prevented
+from userspace. The `serialport` crate's `.dtr_on_open(false)` builder method
+(applied via `TIOCMBIC` ioctl after open) cannot prevent the initial
+kernel-level DTR pulse, only clear DTR afterward.
+
+The real problem is that `ArduinoSerialSource` was reopening the port on
+**every** transient error: `self.stream = None` on any read error, write
+error, or flush error (see arduino.rs:144,172,180). USB serial connections
+experience occasional transient noise (buffer overruns, framing errors), and
+each such error prompted a reopen — which triggered a DTR-based Arduino
+reset, silently clearing the firmware's lifetime min/max tracking.
 
 This was diagnosed from a real symptom: the dashboard's `min` reading showed
 `14.0` while the chart (sourced independently from Redis time-series history)
@@ -29,67 +30,88 @@ did not otherwise observe (Pi/Arduino share a power source with 24h+ uptime).
 ## Goals / Non-Goals
 
 **Goals:**
-- Stop the Arduino from resetting every time the Rust app opens or reopens
-  the serial port, so its lifetime min/max readings (and any in-progress
-  control state) survive transient reconnects.
-- Prove the fix works against real hardware, since DTR/reset behavior cannot
-  be exercised through the mock `SerialSource`.
+- Stop the Arduino from resetting on transient serial errors (read, write,
+  flush) — the primary cause of spurious min/max resets during long-running
+  operation. The port should only reopen on actual disconnection (EOF).
+- Add `.dtr_on_open(false)` to the serial port builder as a best-effort
+  measure to clear DTR after open when the platform supports it.
+- Prove the stream stays alive across reads with a hardware timing test.
 
 **Non-Goals:**
+- Preventing the very first DTR pulse at startup — impossible on Linux
+  (kernel-level USB CDC ACM behavior) and acceptable since it happens only
+  once per process.
+- Preventing DTR resets on explicit device unplug/replug — the firmware
+  legitimately needs to restart after a physical disconnect.
 - Changing the serial framing contract, baud rate, or JSON schema — all
   fixed per `device-connection`'s existing "Serial framing and baud contract"
   requirement.
-- Adding a rolling/windowed min-max to the firmware (a legitimate follow-up,
-  but out of scope here — this change only fixes spurious resets, not the
-  firmware's all-time-since-boot semantics).
-- Changing reconnect/backoff behavior itself (slice-6's exponential backoff
-  is unaffected; only the DTR side-effect of opening the port changes).
+- Adding a rolling/windowed min-max to the firmware — out of scope.
 
 ## Decisions
 
-1. **Disable DTR and RTS on the builder, not via a post-open ioctl.**
-   `tokio_serial::new(...)` returns a `serialport::SerialPortBuilder`, which
-   exposes `.set_dtr(bool)` and `.set_rts(bool)` as chainable builder
-   methods applied at open time — no separate call after
-   `open_native_async()` is needed. This keeps the change to a single
-   builder-chain edit in `ensure_connected`.
-   - *Alternative considered:* call `.write_data_terminal_ready(false)` on
-     the opened `SerialStream` after `open_native_async()` succeeds. Rejected
-     because the reset already fires during the open syscall itself (the port
-     configuration, including DTR/RTS, is applied as part of opening the
-     underlying fd) — configuring it post-open would be too late to prevent
-     the reset on that particular open.
+### Decision 1: Keep the stream alive on transient errors (primary fix)
 
-2. **Disable RTS as well as DTR.** Some USB-serial adapters/boards use RTS
-   (or a DTR+RTS combination gated through control logic on the adapter) to
-   drive reset, depending on the board and bootloader. Disabling both is the
-   standard recommendation (matches Arduino IDE's own "disable hardware
-   reset" workarounds) and has no downside for this project since the
-   firmware doesn't rely on hardware flow control.
+Instead of `self.stream = None` on read/write/flush errors, log the error
+and return it to the caller while keeping the stream open. The caller
+(`ingest_loop` in `ingest.rs`) already retries on error with its own delay,
+so the next call will retry on the same open connection. Only EOF (the device
+physically disconnected) drops the stream, triggering a full reopen.
 
-3. **Prove it with a new hardware-only test, not a unit test.** DTR/reset
-   behavior only manifests against a real USB-serial-to-Arduino link; the
-   `MockSerialSource` has no serial hardware underneath it to reset. Per the
-   existing convention (`tests/serial_hardware.rs`, `#[ignore]`'d,
-   `cargo test -- --ignored`), a new test opens a first connection, drops
-   it, opens a second connection to the same port, and asserts a line
-   arrives within a window tight enough that a DTR-triggered reset (~2s
-   setup delay stacked onto the firmware's ~10s print cycle, i.e. ~12-13s)
-   would miss it. No sensors are required — the test only proves timing, not
-   temperature values, matching the existing hardware tests' approach.
+This directly addresses the root cause: transient USB serial noise no longer
+causes a port reopen, which means no DTR pulse, which means the Arduino is
+never silently reset mid-session.
+
+- *Alternative considered:* Recovering in-place after errors by flushing the
+  buffer and retrying internally. Rejected because `read_line` cannot
+  distinguish "noise on the wire" from "partial line mid-stream" — retrying
+  internally could enter an infinite loop on a persistent hardware fault.
+  Returning the error to the caller (which has its own backoff/retry logic)
+  is more robust.
+
+### Decision 2: Use `.dtr_on_open(false)` on the builder (secondary fix)
+
+`serialport` v4.9.0's `SerialPortBuilder` has `.dtr_on_open(bool)` (not
+`.set_dtr(bool)` — no such builder method exists). After the kernel's
+`open()` syscall and termios setup, the builder applies `dtr_on_open` via
+`TIOCMBIC`/`TIOCMBIS` ioctls. Setting it to `false` clears DTR immediately
+after open.
+
+On Linux this cannot prevent the kernel-level DTR pulse during `open()`, but
+it ensures DTR is LOW after open and helps on platforms where the
+`serialport` crate has full control (Windows, macOS).
+
+- *Alternative considered:* calling `write_data_terminal_ready(false)` on the
+  opened `SerialStream` after `open_native_async()` succeeds. Equivalent
+  effect but requires an extra method call — the builder handles it inline.
+
+### Decision 3: RTS builder control is unavailable in `serialport` v4.9.0
+
+The `SerialPortBuilder` in this version has no `set_rts` or `rts_on_open`
+method. RTS is left in whatever state the kernel sets it to during `open()`.
+On Arduino boards the reset is driven exclusively through DTR (via the 100nF
+capacitor to the ATmega reset pin), so RTS not being controllable is
+acceptable.
+
+### Decision 4: Prove it with a hardware timing test
+
+The new test `consecutive_reads_within_print_interval` opens a single source,
+reads one line (proving the connection), then reads a second line within 11s.
+If the stream is kept alive (no error-triggered reopen), the second line
+arrives within ~10s — the firmware's normal print interval. If the stream
+was dropped, a reopen would trigger DTR reset and push the wait past 12s.
 
 ## Risks / Trade-offs
 
-- **[Risk] Some USB-serial adapters may not support disabling DTR/RTS, or
-  may behave differently.** → `serialport`'s `set_dtr`/`set_rts` are
-  supported broadly across the CDC-ACM and common USB-serial chips (FTDI,
-  CH340, CP210x) used with Arduino boards; if an unusual adapter doesn't
-  honor it, behavior degrades to today's status quo (occasional reset), not
-  a regression.
-- **[Risk] The new hardware test is timing-based, not a direct assertion of
-  "no reset happened."** → Acceptable per user confirmation: no temperature
-  sensors are attached to the dev/test Arduino, so timing is the only
-  externally observable proxy available without sensors. Full confidence
-  comes from the documented manual verification step on the real Pi/Arduino
-  deployment.
-</content>
+- **[Risk] A genuinely broken serial connection (device unplugged then
+  replugged) generates repeated read errors without recovery until EOF is
+  reached.** → The kernel eventually returns EOF after the device disappears;
+  once EOF is received, the existing reconnect-with-backoff kicks in and
+  recovers normally.
+- **[Risk] The hardware test is timing-based.** → Acceptable per user
+  confirmation: no temperature sensors are attached to the dev/test Arduino,
+  so timing is the only observable proxy without sensors.
+- **[Risk] `dtr_on_open(false)` may not be supported on all USB-serial
+  chips.** → If unsupported, the builder call is a no-op — behavior degrades
+  to the existing `dtr_on_open = None` default, which is the pre-fix
+  baseline.

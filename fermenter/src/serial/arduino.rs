@@ -18,11 +18,27 @@ const MAX_BACKOFF: Duration = Duration::from_secs(30);
 /// (ingest/state/web) changes when this replaces the mock.
 ///
 /// The port is opened lazily (on first `read_line`/`write_target` call) and
-/// reopened automatically if it closes or errors mid-stream. Every failure
-/// to open or use the port sleeps for the current backoff delay (doubling
-/// each consecutive failure, capped at `MAX_BACKOFF`) before returning an
-/// error, so a caller that loops on error without its own delay (as
-/// `ingest_loop` does) still retries at a bounded rate rather than busy
+/// reopened automatically ONLY if the stream reaches EOF (the device was
+/// physically disconnected). Transient read, write, and flush errors do NOT
+/// close the stream — the error is returned to the caller, and the next call
+/// retries on the same open connection. This avoids reopening the port on
+/// transient USB serial noise, which on a genuine Arduino would trigger a
+/// DTR-based hardware reset (resetting the firmware's lifetime min/max
+/// temperature tracking).
+///
+/// On Linux the kernel asserts DTR as a side effect of the `open()` syscall
+/// (a USB CDC ACM protocol requirement), so the very first open at startup
+/// always resets the Arduino. The `dtr_on_open(false)` builder setting
+/// clears DTR immediately after open and prevents re-assertion on platforms
+/// where the `serialport` crate can control it, but the kernel-level pulse
+/// during `open()` itself is unavoidable. The reconnection behaviour
+/// ("only on EOF, not on transient errors") is what prevents subsequent
+/// resets during normal operation.
+///
+/// Every failure to open the port sleeps for the current backoff delay
+/// (doubling each consecutive failure, capped at `MAX_BACKOFF`) before
+/// returning an error, so a caller that loops on error without its own delay
+/// (as `ingest_loop` does) still retries at a bounded rate rather than busy
 /// looping. A successful open or read resets the backoff to its initial
 /// value.
 pub struct ArduinoSerialSource {
@@ -60,7 +76,15 @@ impl ArduinoSerialSource {
             return Ok(());
         }
 
-        match tokio_serial::new(&self.port_path, self.baud_rate).open_native_async() {
+        match tokio_serial::new(&self.port_path, self.baud_rate)
+            // On Linux the kernel asserts DTR during the `open()` syscall
+            // regardless, but `dtr_on_open(false)` clears DTR immediately
+            // after and helps on platforms where the `serialport` crate has
+            // control over it at open time (e.g. Windows, macOS). See the
+            // struct-level doc for the full reasoning.
+            .dtr_on_open(false)
+            .open_native_async()
+        {
             Ok(port) => {
                 info!(port = %self.port_path, baud = self.baud_rate, "serial port opened");
                 self.stream = Some(BufReader::new(port));
@@ -117,15 +141,15 @@ impl SerialSource for ArduinoSerialSource {
                 Ok(trimmed)
             }
             Err(e) => {
-                self.stream = None;
+                // Transient read error (e.g. USB noise, buffer overrun).
+                // Keep the stream alive — the next call retries on the same
+                // connection rather than reopening (which would DTR-reset a
+                // genuine Arduino, resetting its lifetime min/max tracking).
                 warn!(
                     error = %e,
                     port = %self.port_path,
-                    backoff_ms = self.backoff.as_millis(),
-                    "serial read error — reconnecting after backoff"
+                    "serial read error — retrying on same connection"
                 );
-                tokio::time::sleep(self.backoff).await;
-                self.bump_backoff();
                 Err(AppError::Serial(format!(
                     "serial read error on {}: {e}",
                     self.port_path
@@ -145,16 +169,25 @@ impl SerialSource for ArduinoSerialSource {
         // (device-connection: "Serial framing and baud contract").
         let framed = format!("<{target}>");
         if let Err(e) = stream.get_mut().write_all(framed.as_bytes()).await {
-            self.stream = None;
-            warn!(error = %e, port = %self.port_path, "serial write error — will reconnect on next use");
+            // Transient write error. Keep the stream alive to avoid
+            // DTR-resetting the Arduino on reopen.
+            warn!(
+                error = %e,
+                port = %self.port_path,
+                "serial write error — retrying on same connection"
+            );
             return Err(AppError::Serial(format!(
                 "serial write error on {}: {e}",
                 self.port_path
             )));
         }
         if let Err(e) = stream.get_mut().flush().await {
-            self.stream = None;
-            warn!(error = %e, port = %self.port_path, "serial flush error — will reconnect on next use");
+            // Transient flush error. Keep the stream alive.
+            warn!(
+                error = %e,
+                port = %self.port_path,
+                "serial flush error — retrying on same connection"
+            );
             return Err(AppError::Serial(format!(
                 "serial flush error on {}: {e}",
                 self.port_path
