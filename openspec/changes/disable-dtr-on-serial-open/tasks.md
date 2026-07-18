@@ -1,20 +1,15 @@
 ## 1. Hardware regression test
 
-- [x] 1.1 Add a new `#[ignore]`'d test `consecutive_reads_within_print_interval`
+- [x] 1.1 Add a new `#[ignore]`'d test `consecutive_reads_on_same_source`
       to `fermenter/tests/serial_hardware.rs`:
   - [x] 1.1.1 Open a single `ArduinoSerialSource`, read one line with the
-        existing `READ_TIMEOUT` (20s — handles the unavoidable first-open
-        reset delay).
-  - [x] 1.1.2 Read a SECOND line from the same source with an 11s timeout
-        (`CONSECUTIVE_READ_TIMEOUT`). If the stream stays alive (no
-        unnecessary reopen), this arrives within the firmware's ~10s print
-        cycle. If the stream was dropped, a reopen triggers a DTR reset and
-        the line takes ~12-13s, missing the tight timeout.
-  - [x] 1.1.3 Document that this test validates the "keep stream alive on
-        transient errors" behaviour: it proves the port is NOT closed and
-        reopened between consecutive reads.
+        existing `READ_TIMEOUT` (20s).
+  - [x] 1.1.2 Read a SECOND line from the same source with `READ_TIMEOUT`.
+        If the stream stays alive (no unnecessary reopen), the second read
+        completes normally. If the stream was dropped between reads, a
+        reopen would reset the Arduino and the test would time out.
 - [ ] 1.2 Run `cargo test --test serial_hardware -- --ignored
-      --test-threads=1 consecutive_reads_within_print_interval` against the
+      --test-threads=1 consecutive_reads_on_same_source` against the
       spare/test Arduino and confirm it PASSES.
       **Needs real Arduino attached**
 
@@ -43,7 +38,7 @@
 - [ ] 3.2 Run `cargo test --test serial_hardware -- --ignored
       --test-threads=1` (full file) and confirm `opens_real_port`,
       `reads_a_real_line`, `write_target_roundtrips`, and the new
-      `consecutive_reads_within_print_interval` all pass against real
+      `consecutive_reads_on_same_source` all pass against real
       hardware.
       **Needs real Arduino attached**
 
