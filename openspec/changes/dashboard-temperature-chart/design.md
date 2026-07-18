@@ -84,7 +84,11 @@ Render into an in-memory string using `SVGBackend::with_string`, then return
 that string through the existing chart fragment. Configure the Plotters mesh
 with labeled X/Y axes, readable server-local timestamp formatting, and major
 gridlines; draw the average fermenter, ambient, and target `LineSeries` with
-stable colors; and use Plotters' series-label configuration for the legend.
+stable colors. Use Plotters' chrono coordinate support so key points align to
+calendar boundaries, selecting minute, quarter-hour, half-hour, or hourly
+intervals appropriate to the selected time window. Reserve a lower drawing
+area beneath the X axis and render the legend box at its right edge, outside
+the plotting area.
 
 Plotters replaces the hand-built coordinates, tick selection, SVG markup, and
 legend layout. It preserves server-side SVG and avoids a browser dependency.

@@ -229,18 +229,16 @@ impl<'a> TemperatureChart<'a> {
         let y_max = maximum + margin;
         let mut svg = String::new();
         {
-            let drawing = SVGBackend::with_string(&mut svg, (800, 480)).into_drawing_area();
+            let drawing = SVGBackend::with_string(&mut svg, (800, 550)).into_drawing_area();
             drawing.fill(&WHITE).map_err(Self::render_error)?;
+            let (plot_area, legend_area) = drawing.split_vertically(455);
 
-            let mut chart = ChartBuilder::on(&drawing)
+            let mut chart = ChartBuilder::on(&plot_area)
                 .caption("Temperature history", ("sans-serif", 24))
                 .margin(16)
                 .x_label_area_size(52)
                 .y_label_area_size(62)
-                .build_cartesian_2d(
-                    0i64..(self.end - self.start).num_milliseconds(),
-                    y_min..y_max,
-                )
+                .build_cartesian_2d(self.start..self.end, y_min..y_max)
                 .map_err(Self::render_error)?;
 
             chart
@@ -251,7 +249,7 @@ impl<'a> TemperatureChart<'a> {
                 .y_labels(5)
                 .max_light_lines(4)
                 .x_label_formatter(&|timestamp| {
-                    (self.start + Duration::milliseconds(*timestamp))
+                    timestamp
                         .with_timezone(&Local)
                         .format("%d %b %H:%M")
                         .to_string()
@@ -265,12 +263,9 @@ impl<'a> TemperatureChart<'a> {
             let fermenter = RGBColor(0, 114, 178);
             chart
                 .draw_series(LineSeries::new(
-                    self.samples.iter().map(|sample| {
-                        (
-                            (sample.timestamp - self.start).num_milliseconds(),
-                            sample.fermenter,
-                        )
-                    }),
+                    self.samples
+                        .iter()
+                        .map(|sample| (sample.timestamp, sample.fermenter)),
                     &fermenter,
                 ))
                 .map_err(Self::render_error)?
@@ -280,12 +275,9 @@ impl<'a> TemperatureChart<'a> {
             let ambient = RGBColor(213, 94, 0);
             chart
                 .draw_series(LineSeries::new(
-                    self.samples.iter().map(|sample| {
-                        (
-                            (sample.timestamp - self.start).num_milliseconds(),
-                            sample.ambient,
-                        )
-                    }),
+                    self.samples
+                        .iter()
+                        .map(|sample| (sample.timestamp, sample.ambient)),
                     &ambient,
                 ))
                 .map_err(Self::render_error)?
@@ -295,25 +287,36 @@ impl<'a> TemperatureChart<'a> {
             let target = RGBColor(0, 158, 115);
             chart
                 .draw_series(LineSeries::new(
-                    self.samples.iter().map(|sample| {
-                        (
-                            (sample.timestamp - self.start).num_milliseconds(),
-                            sample.target,
-                        )
-                    }),
+                    self.samples
+                        .iter()
+                        .map(|sample| (sample.timestamp, sample.target)),
                     &target,
                 ))
                 .map_err(Self::render_error)?
                 .label("Target")
                 .legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], target));
 
-            chart
-                .configure_series_labels()
-                .background_style(WHITE.mix(0.85))
-                .border_style(BLACK)
-                .position(SeriesLabelPosition::UpperRight)
-                .draw()
+            let legend = Rectangle::new([(492, 12), (790, 82)], WHITE.mix(0.9).filled());
+            legend_area.draw(&legend).map_err(Self::render_error)?;
+            legend_area
+                .draw(&Rectangle::new([(492, 12), (790, 82)], BLACK))
                 .map_err(Self::render_error)?;
+            for (index, (label, color)) in [
+                ("Average fermenter", fermenter),
+                ("Ambient", ambient),
+                ("Target", target),
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                let y = 27 + (index as i32 * 20);
+                legend_area
+                    .draw(&PathElement::new(vec![(508, y), (532, y)], color))
+                    .map_err(Self::render_error)?;
+                legend_area
+                    .draw(&Text::new(label, (542, y), ("sans-serif", 14).into_font()))
+                    .map_err(Self::render_error)?;
+            }
             drawing.present().map_err(Self::render_error)?;
         }
         Ok(svg)
@@ -633,7 +636,7 @@ mod tests {
         let svg = test_chart(&chart_samples()).svg().unwrap();
 
         assert!(svg.matches("stroke=\"#DCE0E6\"").count() >= 4);
-        assert!(svg.contains("points=\"80,395 221,329 "));
+        assert!(svg.contains("01 Jan 12:03"));
     }
 
     #[test]
@@ -645,6 +648,15 @@ mod tests {
         assert!(svg.contains("Average fermenter"));
         assert!(svg.contains("Ambient"));
         assert!(svg.contains("Target"));
+    }
+
+    #[test]
+    fn temperature_chart_reserves_space_for_external_legend_and_calendar_ticks() {
+        let svg = test_chart(&chart_samples()).svg().unwrap();
+
+        assert!(svg.contains("<svg width=\"800\" height=\"550\""));
+        assert!(svg.contains("01 Jan 12:01"));
+        assert!(svg.contains("01 Jan 12:03"));
     }
 
     #[test]

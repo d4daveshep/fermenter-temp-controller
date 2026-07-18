@@ -44,3 +44,9 @@
 - [x] 8.1 Add `plotters` with only the SVG backend enabled; write a focused renderer test (RED) that expects Plotters-generated axes, mesh, three labeled line series, and a legend for representative temperature history.
 - [x] 8.2 Replace the custom SVG coordinate, tick, grid, and legend generation with an in-memory `SVGBackend::with_string` + `ChartBuilder` renderer that preserves auto-scaled Y ranges, fixed selected-window X ranges, server-local time labels, and no-history output (GREEN for 8.1).
 - [x] 8.3 Update chart styles and snapshots for Plotters SVG output, then run formatting, Clippy, the full test suite, and the embedded release build.
+
+## 9. Chart Layout and Calendar Ticks -- TDD
+
+- [x] 9.1 Add a renderer test (RED) for a taller SVG with a bottom-right legend outside the plot and calendar-aligned time labels.
+- [x] 9.2 Enable Plotters' chrono coordinate support, render the X axis from the selected `DateTime<Utc>` window, and move the legend into a dedicated lower drawing area (GREEN for 9.1).
+- [x] 9.3 Refresh chart snapshots and run formatting, Clippy, the full test suite, and the embedded release build.

@@ -8,7 +8,9 @@ target temperature series, label its X axis `Time` and its Y axis
 the selected window. Each series SHALL use a distinct color. The chart SHALL
 include a legend that identifies each series by its name and matching color.
 The chart SHALL render major X- and Y-axis gridlines and position samples on
-the X axis relative to the full selected window.
+the X axis relative to the full selected window. The legend SHALL render below
+the X axis, outside the plotting area and aligned to the right. Time-axis ticks
+SHALL use calendar-aligned, round intervals appropriate to the selected window.
 
 #### Scenario: Chart displays all three temperature series
 - **WHEN** the active brew has temperature history in the selected window
@@ -25,6 +27,12 @@ the X axis relative to the full selected window.
 - **WHEN** the active brew has temperature history in the selected window
 - **THEN** the chart renders labeled major ticks and gridlines on both axes,
   and positions each sample by its timestamp within the full selected window
+
+#### Scenario: Chart legend and time ticks stay readable
+- **WHEN** the active brew has temperature history in the selected window
+- **THEN** the legend renders outside the plotting area below and right of the
+  X axis, and time-axis ticks use round calendar intervals rather than offsets
+  from the moment the chart was requested
 
 #### Scenario: Chart Y axis follows displayed data
 - **WHEN** the selected window contains temperature history

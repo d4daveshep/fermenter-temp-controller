@@ -19,7 +19,7 @@ minijinja = "2"
 tokio-serial = "5.5.0"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 minijinja-embed = { version = "2.21.0", optional = true }
-plotters = { version = "0.3.7", default-features = false, features = ["line_series", "svg_backend"] }
+plotters = { version = "0.3.7", default-features = false, features = ["chrono", "line_series", "svg_backend"] }
 
 [build-dependencies]
 minijinja-embed = "2.21.0"
