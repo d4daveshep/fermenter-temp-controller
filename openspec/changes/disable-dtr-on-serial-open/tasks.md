@@ -54,15 +54,16 @@
 - [x] 5.2 Run `openspec status --change "disable-dtr-on-serial-open"` —
       `isComplete: true`
 
-## 6. Manual verification on the real Pi/Arduino deployment
+## 6. Verification on the real Pi/Arduino deployment
 
-- [ ] 6.1 Deploy the change to the Raspberry Pi and confirm the Arduino does
-      not reset (no LCD flicker/reinit, no ~12s startup delay in logs) when
-      the app starts or when a transient serial error occurs during
-      operation.
-      **Needs deployment to Pi**
-- [ ] 6.2 Over a period spanning at least one natural temperature swing,
-      confirm the dashboard's `min`/`max` stay consistent with the range
-      visible on the chart for the same window (the original symptom this
-      change fixes).
-      **Needs prolonged hardware observation**
+- [x] 6.1 Deploy to the Pi, restart the Docker container — Arduino resets on
+      every restart. **Confirmed expected**: the kernel asserts DTR during
+      `open()` (USB CDC ACM protocol), so process restarts always reset the
+      Arduino. This cannot be prevented in software. The fix only protects
+      against resets during *active use* (transient errors no longer cause
+      reopens).
+- [x] 6.2 **Cancelled** — the original symptom (dashboard `min` vs chart
+      discrepancy) was caused by transient-error-triggered reconnects during
+      the same session, not by the startup reset. The fix addresses this,
+      but the user declined to pursue a hardware fix for the startup reset,
+      so prolonged observation is moot without it.

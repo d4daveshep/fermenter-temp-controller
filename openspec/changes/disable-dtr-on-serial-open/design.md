@@ -38,9 +38,16 @@ did not otherwise observe (Pi/Arduino share a power source with 24h+ uptime).
 - Prove the stream stays alive across reads with a hardware timing test.
 
 **Non-Goals:**
-- Preventing the very first DTR pulse at startup — impossible on Linux
-  (kernel-level USB CDC ACM behavior) and acceptable since it happens only
-  once per process.
+- Preventing the DTR pulse at process startup — **not possible from
+  userspace.** The Linux kernel's USB CDC ACM driver (`acm_port_activate` in
+  `drivers/usb/class/cdc-acm.c`) asserts DTR unconditionally during the
+  `open()` syscall. This is a USB protocol requirement that cannot be
+  overridden by any `ioctl` or `tcsetattr` call. As a result, every Docker
+  container restart (which kills the process and closes the fd, then starts
+  a new process that opens the port anew) always resets the Arduino. A
+  hardware fix (e.g. 10–100µF capacitor between the ATmega's RESET pin and
+  GND to filter the DTR pulse) would be required to prevent startup
+  resets, and was considered but explicitly not pursued per user decision.
 - Preventing DTR resets on explicit device unplug/replug — the firmware
   legitimately needs to restart after a physical disconnect.
 - Changing the serial framing contract, baud rate, or JSON schema — all
@@ -115,3 +122,15 @@ was dropped, a reopen would trigger DTR reset and push the wait past 12s.
   chips.** → If unsupported, the builder call is a no-op — behavior degrades
   to the existing `dtr_on_open = None` default, which is the pre-fix
   baseline.
+- **[Observed limitation] Docker container restart always resets the
+  Arduino** — confirmed on hardware. The kernel's `open()` syscall on the
+  USB CDC ACM device unconditionally asserts DTR. Since the container
+  restart kills the process (closing all fds) and starts a fresh process
+  (which opens the port anew), there is no software path to prevent this
+  reset. A hardware fix (capacitor between RESET and GND on the Arduino)
+  would be required, but was explicitly not pursued per user decision.
+  The fix implemented in this change (keeping the stream alive on transient
+  errors) only prevents resets during *active use* — it provides value
+  across long-running sessions where transient USB noise would otherwise
+  cause a reconnect and reset, but cannot protect against container
+  restarts.
