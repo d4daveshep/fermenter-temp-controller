@@ -78,9 +78,11 @@ The handler builds a chart view model from queried points. It derives the Y
 range from all three values, applies a small visual margin, and expands a
 constant range so axis and line coordinates remain valid. The SVG labels the X
 axis `Time` and the Y axis `Temperature`, and uses the server's local time for
-selected sample timestamps. It assigns a stable, distinct color to each of the
-average fermenter, ambient, and target lines; the legend renders the matching
-color and series name for every line.
+selected sample timestamps. It renders five major ticks on each axis and their
+matching gridlines, maps samples against the full requested window rather than
+the first and last returned samples, and assigns a stable, distinct color to
+each of the average fermenter, ambient, and target lines; the legend renders
+the matching color and series name for every line.
 
 Generating coordinates in Rust keeps calculations on the server and avoids a
 new client dependency. A fixed temperature range was rejected because it

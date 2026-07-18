@@ -7,6 +7,8 @@ target temperature series, label its X axis `Time` and its Y axis
 `Temperature`, and scale the Y axis to the range of all values displayed for
 the selected window. Each series SHALL use a distinct color. The chart SHALL
 include a legend that identifies each series by its name and matching color.
+The chart SHALL render major X- and Y-axis gridlines and position samples on
+the X axis relative to the full selected window.
 
 #### Scenario: Chart displays all three temperature series
 - **WHEN** the active brew has temperature history in the selected window
@@ -18,6 +20,11 @@ include a legend that identifies each series by its name and matching color.
 - **THEN** the chart labels its axes `Time` and `Temperature`, renders each
   temperature series in a distinct color, and includes a legend that maps
   each color to its series name
+
+#### Scenario: Chart provides a conventional plotting grid
+- **WHEN** the active brew has temperature history in the selected window
+- **THEN** the chart renders labeled major ticks and gridlines on both axes,
+  and positions each sample by its timestamp within the full selected window
 
 #### Scenario: Chart Y axis follows displayed data
 - **WHEN** the selected window contains temperature history

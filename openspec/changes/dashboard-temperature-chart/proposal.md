@@ -19,7 +19,8 @@ system.
   persisted temperature series for the active brew and selected window.
 - Scale the chart's Y axis from the temperatures returned for the selected
   window, label the time and temperature axes, use a distinct color for each
-  series, and show an explicit no-history state when no readings exist.
+  series, render a conventional time-series plotting grid, and show an
+  explicit no-history state when no readings exist.
 - Include a legend that identifies the average fermenter, ambient, and target
   series by their chart colors.
 

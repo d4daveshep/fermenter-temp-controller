@@ -190,19 +190,31 @@ pub(crate) struct ChartContext {
 
 struct TemperatureChart<'a> {
     samples: &'a [TemperatureSample],
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
 }
 
 impl<'a> TemperatureChart<'a> {
+    const LEFT: f64 = 80.0;
+    const RIGHT: f64 = 720.0;
+    const TOP: f64 = 48.0;
+    const BOTTOM: f64 = 300.0;
+    const TICKS: usize = 4;
+
+    fn new(samples: &'a [TemperatureSample], start: DateTime<Utc>, end: DateTime<Utc>) -> Self {
+        Self {
+            samples,
+            start,
+            end,
+        }
+    }
+
     fn svg(&self) -> String {
         if self.samples.is_empty() {
             return "<p class=\"no-history\">No temperature history is available for this window.</p>"
                 .to_string();
         }
 
-        const LEFT: f64 = 62.0;
-        const RIGHT: f64 = 700.0;
-        const TOP: f64 = 34.0;
-        const BOTTOM: f64 = 286.0;
         let values = self
             .samples
             .iter()
@@ -218,66 +230,82 @@ impl<'a> TemperatureChart<'a> {
         };
         let y_min = minimum - margin;
         let y_max = maximum + margin;
-        let start = self
-            .samples
-            .first()
-            .map(|sample| sample.timestamp)
-            .unwrap_or_default();
-        let end = self
-            .samples
-            .last()
-            .map(|sample| sample.timestamp)
-            .unwrap_or_default();
-        let elapsed = (end - start).num_milliseconds().max(1) as f64;
-        let x = |timestamp: DateTime<Utc>| {
-            LEFT + (timestamp - start).num_milliseconds() as f64 / elapsed * (RIGHT - LEFT)
-        };
-        let y = |value: f64| BOTTOM - (value - y_min) / (y_max - y_min) * (BOTTOM - TOP);
-        let polyline = |values: Vec<f64>| {
-            self.samples
-                .iter()
-                .zip(values)
-                .map(|(sample, value)| format!("{:.1},{:.1}", x(sample.timestamp), y(value)))
-                .collect::<Vec<_>>()
-                .join(" ")
-        };
-        let x_label = |timestamp: DateTime<Utc>| {
-            timestamp
-                .with_timezone(&Local)
-                .format("%d %b %H:%M")
-                .to_string()
-        };
+        let grid = self.grid(y_min, y_max);
 
         format!(
             concat!(
-                "<svg class=\"temperature-chart\" viewBox=\"0 0 760 340\" role=\"img\" aria-label=\"Temperature history\">",
+                "<svg class=\"temperature-chart\" viewBox=\"0 0 800 380\" role=\"img\" aria-label=\"Temperature history\">",
+                "{grid}",
                 "<line class=\"chart-axis\" x1=\"{left}\" y1=\"{bottom}\" x2=\"{right}\" y2=\"{bottom}\"/>",
                 "<line class=\"chart-axis\" x1=\"{left}\" y1=\"{top}\" x2=\"{left}\" y2=\"{bottom}\"/>",
-                "<text class=\"chart-label\" x=\"381\" y=\"330\" text-anchor=\"middle\">Time</text>",
-                "<text class=\"chart-label\" x=\"16\" y=\"160\" transform=\"rotate(-90 16 160)\" text-anchor=\"middle\">Temperature</text>",
-                "<text class=\"chart-tick\" x=\"56\" y=\"{top}\" text-anchor=\"end\">{y_max:.1}</text>",
-                "<text class=\"chart-tick\" x=\"56\" y=\"{bottom}\" text-anchor=\"end\">{y_min:.1}</text>",
-                "<text class=\"chart-tick\" x=\"{left}\" y=\"306\">{start_label}</text>",
-                "<text class=\"chart-tick\" x=\"{right}\" y=\"306\" text-anchor=\"end\">{end_label}</text>",
+                "<text class=\"chart-label\" x=\"400\" y=\"360\" text-anchor=\"middle\">Time</text>",
+                "<text class=\"chart-label\" x=\"18\" y=\"174\" transform=\"rotate(-90 18 174)\" text-anchor=\"middle\">Temperature</text>",
                 "<polyline class=\"chart-series fermenter\" points=\"{fermenter}\"/>",
                 "<polyline class=\"chart-series ambient\" points=\"{ambient}\"/>",
                 "<polyline class=\"chart-series target\" points=\"{target}\"/>",
-                "<g class=\"chart-legend\"><line class=\"fermenter\" x1=\"430\" y1=\"18\" x2=\"450\" y2=\"18\"/><text x=\"455\" y=\"22\">Average fermenter</text>",
-                "<line class=\"ambient\" x1=\"550\" y1=\"18\" x2=\"570\" y2=\"18\"/><text x=\"575\" y=\"22\">Ambient</text>",
-                "<line class=\"target\" x1=\"630\" y1=\"18\" x2=\"650\" y2=\"18\"/><text x=\"655\" y=\"22\">Target</text></g></svg>"
+                "<g class=\"chart-legend\"><line class=\"fermenter\" x1=\"90\" y1=\"24\" x2=\"110\" y2=\"24\"/><text x=\"116\" y=\"28\">Average fermenter</text>",
+                "<line class=\"ambient\" x1=\"280\" y1=\"24\" x2=\"300\" y2=\"24\"/><text x=\"306\" y=\"28\">Ambient</text>",
+                "<line class=\"target\" x1=\"405\" y1=\"24\" x2=\"425\" y2=\"24\"/><text x=\"431\" y=\"28\">Target</text></g></svg>"
             ),
-            fermenter = polyline(self.samples.iter().map(|sample| sample.fermenter).collect()),
-            ambient = polyline(self.samples.iter().map(|sample| sample.ambient).collect()),
-            target = polyline(self.samples.iter().map(|sample| sample.target).collect()),
-            left = LEFT,
-            right = RIGHT,
-            top = TOP,
-            bottom = BOTTOM,
-            y_max = y_max,
-            y_min = y_min,
-            start_label = x_label(start),
-            end_label = x_label(end),
+            grid = grid,
+            fermenter = self.points(y_min, y_max, |sample| sample.fermenter),
+            ambient = self.points(y_min, y_max, |sample| sample.ambient),
+            target = self.points(y_min, y_max, |sample| sample.target),
+            left = Self::LEFT,
+            right = Self::RIGHT,
+            top = Self::TOP,
+            bottom = Self::BOTTOM,
         )
+    }
+
+    fn grid(&self, y_min: f64, y_max: f64) -> String {
+        (0..=Self::TICKS)
+            .flat_map(|step| {
+                let ratio = step as f64 / Self::TICKS as f64;
+                let x = Self::LEFT + ratio * (Self::RIGHT - Self::LEFT);
+                let y = Self::BOTTOM - ratio * (Self::BOTTOM - Self::TOP);
+                let temperature = y_min + ratio * (y_max - y_min);
+                let timestamp = self.start
+                    + Duration::milliseconds(
+                        ((self.end - self.start).num_milliseconds() as f64 * ratio) as i64,
+                    );
+                [
+                    format!("<line class=\"chart-grid\" x1=\"{x:.1}\" y1=\"{top}\" x2=\"{x:.1}\" y2=\"{bottom}\"/><text class=\"chart-tick\" x=\"{x:.1}\" y=\"322\" text-anchor=\"middle\">{label}</text>", top = Self::TOP, bottom = Self::BOTTOM, label = self.time_label(timestamp)),
+                    format!("<line class=\"chart-grid\" x1=\"{left}\" y1=\"{y:.1}\" x2=\"{right}\" y2=\"{y:.1}\"/><text class=\"chart-tick\" x=\"72\" y=\"{y:.1}\" text-anchor=\"end\" dominant-baseline=\"middle\">{temperature:.1}</text>", left = Self::LEFT, right = Self::RIGHT),
+                ]
+            })
+            .collect()
+    }
+
+    fn points(&self, y_min: f64, y_max: f64, value: impl Fn(&TemperatureSample) -> f64) -> String {
+        self.samples
+            .iter()
+            .map(|sample| {
+                format!(
+                    "{:.1},{:.1}",
+                    self.x(sample.timestamp),
+                    self.y(value(sample), y_min, y_max)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    fn x(&self, timestamp: DateTime<Utc>) -> f64 {
+        let elapsed = (self.end - self.start).num_milliseconds().max(1) as f64;
+        let ratio = (timestamp - self.start).num_milliseconds() as f64 / elapsed;
+        Self::LEFT + ratio.clamp(0.0, 1.0) * (Self::RIGHT - Self::LEFT)
+    }
+
+    fn y(&self, value: f64, y_min: f64, y_max: f64) -> f64 {
+        Self::BOTTOM - (value - y_min) / (y_max - y_min) * (Self::BOTTOM - Self::TOP)
+    }
+
+    fn time_label(&self, timestamp: DateTime<Utc>) -> String {
+        timestamp
+            .with_timezone(&Local)
+            .format("%d %b %H:%M")
+            .to_string()
     }
 }
 
@@ -288,16 +316,17 @@ pub(crate) async fn chart(
 ) -> Result<Html<String>> {
     let window = ChartWindow::from_query(query.window.as_deref());
     let end = Utc::now();
+    let start = end - window.duration();
     let brew_id = state.brew_tx.borrow().clone();
     let samples = state
         .store
-        .temperature_history(&brew_id, end - window.duration(), end, window.bucket())
+        .temperature_history(&brew_id, start, end, window.bucket())
         .await?;
     render(
         &state.env,
         "partials/chart.html",
         ChartContext {
-            svg: TemperatureChart { samples: &samples }.svg(),
+            svg: TemperatureChart::new(&samples, start, end).svg(),
         },
     )
 }
@@ -529,6 +558,14 @@ mod tests {
         ]
     }
 
+    fn test_chart(samples: &[TemperatureSample]) -> TemperatureChart<'_> {
+        TemperatureChart::new(
+            samples,
+            Utc.timestamp_millis_opt(0).unwrap(),
+            Utc.timestamp_millis_opt(300_000).unwrap(),
+        )
+    }
+
     #[test]
     fn chart_windows_have_documented_durations_and_buckets() {
         let expected = [
@@ -560,10 +597,7 @@ mod tests {
 
     #[test]
     fn temperature_chart_renders_labeled_colored_series_and_bounds() {
-        let svg = TemperatureChart {
-            samples: &chart_samples(),
-        }
-        .svg();
+        let svg = test_chart(&chart_samples()).svg();
 
         assert!(svg.contains(">Time</text>"));
         assert!(svg.contains(">Temperature</text>"));
@@ -581,6 +615,14 @@ mod tests {
     }
 
     #[test]
+    fn temperature_chart_renders_a_plotting_grid() {
+        let svg = test_chart(&chart_samples()).svg();
+
+        assert_eq!(svg.matches("class=\"chart-grid\"").count(), 10);
+        assert!(svg.contains("points=\"82.1,"));
+    }
+
+    #[test]
     fn temperature_chart_expands_constant_range_and_reports_empty_history() {
         let sample = TemperatureSample {
             timestamp: Utc.timestamp_millis_opt(1_000).unwrap(),
@@ -588,14 +630,10 @@ mod tests {
             ambient: 19.0,
             target: 19.0,
         };
-        let svg = TemperatureChart { samples: &[sample] }.svg();
+        let svg = test_chart(&[sample]).svg();
         assert!(svg.contains(">16.1</text>"));
         assert!(svg.contains(">21.9</text>"));
-        assert!(
-            TemperatureChart { samples: &[] }
-                .svg()
-                .contains("No temperature history")
-        );
+        assert!(test_chart(&[]).svg().contains("No temperature history"));
     }
 
     #[test]
@@ -605,10 +643,7 @@ mod tests {
             &env,
             "partials/chart.html",
             ChartContext {
-                svg: TemperatureChart {
-                    samples: &chart_samples(),
-                }
-                .svg(),
+                svg: test_chart(&chart_samples()).svg(),
             },
         )
         .unwrap();
@@ -622,7 +657,7 @@ mod tests {
             &env,
             "partials/chart.html",
             ChartContext {
-                svg: TemperatureChart { samples: &[] }.svg(),
+                svg: test_chart(&[]).svg(),
             },
         )
         .unwrap();

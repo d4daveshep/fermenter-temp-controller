@@ -56,11 +56,13 @@ header h1 {
     border: 1px solid #ddd;
 }
 
-.chart-axis { stroke: #555; stroke-width: 1; }
-.chart-series { fill: none; stroke-width: 2.5; }
+.chart-grid { stroke: #d9dde3; stroke-width: 1; }
+.chart-axis { stroke: #555; stroke-width: 1.25; }
+.chart-series { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
 .fermenter { stroke: #0072b2; }
 .ambient { stroke: #d55e00; }
 .target { stroke: #009e73; }
 .chart-label, .chart-tick, .chart-legend { fill: #333; font-size: 12px; }
+.chart-tick { fill: #5c6470; font-size: 11px; }
 .chart-legend line { stroke-width: 3; }
 .no-history { color: #666; font-style: italic; }

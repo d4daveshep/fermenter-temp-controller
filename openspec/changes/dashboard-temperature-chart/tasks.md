@@ -34,3 +34,7 @@
 ## 6. Stable Rolling-Window Aggregation -- TDD
 
 - [x] 6.1 Add a Redis integration test (RED) showing that consecutive rolling history queries with the same samples must return the same aggregation buckets, then anchor `TS.RANGE` aggregation at the epoch (GREEN).
+
+## 7. Conventional Time-Series Rendering -- TDD
+
+- [x] 7.1 Add a renderer test (RED) for major plotting-grid lines and fixed-window X coordinates, then render five major ticks and gridlines per axis while mapping samples against the selected window (GREEN).
