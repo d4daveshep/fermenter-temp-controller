@@ -8,10 +8,9 @@
         If the stream stays alive (no unnecessary reopen), the second read
         completes normally. If the stream was dropped between reads, a
         reopen would reset the Arduino and the test would time out.
-- [ ] 1.2 Run `cargo test --test serial_hardware -- --ignored
+- [x] 1.2 Run `cargo test --test serial_hardware -- --ignored
       --test-threads=1 consecutive_reads_on_same_source` against the
-      spare/test Arduino and confirm it PASSES.
-      **Needs real Arduino attached**
+      spare/test Arduino — PASSES
 
 ## 2. Keep stream alive on transient errors
 
@@ -35,12 +34,10 @@
     (backoff timing against nonexistent port — unaffected)
   - All mock-serial and ingest tests (use `MockSerialSource`, not the real
     transport)
-- [ ] 3.2 Run `cargo test --test serial_hardware -- --ignored
-      --test-threads=1` (full file) and confirm `opens_real_port`,
-      `reads_a_real_line`, `write_target_roundtrips`, and the new
-      `consecutive_reads_on_same_source` all pass against real
-      hardware.
-      **Needs real Arduino attached**
+- [x] 3.2 Run `cargo test --test serial_hardware -- --ignored
+      --test-threads=1` (full file) — `opens_real_port`,
+      `reads_a_real_line`, `write_target_roundtrips`, and
+      `consecutive_reads_on_same_source` all PASS
 
 ## 4. Lint, types, full suite
 
