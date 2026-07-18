@@ -47,7 +47,7 @@ header h1 {
     margin-right: 0.5rem;
 }
 
-.temperature-chart {
+#chart > svg {
     display: block;
     width: 100%;
     height: auto;
