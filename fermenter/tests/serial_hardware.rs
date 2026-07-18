@@ -181,3 +181,29 @@ async fn write_target_roundtrips() {
         ROUNDTRIP_TIMEOUT
     );
 }
+
+/// Reads two consecutive lines from the same source using the standard
+/// `READ_TIMEOUT` (20s) for each. This proves the serial port stays open
+/// and usable between reads — it is NOT a tight-timing test (the firmware's
+/// ~10s print interval plus USB serial jitter makes sub-20s timing
+/// unreliable). It IS a regression guard against accidentally dropping the
+/// stream between successful reads.
+#[tokio::test]
+#[ignore]
+async fn consecutive_reads_on_same_source() {
+    let _guard = HARDWARE_LOCK.lock().await;
+    let mut source = ArduinoSerialSource::new(test_port(), test_baud());
+
+    let Ok(Ok(first)) = tokio::time::timeout(READ_TIMEOUT, source.read_line()).await else {
+        panic!("expected first read to succeed within {READ_TIMEOUT:?}");
+    };
+    assert!(!first.is_empty(), "expected a non-empty first line");
+
+    let Ok(Ok(second)) = tokio::time::timeout(READ_TIMEOUT, source.read_line()).await else {
+        panic!(
+            "second read on the same source timed out after {READ_TIMEOUT:?}. \
+             The stream was likely closed between reads"
+        );
+    };
+    assert!(!second.is_empty(), "expected a non-empty second line");
+}
