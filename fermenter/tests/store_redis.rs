@@ -2,6 +2,7 @@
 //! Redis 8 instance (Time Series built in), spun up via `testcontainers`.
 //! Requires Docker on the host running these tests.
 
+use chrono::{Duration, Utc};
 use fermenter::model::{ControllerState, Reading};
 use fermenter::store::TimeStore;
 use fermenter::store::redis::RedisTimeStore;
@@ -93,6 +94,155 @@ async fn repeated_writes_are_idempotent_on_series_creation() {
         .expect("query should succeed")
         .expect("should have a reading");
     assert_eq!(last.average, 18.5);
+}
+
+#[tokio::test]
+async fn temperature_history_returns_complete_aggregated_samples() {
+    let (store, container) = start_store().await;
+    let start = Utc::now() + Duration::seconds(10);
+    let end = start + Duration::milliseconds(1_099);
+
+    store
+        .write_reading("brew-1", &reading(19.5, 18.0))
+        .await
+        .expect("write should create the series");
+    add_temperature_samples(&container, "brew-1", start.timestamp_millis(), 10, 100).await;
+    add_temperature_value(
+        &container,
+        "brew-1",
+        "fermenter",
+        start.timestamp_millis() + 1_000,
+        110,
+    )
+    .await;
+
+    let history = store
+        .temperature_history("brew-1", start, end, Duration::milliseconds(200))
+        .await
+        .expect("query should succeed");
+
+    assert!(
+        history.len() < 10,
+        "200 ms aggregation must return fewer samples than the 10 raw readings"
+    );
+    for sample in history {
+        assert!(sample.fermenter.is_finite());
+        assert!(sample.ambient.is_finite());
+        assert!(sample.target.is_finite());
+    }
+}
+
+#[tokio::test]
+async fn temperature_history_uses_stable_buckets_across_rolling_queries() {
+    let (store, container) = start_store().await;
+    let sample_time = Utc::now() + Duration::seconds(10);
+
+    store
+        .write_reading("brew-1", &reading(19.5, 18.0))
+        .await
+        .expect("write should create the series");
+    add_temperature_samples(&container, "brew-1", sample_time.timestamp_millis(), 1, 100).await;
+
+    let first = store
+        .temperature_history(
+            "brew-1",
+            sample_time - Duration::seconds(100),
+            sample_time + Duration::seconds(100),
+            Duration::seconds(15),
+        )
+        .await
+        .expect("first query should succeed");
+    let second = store
+        .temperature_history(
+            "brew-1",
+            sample_time - Duration::seconds(95),
+            sample_time + Duration::seconds(105),
+            Duration::seconds(15),
+        )
+        .await
+        .expect("second query should succeed");
+
+    assert_eq!(first, second, "rolling query bounds must not shift buckets");
+}
+
+#[tokio::test]
+async fn temperature_history_isolated_by_brew_identifier() {
+    let (store, container) = start_store().await;
+    let start = Utc::now() + Duration::seconds(10);
+    let end = start + Duration::milliseconds(999);
+
+    for brew_id in ["brew-1", "brew-2"] {
+        store
+            .write_reading(brew_id, &reading(19.5, 18.0))
+            .await
+            .expect("write should create the series");
+    }
+    add_temperature_samples(&container, "brew-1", start.timestamp_millis(), 1, 100).await;
+    add_temperature_samples(&container, "brew-2", start.timestamp_millis(), 1, 200).await;
+
+    let history = store
+        .temperature_history("brew-1", start, end, Duration::milliseconds(100))
+        .await
+        .expect("query should succeed");
+
+    assert_eq!(history.len(), 1);
+    assert_eq!(history[0].fermenter, 100.0);
+    assert_eq!(history[0].ambient, 101.0);
+    assert_eq!(history[0].target, 102.0);
+}
+
+async fn add_temperature_samples(
+    container: &testcontainers::ContainerAsync<Redis>,
+    brew_id: &str,
+    start_ms: i64,
+    count: i64,
+    base: i64,
+) {
+    let host = container.get_host().await.expect("container host");
+    let port = container
+        .get_host_port_ipv4(REDIS_PORT)
+        .await
+        .expect("container port");
+    let client = redis::Client::open(format!("redis://{host}:{port}")).unwrap();
+    let mut conn = client.get_multiplexed_async_connection().await.unwrap();
+    for offset in 0..count {
+        for (field, value) in [
+            ("fermenter", base + offset),
+            ("ambient", base + offset + 1),
+            ("target", base + offset + 2),
+        ] {
+            redis::cmd("TS.ADD")
+                .arg(format!("temp:{brew_id}:{field}"))
+                .arg(start_ms + offset * 100)
+                .arg(value)
+                .query_async::<i64>(&mut conn)
+                .await
+                .expect("sample should be added");
+        }
+    }
+}
+
+async fn add_temperature_value(
+    container: &testcontainers::ContainerAsync<Redis>,
+    brew_id: &str,
+    field: &str,
+    timestamp_ms: i64,
+    value: i64,
+) {
+    let host = container.get_host().await.expect("container host");
+    let port = container
+        .get_host_port_ipv4(REDIS_PORT)
+        .await
+        .expect("container port");
+    let client = redis::Client::open(format!("redis://{host}:{port}")).unwrap();
+    let mut conn = client.get_multiplexed_async_connection().await.unwrap();
+    redis::cmd("TS.ADD")
+        .arg(format!("temp:{brew_id}:{field}"))
+        .arg(timestamp_ms)
+        .arg(value)
+        .query_async::<i64>(&mut conn)
+        .await
+        .expect("sample should be added");
 }
 
 #[tokio::test]

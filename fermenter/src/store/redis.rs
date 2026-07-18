@@ -1,10 +1,12 @@
 use async_trait::async_trait;
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use redis::AsyncCommands;
 use redis::aio::ConnectionManager;
+use std::collections::HashMap;
 
 use crate::error::{AppError, Result};
 use crate::model::{ControllerState, Reading};
-use crate::store::TimeStore;
+use crate::store::{TemperatureSample, TimeStore};
 
 /// Redis key holding the persisted controller state hash.
 const STATE_KEY: &str = "controller:state";
@@ -125,6 +127,67 @@ impl TimeStore for RedisTimeStore {
             Some(json) => Ok(Some(serde_json::from_str(&json)?)),
             None => Ok(None),
         }
+    }
+
+    async fn temperature_history(
+        &self,
+        brew_id: &str,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+        bucket: Duration,
+    ) -> Result<Vec<TemperatureSample>> {
+        let bucket_ms = bucket.num_milliseconds();
+        if bucket_ms <= 0 {
+            return Err(AppError::Store(
+                "temperature history bucket must be positive".to_string(),
+            ));
+        }
+
+        let start_ms = start.timestamp_millis();
+        let end_ms = end.timestamp_millis();
+        let mut series = HashMap::new();
+        for field in ["fermenter", "ambient", "target"] {
+            let mut conn = self.manager.clone();
+            let values: std::result::Result<Vec<(i64, f64)>, redis::RedisError> =
+                redis::cmd("TS.RANGE")
+                    .arg(series_key(brew_id, field))
+                    .arg(start_ms)
+                    .arg(end_ms)
+                    .arg("ALIGN")
+                    // Anchor buckets to the epoch so polling a rolling window
+                    // cannot shift sample boundaries between requests.
+                    .arg(0)
+                    .arg("AGGREGATION")
+                    .arg("avg")
+                    .arg(bucket_ms)
+                    .query_async(&mut conn)
+                    .await;
+            let values = match values {
+                Ok(values) => values,
+                Err(error) if error.to_string().contains("key does not exist") => {
+                    return Ok(Vec::new());
+                }
+                Err(error) => return Err(store_err(error)),
+            };
+            series.insert(field, values.into_iter().collect::<HashMap<_, _>>());
+        }
+
+        let fermenter = &series["fermenter"];
+        let ambient = &series["ambient"];
+        let target = &series["target"];
+        let mut samples: Vec<_> = fermenter
+            .iter()
+            .filter_map(|(timestamp, fermenter)| {
+                Some(TemperatureSample {
+                    timestamp: Utc.timestamp_millis_opt(*timestamp).single()?,
+                    fermenter: *fermenter,
+                    ambient: *ambient.get(timestamp)?,
+                    target: *target.get(timestamp)?,
+                })
+            })
+            .collect();
+        samples.sort_by_key(|sample| sample.timestamp);
+        Ok(samples)
     }
 
     async fn save_state(&self, state: &ControllerState) -> Result<()> {

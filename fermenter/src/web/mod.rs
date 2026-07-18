@@ -48,6 +48,7 @@ pub fn build_router(state: AppState) -> Router {
     Router::new()
         .route("/", get(handlers::dashboard))
         .route("/status", get(handlers::status))
+        .route("/chart", get(handlers::chart))
         .route(
             "/target",
             get(handlers::target_form).post(handlers::set_target),
@@ -242,7 +243,7 @@ mod tests {
     #[tokio::test]
     async fn no_route_accepts_mutating_methods() {
         let mutating = [Method::POST, Method::PUT, Method::PATCH, Method::DELETE];
-        for path in ["/", "/status", "/healthz"] {
+        for path in ["/", "/status", "/chart", "/healthz"] {
             for method in &mutating {
                 let router = build_router(test_state(None));
                 let response = router
@@ -262,6 +263,64 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[tokio::test]
+    async fn chart_uses_active_brew_and_defaults_missing_or_invalid_windows() {
+        let store = crate::store::fake::FakeTimeStore::new();
+        let timestamp = chrono::Utc::now() - chrono::Duration::minutes(1);
+        store.seed_temperature_sample(
+            "00-TEST-v00",
+            crate::store::TemperatureSample {
+                timestamp,
+                fermenter: 18.0,
+                ambient: 20.0,
+                target: 19.0,
+            },
+        );
+        store.seed_temperature_sample(
+            "other-brew",
+            crate::store::TemperatureSample {
+                timestamp,
+                fermenter: 10.0,
+                ambient: 11.0,
+                target: 12.0,
+            },
+        );
+        let state =
+            test_state_with_target_brew_and_store(None, 19.5, "00-TEST-v00", Arc::new(store));
+
+        for path in ["/chart", "/chart?window=invalid", "/chart?window=15m"] {
+            let response = build_router(state.clone())
+                .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            let body = body_string(response).await;
+            assert!(body.contains("Average fermenter"));
+            assert!(!body.contains("10.0"));
+        }
+    }
+
+    #[tokio::test]
+    async fn chart_returns_no_history_for_empty_selected_window() {
+        let router = build_router(test_state(None));
+        let response = router
+            .oneshot(
+                Request::builder()
+                    .uri("/chart?window=15m")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(
+            body_string(response)
+                .await
+                .contains("No temperature history is available")
+        );
     }
 
     #[tokio::test]

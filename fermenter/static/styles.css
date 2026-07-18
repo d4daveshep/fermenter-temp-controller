@@ -36,3 +36,24 @@ header h1 {
     color: #666;
     font-size: 0.85rem;
 }
+
+.chart-panel {
+    margin: 1.5rem 0;
+    max-width: 48rem;
+}
+
+.chart-panel label {
+    font-weight: 600;
+    margin-right: 0.5rem;
+}
+
+#chart > svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-top: 0.75rem;
+    background: #fff;
+    border: 1px solid #ddd;
+}
+
+.no-history { color: #666; font-style: italic; }

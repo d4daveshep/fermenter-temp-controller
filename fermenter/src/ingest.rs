@@ -260,6 +260,16 @@ mod tests {
             Ok(None)
         }
 
+        async fn temperature_history(
+            &self,
+            _brew_id: &str,
+            _start: chrono::DateTime<chrono::Utc>,
+            _end: chrono::DateTime<chrono::Utc>,
+            _bucket: chrono::Duration,
+        ) -> crate::error::Result<Vec<crate::store::TemperatureSample>> {
+            Ok(Vec::new())
+        }
+
         async fn save_state(
             &self,
             _state: &crate::model::ControllerState,
