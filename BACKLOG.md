@@ -2,11 +2,10 @@
 
 ## UI Enhancements
 
-- Add the reason text to the dashboard (requires a static mapping from code to text)
+- Add a nicer theme to the dashboard via CSS
+- Increase font size and line weight on the temperature graph
 
 ## Functionality
-
-- Build timeseries graphs for data over fixed (but configurable?) time periods
 
 ## Technical Architecture
 
@@ -14,8 +13,4 @@
 
 ## Code Improvements / Refactoring
 
-- Ask Claude Opus for a code refactor analysis then use this for a backlog of tasks
-
 ## Documentation
-
-- Generate a detailed technical architecture document
