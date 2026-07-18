@@ -41,5 +41,6 @@ None.
 
 Changes affect the `TimeStore` abstraction and Redis implementation, the fake
 store used by tests, Axum routes and handlers, and dashboard templates and
-snapshots. The server will add SVG chart rendering support; the browser will
-continue to use HTMX and will not require a client-side charting library.
+snapshots. The server will use Plotters' SVG backend for chart rendering; the
+browser will continue to use HTMX and will not require a client-side charting
+library.

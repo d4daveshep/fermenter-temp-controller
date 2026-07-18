@@ -38,3 +38,9 @@
 ## 7. Conventional Time-Series Rendering -- TDD
 
 - [x] 7.1 Add a renderer test (RED) for major plotting-grid lines and fixed-window X coordinates, then render five major ticks and gridlines per axis while mapping samples against the selected window (GREEN).
+
+## 8. Plotters SVG Migration -- TDD
+
+- [x] 8.1 Add `plotters` with only the SVG backend enabled; write a focused renderer test (RED) that expects Plotters-generated axes, mesh, three labeled line series, and a legend for representative temperature history.
+- [x] 8.2 Replace the custom SVG coordinate, tick, grid, and legend generation with an in-memory `SVGBackend::with_string` + `ChartBuilder` renderer that preserves auto-scaled Y ranges, fixed selected-window X ranges, server-local time labels, and no-history output (GREEN for 8.1).
+- [x] 8.3 Update chart styles and snapshots for Plotters SVG output, then run formatting, Clippy, the full test suite, and the embedded release build.

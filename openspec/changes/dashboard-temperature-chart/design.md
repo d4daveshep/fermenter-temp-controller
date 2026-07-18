@@ -72,21 +72,26 @@ so tests can validate handler behavior without Redis. Returning raw values was
 rejected because long windows can create very large SVG responses and exceed
 the chart's useful visual resolution.
 
-### 4. Calculate chart geometry and axis range in Rust
+### 4. Use Plotters to render the server-side SVG
 
-The handler builds a chart view model from queried points. It derives the Y
-range from all three values, applies a small visual margin, and expands a
-constant range so axis and line coordinates remain valid. The SVG labels the X
-axis `Time` and the Y axis `Temperature`, and uses the server's local time for
-selected sample timestamps. It renders five major ticks on each axis and their
-matching gridlines, maps samples against the full requested window rather than
-the first and last returned samples, and assigns a stable, distinct color to
-each of the average fermenter, ambient, and target lines; the legend renders
-the matching color and series name for every line.
+Add `plotters` with only its SVG backend enabled. The chart handler derives the
+Y range from all three values, applies a visual margin, and expands a constant
+range so the coordinate range remains valid. It passes the selected window's
+start and end timestamps and the calculated Y range to Plotters'
+`ChartBuilder`.
 
-Generating coordinates in Rust keeps calculations on the server and avoids a
-new client dependency. A fixed temperature range was rejected because it
-would obscure small but operationally important variation.
+Render into an in-memory string using `SVGBackend::with_string`, then return
+that string through the existing chart fragment. Configure the Plotters mesh
+with labeled X/Y axes, readable server-local timestamp formatting, and major
+gridlines; draw the average fermenter, ambient, and target `LineSeries` with
+stable colors; and use Plotters' series-label configuration for the legend.
+
+Plotters replaces the hand-built coordinates, tick selection, SVG markup, and
+legend layout. It preserves server-side SVG and avoids a browser dependency.
+Keeping the custom renderer was rejected after live data showed it did not
+provide the mature plotting behavior expected from a conventional charting
+tool. A fixed temperature range remains rejected because it would obscure
+small but operationally important variation.
 
 ### 5. No data is a normal chart response
 
@@ -109,6 +114,9 @@ observable.
   the calculated range before mapping points to SVG coordinates.
 - [Risk] Server-local time axis labels can differ across deployments -> labels
   intentionally follow the dashboard's existing server-local-time convention.
+- [Risk] Plotters adds a rendering dependency and increases the binary size ->
+  enable only its SVG backend and verify the release image build before
+  deployment.
 
 ## Migration Plan
 
