@@ -1,9 +1,9 @@
 use std::sync::atomic::Ordering;
 
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::{Form, Json};
-use chrono::Local;
+use chrono::{DateTime, Duration, Local, Utc};
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
 
@@ -12,6 +12,7 @@ use crate::error::Result;
 use crate::ingest;
 use crate::model::Reading;
 use crate::reason_code;
+use crate::store::TemperatureSample;
 use crate::temperature_control::{persist_target, validate_target};
 
 use super::AppState;
@@ -27,6 +28,7 @@ pub(crate) struct StatusContext {
     reason_text: Option<String>,
     brew_id: String,
     pub(crate) server_time: String,
+    chart_windows: Vec<ChartWindowOption>,
 }
 
 pub(crate) fn status_context(state: &AppState) -> StatusContext {
@@ -40,6 +42,10 @@ pub(crate) fn status_context(state: &AppState) -> StatusContext {
         reason_text,
         brew_id: state.brew_tx.borrow().clone(),
         server_time: Local::now().format("%d-%b-%Y %H:%M:%S").to_string(),
+        chart_windows: ChartWindow::ALL
+            .into_iter()
+            .map(ChartWindowOption::from)
+            .collect(),
     }
 }
 
@@ -51,6 +57,249 @@ pub(crate) async fn dashboard(State(state): State<AppState>) -> Result<Html<Stri
 /// `GET /status` — HTMX-polled current-state fragment.
 pub(crate) async fn status(State(state): State<AppState>) -> Result<Html<String>> {
     render(&state.env, "partials/status.html", status_context(&state))
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ChartWindow {
+    FiveMinutes,
+    FifteenMinutes,
+    OneHour,
+    ThreeHours,
+    SixHours,
+    TwelveHours,
+    TwentyFourHours,
+    ThreeDays,
+    SevenDays,
+    FourteenDays,
+}
+
+impl ChartWindow {
+    const ALL: [Self; 10] = [
+        Self::FiveMinutes,
+        Self::FifteenMinutes,
+        Self::OneHour,
+        Self::ThreeHours,
+        Self::SixHours,
+        Self::TwelveHours,
+        Self::TwentyFourHours,
+        Self::ThreeDays,
+        Self::SevenDays,
+        Self::FourteenDays,
+    ];
+
+    fn from_query(value: Option<&str>) -> Self {
+        match value {
+            Some("5m") => Self::FiveMinutes,
+            Some("1h") => Self::OneHour,
+            Some("3h") => Self::ThreeHours,
+            Some("6h") => Self::SixHours,
+            Some("12h") => Self::TwelveHours,
+            Some("24h") => Self::TwentyFourHours,
+            Some("3d") => Self::ThreeDays,
+            Some("7d") => Self::SevenDays,
+            Some("14d") => Self::FourteenDays,
+            _ => Self::FifteenMinutes,
+        }
+    }
+
+    fn duration(self) -> Duration {
+        match self {
+            Self::FiveMinutes => Duration::minutes(5),
+            Self::FifteenMinutes => Duration::minutes(15),
+            Self::OneHour => Duration::hours(1),
+            Self::ThreeHours => Duration::hours(3),
+            Self::SixHours => Duration::hours(6),
+            Self::TwelveHours => Duration::hours(12),
+            Self::TwentyFourHours => Duration::hours(24),
+            Self::ThreeDays => Duration::days(3),
+            Self::SevenDays => Duration::days(7),
+            Self::FourteenDays => Duration::days(14),
+        }
+    }
+
+    fn bucket(self) -> Duration {
+        match self {
+            Self::FiveMinutes => Duration::seconds(15),
+            Self::FifteenMinutes => Duration::minutes(1),
+            Self::OneHour => Duration::minutes(2),
+            Self::ThreeHours => Duration::minutes(5),
+            Self::SixHours => Duration::minutes(10),
+            Self::TwelveHours => Duration::minutes(15),
+            Self::TwentyFourHours => Duration::minutes(30),
+            Self::ThreeDays => Duration::hours(1),
+            Self::SevenDays => Duration::hours(2),
+            Self::FourteenDays => Duration::hours(4),
+        }
+    }
+
+    fn value(self) -> &'static str {
+        match self {
+            Self::FiveMinutes => "5m",
+            Self::FifteenMinutes => "15m",
+            Self::OneHour => "1h",
+            Self::ThreeHours => "3h",
+            Self::SixHours => "6h",
+            Self::TwelveHours => "12h",
+            Self::TwentyFourHours => "24h",
+            Self::ThreeDays => "3d",
+            Self::SevenDays => "7d",
+            Self::FourteenDays => "14d",
+        }
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            Self::FiveMinutes => "Last 5 minutes",
+            Self::FifteenMinutes => "Last 15 minutes",
+            Self::OneHour => "Last 1 hour",
+            Self::ThreeHours => "Last 3 hours",
+            Self::SixHours => "Last 6 hours",
+            Self::TwelveHours => "Last 12 hours",
+            Self::TwentyFourHours => "Last 24 hours",
+            Self::ThreeDays => "Last 3 days",
+            Self::SevenDays => "Last 7 days",
+            Self::FourteenDays => "Last 14 days",
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct ChartWindowOption {
+    value: &'static str,
+    label: &'static str,
+}
+
+impl From<ChartWindow> for ChartWindowOption {
+    fn from(window: ChartWindow) -> Self {
+        Self {
+            value: window.value(),
+            label: window.label(),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub(crate) struct ChartQuery {
+    window: Option<String>,
+}
+
+#[derive(Serialize)]
+pub(crate) struct ChartContext {
+    svg: String,
+}
+
+struct TemperatureChart<'a> {
+    samples: &'a [TemperatureSample],
+}
+
+impl<'a> TemperatureChart<'a> {
+    fn svg(&self) -> String {
+        if self.samples.is_empty() {
+            return "<p class=\"no-history\">No temperature history is available for this window.</p>"
+                .to_string();
+        }
+
+        const LEFT: f64 = 62.0;
+        const RIGHT: f64 = 700.0;
+        const TOP: f64 = 34.0;
+        const BOTTOM: f64 = 286.0;
+        let values = self
+            .samples
+            .iter()
+            .flat_map(|sample| [sample.fermenter, sample.ambient, sample.target]);
+        let (minimum, maximum) = values.fold((f64::INFINITY, f64::NEG_INFINITY), |range, value| {
+            (range.0.min(value), range.1.max(value))
+        });
+        let spread = maximum - minimum;
+        let margin = if spread == 0.0 {
+            maximum.abs().mul_add(0.1, 1.0)
+        } else {
+            spread * 0.05
+        };
+        let y_min = minimum - margin;
+        let y_max = maximum + margin;
+        let start = self
+            .samples
+            .first()
+            .map(|sample| sample.timestamp)
+            .unwrap_or_default();
+        let end = self
+            .samples
+            .last()
+            .map(|sample| sample.timestamp)
+            .unwrap_or_default();
+        let elapsed = (end - start).num_milliseconds().max(1) as f64;
+        let x = |timestamp: DateTime<Utc>| {
+            LEFT + (timestamp - start).num_milliseconds() as f64 / elapsed * (RIGHT - LEFT)
+        };
+        let y = |value: f64| BOTTOM - (value - y_min) / (y_max - y_min) * (BOTTOM - TOP);
+        let polyline = |values: Vec<f64>| {
+            self.samples
+                .iter()
+                .zip(values)
+                .map(|(sample, value)| format!("{:.1},{:.1}", x(sample.timestamp), y(value)))
+                .collect::<Vec<_>>()
+                .join(" ")
+        };
+        let x_label = |timestamp: DateTime<Utc>| {
+            timestamp
+                .with_timezone(&Local)
+                .format("%d %b %H:%M")
+                .to_string()
+        };
+
+        format!(
+            concat!(
+                "<svg class=\"temperature-chart\" viewBox=\"0 0 760 340\" role=\"img\" aria-label=\"Temperature history\">",
+                "<line class=\"chart-axis\" x1=\"{left}\" y1=\"{bottom}\" x2=\"{right}\" y2=\"{bottom}\"/>",
+                "<line class=\"chart-axis\" x1=\"{left}\" y1=\"{top}\" x2=\"{left}\" y2=\"{bottom}\"/>",
+                "<text class=\"chart-label\" x=\"381\" y=\"330\" text-anchor=\"middle\">Time</text>",
+                "<text class=\"chart-label\" x=\"16\" y=\"160\" transform=\"rotate(-90 16 160)\" text-anchor=\"middle\">Temperature</text>",
+                "<text class=\"chart-tick\" x=\"56\" y=\"{top}\" text-anchor=\"end\">{y_max:.1}</text>",
+                "<text class=\"chart-tick\" x=\"56\" y=\"{bottom}\" text-anchor=\"end\">{y_min:.1}</text>",
+                "<text class=\"chart-tick\" x=\"{left}\" y=\"306\">{start_label}</text>",
+                "<text class=\"chart-tick\" x=\"{right}\" y=\"306\" text-anchor=\"end\">{end_label}</text>",
+                "<polyline class=\"chart-series fermenter\" points=\"{fermenter}\"/>",
+                "<polyline class=\"chart-series ambient\" points=\"{ambient}\"/>",
+                "<polyline class=\"chart-series target\" points=\"{target}\"/>",
+                "<g class=\"chart-legend\"><line class=\"fermenter\" x1=\"430\" y1=\"18\" x2=\"450\" y2=\"18\"/><text x=\"455\" y=\"22\">Average fermenter</text>",
+                "<line class=\"ambient\" x1=\"550\" y1=\"18\" x2=\"570\" y2=\"18\"/><text x=\"575\" y=\"22\">Ambient</text>",
+                "<line class=\"target\" x1=\"630\" y1=\"18\" x2=\"650\" y2=\"18\"/><text x=\"655\" y=\"22\">Target</text></g></svg>"
+            ),
+            fermenter = polyline(self.samples.iter().map(|sample| sample.fermenter).collect()),
+            ambient = polyline(self.samples.iter().map(|sample| sample.ambient).collect()),
+            target = polyline(self.samples.iter().map(|sample| sample.target).collect()),
+            left = LEFT,
+            right = RIGHT,
+            top = TOP,
+            bottom = BOTTOM,
+            y_max = y_max,
+            y_min = y_min,
+            start_label = x_label(start),
+            end_label = x_label(end),
+        )
+    }
+}
+
+/// `GET /chart` — HTMX-polled temperature-history fragment for the active brew.
+pub(crate) async fn chart(
+    State(state): State<AppState>,
+    Query(query): Query<ChartQuery>,
+) -> Result<Html<String>> {
+    let window = ChartWindow::from_query(query.window.as_deref());
+    let end = Utc::now();
+    let brew_id = state.brew_tx.borrow().clone();
+    let samples = state
+        .store
+        .temperature_history(&brew_id, end - window.duration(), end, window.bucket())
+        .await?;
+    render(
+        &state.env,
+        "partials/chart.html",
+        ChartContext {
+            svg: TemperatureChart { samples: &samples }.svg(),
+        },
+    )
 }
 
 /// Context for `target_form.html`, shared by the `GET` (display) and `POST`
@@ -220,6 +469,7 @@ pub(crate) async fn healthz(State(state): State<AppState>) -> Json<HealthRespons
 mod tests {
     use super::*;
     use crate::web::build_environment;
+    use chrono::TimeZone;
 
     fn sample_reading() -> Reading {
         Reading {
@@ -242,6 +492,10 @@ mod tests {
             reason_text,
             brew_id: "00-TEST-v00".to_string(),
             server_time: "14-Jul-2026 14:30:45".to_string(),
+            chart_windows: ChartWindow::ALL
+                .into_iter()
+                .map(ChartWindowOption::from)
+                .collect(),
         }
     }
 
@@ -251,7 +505,128 @@ mod tests {
             reason_text: None,
             brew_id: "00-TEST-v00".to_string(),
             server_time: "14-Jul-2026 14:30:45".to_string(),
+            chart_windows: ChartWindow::ALL
+                .into_iter()
+                .map(ChartWindowOption::from)
+                .collect(),
         }
+    }
+
+    fn chart_samples() -> Vec<TemperatureSample> {
+        vec![
+            TemperatureSample {
+                timestamp: Utc.timestamp_millis_opt(1_000).unwrap(),
+                fermenter: 18.0,
+                ambient: 20.0,
+                target: 19.0,
+            },
+            TemperatureSample {
+                timestamp: Utc.timestamp_millis_opt(61_000).unwrap(),
+                fermenter: 18.5,
+                ambient: 20.5,
+                target: 19.0,
+            },
+        ]
+    }
+
+    #[test]
+    fn chart_windows_have_documented_durations_and_buckets() {
+        let expected = [
+            ("5m", Duration::minutes(5), Duration::seconds(15)),
+            ("15m", Duration::minutes(15), Duration::minutes(1)),
+            ("1h", Duration::hours(1), Duration::minutes(2)),
+            ("3h", Duration::hours(3), Duration::minutes(5)),
+            ("6h", Duration::hours(6), Duration::minutes(10)),
+            ("12h", Duration::hours(12), Duration::minutes(15)),
+            ("24h", Duration::hours(24), Duration::minutes(30)),
+            ("3d", Duration::days(3), Duration::hours(1)),
+            ("7d", Duration::days(7), Duration::hours(2)),
+            ("14d", Duration::days(14), Duration::hours(4)),
+        ];
+
+        for (value, duration, bucket) in expected {
+            let window = ChartWindow::from_query(Some(value));
+            assert_eq!(window.value(), value);
+            assert_eq!(window.duration(), duration);
+            assert_eq!(window.bucket(), bucket);
+            assert!(!window.label().is_empty());
+        }
+        assert_eq!(ChartWindow::from_query(None), ChartWindow::FifteenMinutes);
+        assert_eq!(
+            ChartWindow::from_query(Some("not-a-window")),
+            ChartWindow::FifteenMinutes
+        );
+    }
+
+    #[test]
+    fn temperature_chart_renders_labeled_colored_series_and_bounds() {
+        let svg = TemperatureChart {
+            samples: &chart_samples(),
+        }
+        .svg();
+
+        assert!(svg.contains(">Time</text>"));
+        assert!(svg.contains(">Temperature</text>"));
+        for (class, name) in [
+            ("fermenter", "Average fermenter"),
+            ("ambient", "Ambient"),
+            ("target", "Target"),
+        ] {
+            assert!(svg.contains(&format!("chart-series {class}")));
+            assert!(svg.contains(&format!("<line class=\"{class}\"")));
+            assert!(svg.contains(&format!(">{name}</text>")));
+        }
+        assert!(svg.contains(">17.9</text>"));
+        assert!(svg.contains(">20.6</text>"));
+    }
+
+    #[test]
+    fn temperature_chart_expands_constant_range_and_reports_empty_history() {
+        let sample = TemperatureSample {
+            timestamp: Utc.timestamp_millis_opt(1_000).unwrap(),
+            fermenter: 19.0,
+            ambient: 19.0,
+            target: 19.0,
+        };
+        let svg = TemperatureChart { samples: &[sample] }.svg();
+        assert!(svg.contains(">16.1</text>"));
+        assert!(svg.contains(">21.9</text>"));
+        assert!(
+            TemperatureChart { samples: &[] }
+                .svg()
+                .contains("No temperature history")
+        );
+    }
+
+    #[test]
+    fn chart_fragment_with_history_snapshot() {
+        let env = build_environment();
+        let html = render(
+            &env,
+            "partials/chart.html",
+            ChartContext {
+                svg: TemperatureChart {
+                    samples: &chart_samples(),
+                }
+                .svg(),
+            },
+        )
+        .unwrap();
+        insta::assert_snapshot!(html.0);
+    }
+
+    #[test]
+    fn chart_fragment_without_history_snapshot() {
+        let env = build_environment();
+        let html = render(
+            &env,
+            "partials/chart.html",
+            ChartContext {
+                svg: TemperatureChart { samples: &[] }.svg(),
+            },
+        )
+        .unwrap();
+        insta::assert_snapshot!(html.0);
     }
 
     #[test]
@@ -349,6 +724,9 @@ mod tests {
         let ctx = sample_context();
         let html = render(&env, "dashboard.html", ctx).unwrap();
         assert!(html.0.contains("<button"), "dashboard must use buttons");
+        assert!(html.0.contains(r#"hx-get="/chart""#));
+        assert!(html.0.contains(r#"hx-trigger="load, every 5s""#));
+        assert!(html.0.contains(r##"hx-include="#chart-window""##));
         assert!(
             !html.0.contains("<a href=\"/target\">"),
             "dashboard must not use <a> link for target navigation"

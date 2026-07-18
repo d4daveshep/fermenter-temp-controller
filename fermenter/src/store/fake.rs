@@ -2,10 +2,11 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 use async_trait::async_trait;
+use chrono::{DateTime, Duration, Utc};
 
 use crate::error::Result;
 use crate::model::{ControllerState, Reading};
-use crate::store::TimeStore;
+use crate::store::{TemperatureSample, TimeStore};
 
 /// In-memory `TimeStore` test double. Records the most recent reading
 /// written per brew and the most recently saved controller state, with no
@@ -13,6 +14,7 @@ use crate::store::TimeStore;
 #[derive(Default)]
 pub struct FakeTimeStore {
     readings: Mutex<HashMap<String, Reading>>,
+    temperature_samples: Mutex<HashMap<String, Vec<TemperatureSample>>>,
     state: Mutex<Option<ControllerState>>,
 }
 
@@ -30,6 +32,16 @@ impl FakeTimeStore {
             .unwrap()
             .insert(brew_id.to_string(), reading);
     }
+
+    /// Pre-populate a complete timestamped temperature sample for `brew_id`.
+    pub fn seed_temperature_sample(&self, brew_id: &str, sample: TemperatureSample) {
+        self.temperature_samples
+            .lock()
+            .unwrap()
+            .entry(brew_id.to_string())
+            .or_default()
+            .push(sample);
+    }
 }
 
 #[async_trait]
@@ -46,6 +58,25 @@ impl TimeStore for FakeTimeStore {
         Ok(self.readings.lock().unwrap().get(brew_id).cloned())
     }
 
+    async fn temperature_history(
+        &self,
+        brew_id: &str,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+        _bucket: Duration,
+    ) -> Result<Vec<TemperatureSample>> {
+        Ok(self
+            .temperature_samples
+            .lock()
+            .unwrap()
+            .get(brew_id)
+            .into_iter()
+            .flatten()
+            .filter(|sample| sample.timestamp >= start && sample.timestamp <= end)
+            .cloned()
+            .collect())
+    }
+
     async fn save_state(&self, state: &ControllerState) -> Result<()> {
         *self.state.lock().unwrap() = Some(state.clone());
         Ok(())
@@ -59,6 +90,7 @@ impl TimeStore for FakeTimeStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::TimeZone;
 
     fn reading(average: f64) -> Reading {
         Reading {
@@ -86,6 +118,137 @@ mod tests {
     async fn last_reading_on_empty_brew_returns_none() {
         let store = FakeTimeStore::new();
         assert!(store.last_reading("no-such-brew").await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn temperature_history_returns_complete_samples_within_the_range() {
+        let store = FakeTimeStore::new();
+        let before = Utc.timestamp_millis_opt(999).unwrap();
+        let first = Utc.timestamp_millis_opt(1_000).unwrap();
+        let second = Utc.timestamp_millis_opt(2_000).unwrap();
+        let after = Utc.timestamp_millis_opt(3_001).unwrap();
+        store.seed_temperature_sample(
+            "brew-1",
+            TemperatureSample {
+                timestamp: before,
+                fermenter: 17.0,
+                ambient: 18.0,
+                target: 19.0,
+            },
+        );
+        store.seed_temperature_sample(
+            "brew-1",
+            TemperatureSample {
+                timestamp: first,
+                fermenter: 18.0,
+                ambient: 19.0,
+                target: 20.0,
+            },
+        );
+        store.seed_temperature_sample(
+            "brew-1",
+            TemperatureSample {
+                timestamp: second,
+                fermenter: 19.0,
+                ambient: 20.0,
+                target: 21.0,
+            },
+        );
+        store.seed_temperature_sample(
+            "brew-1",
+            TemperatureSample {
+                timestamp: after,
+                fermenter: 20.0,
+                ambient: 21.0,
+                target: 22.0,
+            },
+        );
+
+        let history = store
+            .temperature_history("brew-1", first, second, Duration::milliseconds(1_000))
+            .await
+            .unwrap();
+
+        assert_eq!(
+            history,
+            vec![
+                TemperatureSample {
+                    timestamp: first,
+                    fermenter: 18.0,
+                    ambient: 19.0,
+                    target: 20.0,
+                },
+                TemperatureSample {
+                    timestamp: second,
+                    fermenter: 19.0,
+                    ambient: 20.0,
+                    target: 21.0,
+                },
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn temperature_history_returns_no_samples_for_an_empty_range() {
+        let store = FakeTimeStore::new();
+        store.seed_temperature_sample(
+            "brew-1",
+            TemperatureSample {
+                timestamp: Utc.timestamp_millis_opt(1_000).unwrap(),
+                fermenter: 18.0,
+                ambient: 19.0,
+                target: 20.0,
+            },
+        );
+
+        let history = store
+            .temperature_history(
+                "brew-1",
+                Utc.timestamp_millis_opt(2_000).unwrap(),
+                Utc.timestamp_millis_opt(3_000).unwrap(),
+                Duration::milliseconds(1_000),
+            )
+            .await
+            .unwrap();
+
+        assert!(history.is_empty());
+    }
+
+    #[tokio::test]
+    async fn temperature_history_excludes_another_brews_samples() {
+        let store = FakeTimeStore::new();
+        let timestamp = Utc.timestamp_millis_opt(1_000).unwrap();
+        store.seed_temperature_sample(
+            "brew-1",
+            TemperatureSample {
+                timestamp,
+                fermenter: 18.0,
+                ambient: 19.0,
+                target: 20.0,
+            },
+        );
+        store.seed_temperature_sample(
+            "brew-2",
+            TemperatureSample {
+                timestamp,
+                fermenter: 10.0,
+                ambient: 11.0,
+                target: 12.0,
+            },
+        );
+
+        let history = store
+            .temperature_history(
+                "brew-1",
+                timestamp,
+                timestamp,
+                Duration::milliseconds(1_000),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0].fermenter, 18.0);
     }
 
     #[tokio::test]

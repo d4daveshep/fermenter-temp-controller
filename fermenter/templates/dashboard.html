@@ -6,6 +6,15 @@
 <div hx-get="/status" hx-trigger="every 5s" hx-swap="innerHTML">
     {% include "partials/status.html" %}
 </div>
+<section class="chart-panel">
+    <label for="chart-window">Temperature history</label>
+    <select id="chart-window" name="window" hx-get="/chart" hx-trigger="change" hx-target="#chart" hx-swap="innerHTML">
+{% for window in chart_windows %}
+        <option value="{{ window.value }}"{% if window.value == "15m" %} selected{% endif %}>{{ window.label }}</option>
+{% endfor %}
+    </select>
+    <div id="chart" hx-get="/chart" hx-trigger="load, every 5s" hx-include="#chart-window" hx-swap="innerHTML"></div>
+</section>
 <form method="get" action="/target"><button type="submit">Set target temperature</button></form>
 <form method="get" action="/brew"><button type="submit">Change brew identifier</button></form>
 {% endblock %}

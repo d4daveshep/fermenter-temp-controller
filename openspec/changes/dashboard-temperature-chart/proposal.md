@@ -10,8 +10,8 @@ system.
 
 - Add a dashboard temperature-history chart for the active brew, displaying
   average fermenter, ambient, and target temperatures together over time.
-- Let an operator choose one fixed chart window: 15 minutes, 1 hour, 3 hours,
-  6 hours, 12 hours, 24 hours, 3 days, 7 days, or 14 days.
+- Let an operator choose one fixed chart window: 5 minutes, 15 minutes, 1
+  hour, 3 hours, 6 hours, 12 hours, 24 hours, 3 days, 7 days, or 14 days.
 - Serve the chart as server-rendered SVG through a read-only, HTMX-polled
   dashboard fragment; selecting a new window refreshes the chart without a
   full page reload.

@@ -47,11 +47,12 @@ the browser.
 
 ### 2. Model windows as a closed server-side enum
 
-Use a `ChartWindow` enum to accept only `15m`, `1h`, `3h`, `6h`, `12h`, `24h`,
-`3d`, `7d`, and `14d`. The enum provides its duration, display label, and an
-aggregation bucket size. Missing or invalid query values resolve to the
-default 15-minute window, ensuring polling cannot create unbounded storage
-queries.
+Use a `ChartWindow` enum to accept only `5m`, `15m`, `1h`, `3h`, `6h`, `12h`,
+`24h`, `3d`, `7d`, and `14d`. The enum provides its duration, display label,
+and an aggregation bucket size. The 5-minute window uses 15-second buckets so
+newly started test servers show graphable data promptly. Missing or invalid
+query values resolve to the default 15-minute window, ensuring polling cannot
+create unbounded storage queries.
 
 An arbitrary duration query parameter was rejected because it makes query
 cost and the UI contract unbounded.
@@ -61,8 +62,9 @@ cost and the UI contract unbounded.
 Add timestamped chart-point types and a `temperature_history` method to
 `TimeStore`, accepting a brew ID, start timestamp, end timestamp, and bucket
 duration. `RedisTimeStore` queries each of the three known series with
-`TS.RANGE ... AGGREGATION avg <bucket-ms>`, aligns returned buckets by
-timestamp, and returns only complete points. The selected buckets cap each
+`TS.RANGE ... ALIGN 0 AGGREGATION avg <bucket-ms>`, aligns returned buckets by
+timestamp, and returns only complete points. Epoch-aligned buckets stay stable
+when the dashboard polls a rolling time window. The selected buckets cap each
 query to a practical chart-width-sized number of points across every window.
 
 The fake store retains timestamped chart samples and applies the same bounds,

@@ -1,0 +1,5 @@
+---
+source: src/web/handlers.rs
+expression: html.0
+---
+<p class="no-history">No temperature history is available for this window.</p>

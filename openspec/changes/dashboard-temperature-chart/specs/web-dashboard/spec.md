@@ -35,11 +35,12 @@ include a legend that identifies each series by its name and matching color.
   error
 
 ### Requirement: Select and refresh fixed chart windows
-The dashboard SHALL offer exactly these selectable chart windows: last 15
-minutes, 1 hour, 3 hours, 6 hours, 12 hours, 24 hours, 3 days, 7 days, and 14
-days. The dashboard SHALL request a server-rendered chart for the selected
-window when the page loads, when the selection changes, and at a periodic
-interval without a full page reload. Chart requests SHALL be read-only.
+The dashboard SHALL offer exactly these selectable chart windows: last 5
+minutes, 15 minutes, 1 hour, 3 hours, 6 hours, 12 hours, 24 hours, 3 days, 7
+days, and 14 days. The dashboard SHALL request a server-rendered chart for the
+selected window when the page loads, when the selection changes, and at a
+periodic interval without a full page reload. Chart requests SHALL be
+read-only.
 
 #### Scenario: Selecting a window refreshes the chart
 - **WHEN** an operator selects one of the supported chart windows
