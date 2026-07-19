@@ -5,6 +5,7 @@
 - Add a nicer theme to the dashboard via CSS
 - Increase font size and line weight on the temperature graph
 - Decrease the polling from 5s to 10s
+- Add the version number to the dashboard as a subtitle or a footer
 
 ## Functionality
 
