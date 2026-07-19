@@ -28,6 +28,9 @@ COPY src ./src
 COPY templates ./templates
 COPY static ./static
 
+ARG FERMENTER_VERSION=dev
+ENV FERMENTER_VERSION=$FERMENTER_VERSION
+
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git/db \
     --mount=type=cache,target=/app/target \

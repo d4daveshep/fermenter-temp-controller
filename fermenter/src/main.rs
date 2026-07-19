@@ -37,11 +37,19 @@ async fn main() {
         .with_env_filter(&config.rust_log)
         .init();
 
+    // Resolve application version: compile-time embed (release build with
+    // annotated Git tag), runtime env var override, or "dev" fallback.
+    let version = option_env!("FERMENTER_VERSION")
+        .map(|s| s.to_string())
+        .or_else(|| std::env::var("FERMENTER_VERSION").ok())
+        .unwrap_or_else(|| "dev".to_string());
+
     info!(
         serial_port = %config.serial_port,
         mock = config.mock_serial,
         redis_url = %config.redis_url,
         brew_id = %config.default_brew_id,
+        version = %version,
         "fermenter controller starting"
     );
 
@@ -92,11 +100,12 @@ async fn main() {
 
     let app_state = AppState {
         latest: Arc::clone(&latest_reading),
-        env: Arc::new(web::build_environment()),
+        env: Arc::new(web::build_environment(&version)),
         ingest_alive: Arc::clone(&ingest_alive),
         target_tx,
         brew_tx,
         store: Arc::clone(&store),
+        version,
     };
     let router = web::build_router(app_state);
 
