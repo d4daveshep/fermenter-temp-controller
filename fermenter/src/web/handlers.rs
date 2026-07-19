@@ -681,7 +681,7 @@ mod tests {
 
     #[test]
     fn chart_fragment_with_history_snapshot() {
-        let env = build_environment();
+        let env = build_environment("dev");
         let html = render(
             &env,
             "partials/chart.html",
@@ -695,7 +695,7 @@ mod tests {
 
     #[test]
     fn chart_fragment_without_history_snapshot() {
-        let env = build_environment();
+        let env = build_environment("dev");
         let html = render(
             &env,
             "partials/chart.html",
@@ -709,7 +709,7 @@ mod tests {
 
     #[test]
     fn status_fragment_with_reading_snapshot() {
-        let env = build_environment();
+        let env = build_environment("dev");
         let ctx = sample_context();
         let html = render(&env, "partials/status.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
@@ -717,7 +717,7 @@ mod tests {
 
     #[test]
     fn status_fragment_without_reading_snapshot() {
-        let env = build_environment();
+        let env = build_environment("dev");
         let ctx = empty_context();
         let html = render(&env, "partials/status.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
@@ -725,7 +725,7 @@ mod tests {
 
     #[test]
     fn dashboard_renders_snapshot() {
-        let env = build_environment();
+        let env = build_environment("dev");
         let ctx = sample_context();
         let html = render(&env, "dashboard.html", ctx).unwrap();
         insta::assert_snapshot!(html.0);
@@ -733,7 +733,7 @@ mod tests {
 
     #[test]
     fn status_fragment_includes_reason_code() {
-        let env = build_environment();
+        let env = build_environment("dev");
         let ctx = sample_context();
         let html = render(&env, "partials/status.html", ctx).unwrap();
         assert!(html.0.contains("<dt>Reason</dt>"));
@@ -746,7 +746,7 @@ mod tests {
 
     #[test]
     fn status_fragment_omits_reason_text_for_unmapped_codes() {
-        let env = build_environment();
+        let env = build_environment("dev");
 
         for reason_code in ["RC_FOO", "", "RC_ERR"] {
             let mut ctx = sample_context();
@@ -765,7 +765,7 @@ mod tests {
 
     #[test]
     fn target_form_with_current_target_snapshot() {
-        let env = build_environment();
+        let env = build_environment("dev");
         let ctx = TargetFormContext {
             target: 19.5,
             error: None,
@@ -776,7 +776,7 @@ mod tests {
 
     #[test]
     fn target_form_with_error_snapshot() {
-        let env = build_environment();
+        let env = build_environment("dev");
         let ctx = TargetFormContext {
             target: 19.5,
             error: Some("'abc' is not a valid number".to_string()),
@@ -787,7 +787,7 @@ mod tests {
 
     #[test]
     fn brew_form_with_current_brew_snapshot() {
-        let env = build_environment();
+        let env = build_environment("dev");
         let ctx = BrewFormContext {
             brew_id: "00-TEST-v00".to_string(),
             error: None,
@@ -798,7 +798,7 @@ mod tests {
 
     #[test]
     fn dashboard_uses_buttons_not_links_for_navigation() {
-        let env = build_environment();
+        let env = build_environment("dev");
         let ctx = sample_context();
         let html = render(&env, "dashboard.html", ctx).unwrap();
         assert!(html.0.contains("<button"), "dashboard must use buttons");
@@ -817,7 +817,7 @@ mod tests {
 
     #[test]
     fn form_templates_do_not_contain_back_link_or_confirmed_block() {
-        let env = build_environment();
+        let env = build_environment("dev");
         let html = render(
             &env,
             "target_form.html",
@@ -856,7 +856,7 @@ mod tests {
 
     #[test]
     fn brew_form_with_error_snapshot() {
-        let env = build_environment();
+        let env = build_environment("dev");
         let ctx = BrewFormContext {
             brew_id: "00-TEST-v00".to_string(),
             error: Some("brew identifier must not be empty".to_string()),

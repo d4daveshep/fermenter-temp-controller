@@ -81,6 +81,7 @@ docker buildx build \
   --builder "$BUILDER_NAME" \
   --platform "$PLATFORM" \
   --tag "$IMAGE_REF" \
+  --build-arg "FERMENTER_VERSION=$IMAGE_TAG" \
   --load \
   "$REPO_ROOT/fermenter"
 

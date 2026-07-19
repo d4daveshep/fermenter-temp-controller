@@ -16,24 +16,25 @@ The dashboard is rendered via MiniJinja templates (`fermenter/templates/base.htm
 - Version API endpoint (not needed — version is static UI chrome).
 - Displaying commit SHA, build date, or Rust version (out of scope).
 - Changing the Arduino firmware or serial protocol.
-- Modifying the deploy script — it already has the tag.
+- Adding a version API endpoint (not needed — version is static UI chrome).
 
 ## Decisions
 
-### 1. Version Injection: Build Script + Env Var
+### 1. Version Injection: Docker Build Arg + Build Script Fallback
 
-**Decision:** Use `build.rs` to run `git describe --tags --exact-match` when the `embed` feature is enabled (release build). Emit the result as `cargo:rustc-env=FERMENTER_VERSION=<tag>`. For dev builds (no `embed`), fall back to reading `FERMENTER_VERSION` from the environment at runtime, defaulting to `dev`.
+**Decision:** The primary mechanism is a Docker build arg (`--build-arg FERMENTER_VERSION=<tag>`), passed by `compose.yaml` and `scripts/build_and_ship_image.sh`. Inside the Dockerfile it becomes an `ENV` visible to `build.rs`, which emits `cargo:rustc-env=FERMENTER_VERSION=<tag>` to bake the value into the binary at compile time. `build.rs` also falls back to `git describe --tags --exact-match` for native `cargo build --features embed` outside Docker. For dev builds (no `embed`), the binary reads `FERMENTER_VERSION` from the runtime environment, defaulting to `dev`.
 
 **Rationale:**
-- Matches the existing pattern: `build.rs` already runs only for `embed` feature and embeds templates via `minijinja_embed::embed_templates!`.
-- `cargo:rustc-env` makes the value available at compile time as `env!("FERMENTER_VERSION")` — zero runtime cost.
+- The Docker build context (`fermenter/`) does not contain `.git/`, so `git describe` inside `build.rs` cannot discover the tag during `docker build`. A build arg is the idiomatic Docker way to inject host-side metadata.
+- `cargo:rustc-env` still makes the value available at compile time as `option_env!("FERMENTER_VERSION")` — zero runtime cost.
 - Dev fallback via `std::env::var` keeps local `cargo run` working without Git tags.
-- The deploy script already computes the tag; `compose.yaml` passes it as `FERMENTER_IMAGE_TAG` which we can map to `FERMENTER_VERSION`.
+- The deploy script already computes the tag and passes it as `--build-arg`.
+- `compose.yaml` passes `FERMENTER_VERSION=dev` as the default build arg (no tag for local builds), matching the existing `dev` fallback.
 
 **Alternatives considered:**
 - **Runtime `git describe` in container:** Rejected — no Git in the minimal runtime image (debian:bookworm-slim), adds attack surface.
 - **`vergen` crate:** Rejected — adds a build dependency for a one-liner; `build.rs` is already present and simple.
-- **Pass via Docker `--build-arg`:** Rejected — would require changing Dockerfile and deploy script; build script approach is self-contained.
+- **`build.rs` `git describe` only (no build arg):** Rejected — Docker build context lacks `.git/`, so this silently fails in all container builds.
 
 ### 2. Version Propagation: `AppState` → Template Context
 
@@ -61,7 +62,7 @@ The dashboard is rendered via MiniJinja templates (`fermenter/templates/base.htm
 
 | Risk | Mitigation |
 |------|------------|
-| `git describe` fails in CI/release if tag not checked out | Build script only runs with `embed` feature (release). Deploy script guarantees tag exists at HEAD. Dev builds use env fallback. |
+| `git describe` fails in Docker build (no `.git/` in context) | Build arg is primary; `git describe` is only a fallback for native builds outside Docker. |
 | Version stale if container restarted without rebuild | Version is baked at compile time — always matches the binary. Correct behavior. |
 | Dev build shows `dev` instead of meaningful version | Acceptable — local dev doesn't need precise version. Can set `FERMENTER_VERSION=local` in `.env` if desired. |
 | `minijinja-embed` captures templates *before* build script runs | `build.rs` runs before codegen; `minijinja_embed::embed_templates!` runs at codegen time. Env var is set before template compilation. Order is correct. |

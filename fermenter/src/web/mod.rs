@@ -37,6 +37,10 @@ pub struct AppState {
     /// change (temperature-control / brew-session: "Persist and restore ...
     /// across restarts").
     pub store: Arc<dyn TimeStore>,
+    /// Application version, embedded at compile time from the annotated Git
+    /// tag (release) or read from the `FERMENTER_VERSION` env var (dev),
+    /// falling back to "dev". Displayed as a subtitle on the dashboard.
+    pub version: String,
 }
 
 /// Build the Axum router for the dashboard, status fragment, target-setpoint
@@ -70,8 +74,9 @@ pub fn build_router(state: AppState) -> Router {
 /// baked into the binary at compile time by `build.rs`
 /// (`minijinja_embed::embed_templates!`), so no `templates/` directory needs
 /// to exist at runtime.
-pub fn build_environment() -> Environment<'static> {
+pub fn build_environment(version: &str) -> Environment<'static> {
     let mut env = Environment::new();
+    env.add_global("version", version);
     #[cfg(feature = "embed")]
     {
         minijinja_embed::load_templates!(env);
@@ -127,11 +132,12 @@ mod tests {
         let (brew_tx, _brew_rx) = watch::channel(brew_id.to_string());
         AppState {
             latest: Arc::new(Mutex::new(reading)),
-            env: Arc::new(build_environment()),
+            env: Arc::new(build_environment("dev")),
             ingest_alive: Arc::new(AtomicBool::new(true)),
             target_tx,
             brew_tx,
             store,
+            version: "dev".to_string(),
         }
     }
 

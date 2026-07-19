@@ -29,7 +29,11 @@ services:
     image: fermenter:${FERMENTER_IMAGE_TAG:-arm64}
     build:
       context: fermenter
+      args:
+        FERMENTER_VERSION: ${FERMENTER_VERSION:-dev}
     env_file: fermenter/.env
+    environment:
+      - FERMENTER_VERSION=${FERMENTER_IMAGE_TAG:-dev}
     devices:
       - "${SERIAL_PORT:-/dev/ttyACM0}:${SERIAL_PORT:-/dev/ttyACM0}"
     depends_on:
