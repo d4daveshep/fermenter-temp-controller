@@ -1,4 +1,4 @@
-# web-dashboard
+# web-dashboard (MODIFIED by change show-git-tag-on-dashboard)
 
 ## Purpose
 
@@ -103,8 +103,8 @@ fragment every 10 seconds.
 - **WHEN** a browser requests the status fragment after a new reading has
   been observed since the previous request
 - **THEN** the fragment reflects the newly observed reading, including its
-reason code and, when the code has a known mapping entry, the
-human-readable description rendered in the same form as the dashboard page
+  reason code and, when the code has a known mapping entry, the
+  human-readable description rendered in the same form as the dashboard page
 
 #### Scenario: Fragment shows the raw code alone when no description is available
 
@@ -332,4 +332,3 @@ the browser back to the dashboard page.
   whitespace-only) through the form
 - **THEN** the response redisplays the form with an error message and the
   current brew identifier is left unchanged
-</content>
