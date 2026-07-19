@@ -84,7 +84,8 @@ immediately after the action value, together with its human-readable
 description derived from the same static code-to-text mapping used by the
 dashboard page, formatted `<code> — <description>`. The description SHALL
 be omitted (leaving only the raw code) when the code is unrecognized, empty,
-or an error sentinel such as `RC_ERR`.
+or an error sentinel such as `RC_ERR`. The dashboard page SHALL poll this
+fragment every 10 seconds.
 
 #### Scenario: Fragment reflects the latest state on each poll
 
@@ -110,11 +111,11 @@ human-readable description rendered in the same form as the dashboard page
   excluding the server-local-time field whose value is by design render-time
   and therefore differs between the two responses
 
-#### Scenario: Dashboard page polls the fragment automatically
+#### Scenario: Dashboard page polls the fragment every 10 seconds
 
 - **WHEN** the dashboard page is loaded in a browser
 - **THEN** the page is configured to automatically re-request the status
-  fragment on an interval, without requiring a manual refresh
+  fragment every 10 seconds, without requiring a manual refresh
 
 #### Scenario: Fragment includes a server-time timestamp that refreshes on each poll
 
@@ -146,6 +147,9 @@ The chart SHALL render major X- and Y-axis gridlines and position samples on
 the X axis relative to the full selected window. The legend SHALL render below
 the X axis, outside the plotting area and aligned to the right. Time-axis ticks
 SHALL use calendar-aligned, round intervals appropriate to the selected window.
+Axis tick labels SHALL be rendered in sans-serif at 14px. Each plotted
+temperature series SHALL be drawn with a 2px stroke width. Legend swatch
+lines SHALL match the plotted series stroke width of 2px.
 
 #### Scenario: Chart displays all three temperature series
 
@@ -191,14 +195,25 @@ SHALL use calendar-aligned, round intervals appropriate to the selected window.
 - **THEN** the chart area displays an explicit no-history indication without
   error
 
+#### Scenario: Axis tick labels render at 14px
+
+- **WHEN** the active brew has temperature history in the selected window
+- **THEN** the chart's X- and Y-axis tick-value labels are rendered in a
+  sans-serif font at 14px
+
+#### Scenario: Series and legend lines render at 2px stroke width
+
+- **WHEN** the active brew has temperature history in the selected window
+- **THEN** each plotted temperature-series line is drawn with a 2px stroke
+  width, and every legend swatch line matches that 2px stroke width
+
 ### Requirement: Select and refresh fixed chart windows
 
 The dashboard SHALL offer exactly these selectable chart windows: last 5
 minutes, 15 minutes, 1 hour, 3 hours, 6 hours, 12 hours, 24 hours, 3 days, 7
 days, and 14 days. The dashboard SHALL request a server-rendered chart for the
-selected window when the page loads, when the selection changes, and at a
-periodic interval without a full page reload. Chart requests SHALL be
-read-only.
+selected window when the page loads, when the selection changes, and every 10
+seconds without a full page reload. Chart requests SHALL be read-only.
 
 #### Scenario: Selecting a window refreshes the chart
 

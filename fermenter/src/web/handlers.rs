@@ -255,42 +255,44 @@ impl<'a> TemperatureChart<'a> {
                         .to_string()
                 })
                 .y_label_formatter(&|temperature| format!("{temperature:.1}"))
+                .x_label_style(("sans-serif", 14))
+                .y_label_style(("sans-serif", 14))
                 .light_line_style(RGBColor(220, 224, 230))
                 .axis_style(BLACK.mix(0.7))
                 .draw()
                 .map_err(Self::render_error)?;
 
-            let fermenter = RGBColor(0, 114, 178);
+            let fermenter = ShapeStyle::from(RGBColor(0, 114, 178)).stroke_width(2);
             chart
                 .draw_series(LineSeries::new(
                     self.samples
                         .iter()
                         .map(|sample| (sample.timestamp, sample.fermenter)),
-                    &fermenter,
+                    fermenter,
                 ))
                 .map_err(Self::render_error)?
                 .label("Average fermenter")
                 .legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], fermenter));
 
-            let ambient = RGBColor(213, 94, 0);
+            let ambient = ShapeStyle::from(RGBColor(213, 94, 0)).stroke_width(2);
             chart
                 .draw_series(LineSeries::new(
                     self.samples
                         .iter()
                         .map(|sample| (sample.timestamp, sample.ambient)),
-                    &ambient,
+                    ambient,
                 ))
                 .map_err(Self::render_error)?
                 .label("Ambient")
                 .legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], ambient));
 
-            let target = RGBColor(0, 158, 115);
+            let target = ShapeStyle::from(RGBColor(0, 158, 115)).stroke_width(2);
             chart
                 .draw_series(LineSeries::new(
                     self.samples
                         .iter()
                         .map(|sample| (sample.timestamp, sample.target)),
-                    &target,
+                    target,
                 ))
                 .map_err(Self::render_error)?
                 .label("Target")
@@ -801,7 +803,7 @@ mod tests {
         let html = render(&env, "dashboard.html", ctx).unwrap();
         assert!(html.0.contains("<button"), "dashboard must use buttons");
         assert!(html.0.contains(r#"hx-get="/chart""#));
-        assert!(html.0.contains(r#"hx-trigger="load, every 5s""#));
+        assert!(html.0.contains(r#"hx-trigger="load, every 10s""#));
         assert!(html.0.contains(r##"hx-include="#chart-window""##));
         assert!(
             !html.0.contains("<a href=\"/target\">"),

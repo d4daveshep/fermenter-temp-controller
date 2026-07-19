@@ -17,7 +17,7 @@ expression: html.0
     </header>
     <main>
         
-<div hx-get="/status" hx-trigger="every 5s" hx-swap="innerHTML">
+<div hx-get="/status" hx-trigger="every 10s" hx-swap="innerHTML">
     <div id="status" class="status">
     <p class="brew-id">Brew: <strong>00-TEST-v00</strong></p>
     <p class="server-time">Server time: 14-Jul-2026 14:30:45</p>
@@ -59,7 +59,7 @@ expression: html.0
         <option value="14d">Last 14 days</option>
 
     </select>
-    <div id="chart" hx-get="/chart" hx-trigger="load, every 5s" hx-include="#chart-window" hx-swap="innerHTML"></div>
+    <div id="chart" hx-get="/chart" hx-trigger="load, every 10s" hx-include="#chart-window" hx-swap="innerHTML"></div>
 </section>
 <form method="get" action="/target"><button type="submit">Set target temperature</button></form>
 <form method="get" action="/brew"><button type="submit">Change brew identifier</button></form>
