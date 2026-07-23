@@ -8,11 +8,15 @@ back. The host's `SerialSource` trait and all dependent code remain unchanged
 by this rewrite — only the concrete device on the other end of the cable
 changes.
 
-The replacement board is an **Espressif ESP32-C3 Mini DevKit** with native
-USB-Serial-JTAG (GPIO18/19 wired directly to the USB connector — no CH340 bridge
-chip). Target Rust toolchain: `riscv32imc-unknown-none-elf` via `espup`, flashed
-with `espflash`. The board runs Embassy's cooperative async executor, which is
-the established pattern for Rust on embedded systems where `tokio` is unavailable.
+The replacement board is an **Espressif ESP32-C3 SuperMini Dev Board** with native
+USB-Serial-JTAG. The ESP32-C3's USB-Serial-JTAG peripheral connects directly to
+the USB-C connector through the chip's internal USB PHY — it uses no external
+CH340/CP2102 bridge and occupies no numbered GPIO pins. The physical header pins
+GPIO20 (RX) and GPIO21 (TX) are the separate UART0 port, available for other use
+if needed. Target Rust toolchain: `riscv32imc-unknown-none-elf` via `espup`,
+flashed with `espflash`. The board runs Embassy's cooperative async executor,
+which is the established pattern for Rust on embedded systems where `tokio` is
+unavailable.
 
 The hardware scope is narrower than the original: the LCD and its 6 GPIO pins
 are gone. Three signals remain — OneWire data bus (one shared data line for both
@@ -21,6 +25,7 @@ DS18B20 sensors), and two relay control outputs (heat, cool).
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Port all controller logic (RC1–RC10 decision rules, EMA, relay model) to Rust,
   fully unit-testable on the host without embedded toolchain or hardware.
 - Implement the identical serial protocol (`fermenter/` requires zero code changes).
@@ -31,6 +36,7 @@ DS18B20 sensors), and two relay control outputs (heat, cool).
   any hardware is needed.
 
 **Non-Goals:**
+
 - WiFi/network telemetry transport (deferred; a future change will add this when needed).
 - Multi-task Embassy split (deferred; documented as a future refactor below).
 - LCD support (removed from hardware build).
@@ -44,6 +50,7 @@ DS18B20 sensors), and two relay control outputs (heat, cool).
 `firmware/logic/` (pure library) and `firmware/esp32c3/` (no_std binary).
 
 **Rationale:** Keeping logic separate from the hardware crate means:
+
 - `logic/` compiles and tests under standard `cargo test` on any host, with no
   embedded toolchain, no `probe-rs`, no hardware. The Arduino C++ test suite
   (AUnit, ~40 cases across `Test_ControllerActionRules.cpp`,
@@ -73,6 +80,7 @@ board. Embassy's cooperative executor gives deterministic task scheduling withou
 the complexity of cross-task `Signal`/`Mutex` for a first version.
 
 **Future refactor (documented, not built):** Split into:
+
 - `sensor_task` — owns the OneWire bus, pushes readings via `Signal`
 - `serial_rx_task` — owns USB serial RX, parses `<target>` frames, sends via
   `Signal`
@@ -122,9 +130,19 @@ formatted output.
 established no_std alternative and matches the project's existing `serde` usage.
 
 **Fields emitted** (minimal set that satisfies `fermenter/src/model.rs`):
+
 ```json
-{"target":19.5,"average":18.2,"min":18.0,"max":18.4,"ambient":20.1,"action":"Rest","reason-code":"RC3.1"}
+{
+  "target": 19.5,
+  "average": 18.2,
+  "min": 18.0,
+  "max": 18.4,
+  "ambient": 20.1,
+  "action": "Rest",
+  "reason-code": "RC3.1"
+}
 ```
+
 Fields dropped vs. the Arduino: `instant`, `json-size`, and the
 `rest`/`heat`/`cool` boolean flags — none are consumed by the host. `action` and
 `reason-code` must match exactly (the host's `reason_code.rs` pattern-matches
@@ -132,15 +150,20 @@ on them).
 
 ### Decision 6 — Native USB-Serial-JTAG
 
-**Choice:** Use the ESP32-C3's native USB-Serial-JTAG peripheral (GPIO18/19)
-as the serial transport. No CH340/CP2102 bridge chip.
+**Choice:** Use the ESP32-C3's native USB-Serial-JTAG peripheral as the serial
+transport to the Pi host. No CH340/CP2102 bridge chip.
 
-**Rationale:** This board has native USB-Serial-JTAG; it enumerates as a CDC-ACM
-device (`/dev/ttyACM0` on Linux), indistinguishable to the host from the
-Arduino Uno's FTDI bridge. On reset, the peripheral re-enumerates (no DTR reset
-pulse on the GPIO pins themselves), so the host reconnects cleanly — matching
-the behaviour `fermenter/src/serial/arduino.rs` already handles via its
-EOF-only reconnect strategy.
+**Rationale:** The ESP32-C3 SuperMini's USB-Serial-JTAG peripheral is connected
+to the USB-C port via the chip's internal USB PHY — it has no associated GPIO
+pin number (it is entirely internal to the SoC). It enumerates as a CDC-ACM
+device (`/dev/ttyACM0` on Linux), indistinguishable to the host from the Arduino
+Uno's FTDI bridge. Note: GPIO20 (RX) and GPIO21 (TX) on the header are a
+separate UART0 peripheral; they play no role in the host-facing serial link.
+
+On reset, the USB-Serial-JTAG peripheral re-enumerates cleanly — there is no
+DTR pulse on physical GPIO pins — so the host's existing EOF-only reconnect
+strategy (`fermenter/src/serial/arduino.rs`) handles reconnection without any
+code changes.
 
 ### Decision 7 — `esp-println` for diagnostic output during bring-up
 
@@ -199,9 +222,13 @@ compiles successfully (flash step is hardware-only).
 
 ## Open Questions
 
-- What GPIO pins are free on your specific "ESP32-C3 Mini DevKit" board?
-  Strapping pins GPIO2/8/9 must be avoided for relay outputs; GPIO18/19 are
-  reserved for USB-Serial-JTAG. The relay and OneWire pin assignments will be
-  finalized as compile-time constants during the `firmware-device` spec and must
-  be confirmed against the board's silkscreen/schematic before first flash.
-  *(To be resolved in task 3.1 of tasks.md — sensor discovery and pin assignment.)*
+- Which GPIO pins should be used for the relay outputs and OneWire data line?
+  The board exposes GPIO0–10, GPIO20, and GPIO21 on its headers (13 pins total).
+  Strapping pins GPIO2, GPIO8, and GPIO9 must be avoided for relay and sensor
+  outputs. USB-Serial-JTAG uses no GPIO numbers (internal USB PHY). GPIO20/21
+  (UART0) are available for general use but should be reserved in case UART0 is
+  needed later. That leaves GPIO0, GPIO1, GPIO3, GPIO4–7, and GPIO10 as the
+  candidates — the safest first picks with no system duties are GPIO0, GPIO1,
+  GPIO3, and GPIO10. The exact assignments will be finalized as named compile-time
+  constants before first flash.
+  _(To be resolved in task 12.1 of tasks.md — GPIO pin assignment and relay control.)_
