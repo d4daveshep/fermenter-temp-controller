@@ -51,7 +51,7 @@ for the cooling relay — according to the active `Action`, with mutual exclusio
 #### Scenario: Cool action enables cool relay only
 
 - **WHEN** the active action is `Cool`
-- **THEN** the cool relay pin is driven LOW and the cool relay pin is driven HIGH
+- **THEN** the heat relay pin is driven LOW and the cool relay pin is driven HIGH
 
 #### Scenario: Error action disables both relays (fail-safe)
 

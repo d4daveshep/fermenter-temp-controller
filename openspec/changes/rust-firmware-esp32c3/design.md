@@ -143,27 +143,70 @@ established no_std alternative and matches the project's existing `serde` usage.
 }
 ```
 
-Fields dropped vs. the Arduino: `instant`, `json-size`, and the
-`rest`/`heat`/`cool` boolean flags — none are consumed by the host. `action` and
-`reason-code` must match exactly (the host's `reason_code.rs` pattern-matches
-on them).
+**Fields deliberately omitted vs. the original Arduino firmware:**
+- `instant` — the Arduino emitted a `instant` field containing the raw
+  (non-averaged) current temperature reading. The host's `fermenter/src/model.rs`
+  `Reading` struct has no `instant` field and never reads it; it was a firmware
+  debug convenience. Omitting it keeps the telemetry payload smaller and removes
+  dead data. A developer porting the Arduino code should not add it back.
+- `json-size` — a self-diagnostic field the Arduino used to verify JSON buffer
+  sizing; accepted but ignored by the host (`#[serde(default)]`). Irrelevant
+  in the Rust firmware where buffer sizing is compile-time checked.
+- `rest`/`heat`/`cool` boolean flags — redundant with the `action` string field;
+  not used by any host code or template.
 
-### Decision 6 — Native USB-Serial-JTAG
+`action` and `reason-code` must match exactly (the host's `reason_code.rs`
+pattern-matches on the RC codes; the dashboard template renders `action`
+directly).
+
+### Decision 6 — Serial transport: USB-Serial-JTAG via `esp-hal unstable` feature
 
 **Choice:** Use the ESP32-C3's native USB-Serial-JTAG peripheral as the serial
-transport to the Pi host. No CH340/CP2102 bridge chip.
+transport to the Pi host, accessed via `esp-hal`'s `usb_serial_jtag` module.
+This requires enabling the `unstable` *cargo feature* of `esp-hal`.
 
-**Rationale:** The ESP32-C3 SuperMini's USB-Serial-JTAG peripheral is connected
-to the USB-C port via the chip's internal USB PHY — it has no associated GPIO
-pin number (it is entirely internal to the SoC). It enumerates as a CDC-ACM
-device (`/dev/ttyACM0` on Linux), indistinguishable to the host from the Arduino
-Uno's FTDI bridge. Note: GPIO20 (RX) and GPIO21 (TX) on the header are a
-separate UART0 peripheral; they play no role in the host-facing serial link.
+**Important distinction — stable Rust compiler vs. `unstable` cargo feature:**
+These are two entirely separate things and must not be confused:
 
-On reset, the USB-Serial-JTAG peripheral re-enumerates cleanly — there is no
-DTR pulse on physical GPIO pins — so the host's existing EOF-only reconnect
-strategy (`fermenter/src/serial/arduino.rs`) handles reconnection without any
-code changes.
+- **Rust compiler channel**: `esp-hal` v1.x fully supports RISC-V targets
+  (including ESP32-C3) on **stable Rust**. No nightly compiler is needed.
+  Espressif's own CI uses `toolchain: stable` for RISC-V builds.
+- **`esp-hal`'s `unstable` cargo feature**: This is Espressif's internal API
+  stability designation — a cargo feature flag that gates modules whose *API
+  surface* the `esp-hal` team has not yet committed to stabilize across semver
+  versions. It has nothing to do with the Rust compiler channel.
+
+`usb_serial_jtag` is gated behind `esp-hal`'s `unstable` feature in v1.0 and
+v1.1. This means the API may change in a future `esp-hal` minor release (though
+not in a patch release). Given we will pin the `esp-hal` version in `Cargo.toml`
+and update deliberately, this is an acceptable tradeoff.
+
+**Alternative considered — UART0 on GPIO20/21 with an external adapter:**
+The `uart` driver in `esp-hal` is stable (not gated by the `unstable` feature).
+Using UART0 on header pins GPIO20 (RX) and GPIO21 (TX) would avoid the
+`unstable` feature entirely, but requires an external USB-UART adapter (e.g.
+CP2102 dongle) connected to those pins and plugged into the Pi — the USB-C port
+would be used only for flashing, not for runtime telemetry. This is a meaningful
+hardware cost and complicates the physical setup for no functional gain.
+
+**Rationale for choosing USB-Serial-JTAG:**
+- Single cable for both flashing and runtime telemetry (USB-C to Pi); cleaner
+  physical setup.
+- Enumerates as CDC-ACM (`/dev/ttyACM0` on Linux), indistinguishable to the
+  host from the Arduino Uno's connection; no host-side changes needed.
+- The USB-Serial-JTAG peripheral is connected to the USB-C port via the chip's
+  internal USB PHY (no associated GPIO pin number). GPIO20/21 (UART0) remain
+  available for other purposes.
+- On reset, the peripheral re-enumerates cleanly (no DTR pulse on GPIO pins),
+  matching the EOF-only reconnect strategy already in
+  `fermenter/src/serial/arduino.rs`.
+- Pinning `esp-hal = "~1.1"` in `Cargo.toml` bounds any `unstable` API churn
+  to minor releases, which are deliberate upgrade decisions.
+
+**Rollback path:** If the `usb_serial_jtag` API changes disruptively in a future
+`esp-hal` release, switching to UART0 + external adapter is a straightforward
+migration: change one peripheral in `main.rs`, update the Pi's `.env`
+`SERIAL_PORT`, and add a CP2102 dongle to the hardware.
 
 ### Decision 7 — `esp-println` for diagnostic output during bring-up
 
