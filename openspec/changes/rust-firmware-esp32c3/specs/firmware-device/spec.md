@@ -59,6 +59,27 @@ for the cooling relay — according to the active `Action`, with mutual exclusio
 - **THEN** both relay pins are driven LOW (safe default — no uncontrolled
   heating or cooling)
 
+### Requirement: Sensor read failure triggers fail-safe Error action
+
+The system SHALL treat a failed or disconnected DS18B20 read as an explicit
+error condition, not a bogus temperature value: on read failure, the system
+SHALL skip the temperature decision for that tick and immediately command
+`Action::Error`, driving both relay pins LOW.
+
+#### Scenario: Sensor read failure forces both relays off
+
+- **WHEN** reading either the fermenter or ambient sensor over the OneWire bus
+  fails (disconnected, CRC mismatch, or timeout)
+- **THEN** `make_action_decision` is not called for that tick, `Action::Error`
+  is applied directly, and both the heat relay pin and the cool relay pin are
+  driven LOW
+
+#### Scenario: Sensor recovery resumes normal decisions
+
+- **WHEN** a subsequent tick's sensor read succeeds after a prior failure
+- **THEN** the control loop resumes calling `make_action_decision` normally
+  using the newly read temperatures
+
 ### Requirement: Main control loop cadence
 
 The system SHALL execute the control loop on a 1-second tick: poll for an
@@ -112,6 +133,15 @@ SHALL be a valid target temperature.
   `<abc>`, `<19.5` without closing `>`)
 - **THEN** the parser returns `None` and no target update occurs
 
+#### Scenario: A frame split across a tick boundary is not lost
+
+- **WHEN** a `<target>` frame's bytes arrive split across two consecutive
+  1-second ticks (e.g. `<19.` received on one tick, `5>` on the next)
+- **THEN** the unconsumed bytes from the first tick are retained and combined
+  with the bytes from the next tick, and the frame is still parsed to
+  `Some(19.5)` — no frame is silently dropped merely because it did not
+  complete within a single tick
+
 ### Requirement: JSON telemetry output format
 
 The system SHALL emit telemetry as a single newline-terminated JSON object
@@ -142,6 +172,21 @@ containing the fields required by the host's `Reading` struct: `target`,
 - **WHEN** a telemetry line is emitted
 - **THEN** it is sent over the native USB-Serial-JTAG peripheral at 115200 baud,
   matching the fixed serial contract the host expects
+
+### Requirement: Diagnostic output does not corrupt the telemetry stream
+
+The system SHALL NOT emit diagnostic or debug output on the same
+USB-Serial-JTAG stream used for JSON telemetry and `<target>` frames in a
+production (default-feature) build, since the host's line-based `Reading`
+parser has no way to distinguish a diagnostic line from a telemetry line.
+
+#### Scenario: Default build emits no diagnostic output
+
+- **WHEN** `firmware/esp32c3` is built without the `debug-log` feature enabled
+  (the default)
+- **THEN** no `println!`/diagnostic call site produces output on the
+  USB-Serial-JTAG stream, so every line the host receives is either a valid
+  JSON telemetry line or absent
 
 ### Requirement: Startup initialisation
 

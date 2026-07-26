@@ -4,9 +4,9 @@
 
 - [ ] 1.1 Create `firmware/` directory with a Cargo workspace `Cargo.toml` declaring members `["logic", "esp32c3"]`
 - [ ] 1.2 Create `firmware/logic/Cargo.toml` as a `no_std`-compatible library crate; add `rstest` as a dev-dependency
-- [ ] 1.3 Create `firmware/esp32c3/Cargo.toml` targeting `riscv32imc-unknown-none-elf`; declare `logic` as a path dependency; add `esp-hal`, `embassy-executor`, `embassy-time`, `embedded-hal`, `one-wire-bus`, `ds18b20`, `serde-json-core`, `heapless`, `esp-println`
-- [ ] 1.4 Create `firmware/esp32c3/.cargo/config.toml` with target triple, linker, and `espflash` as the runner
-- [ ] 1.5 Create `firmware/README.md` documenting toolchain setup (`espup`, `espflash`), how to run `cargo test` for the logic crate, and the sensor ROM address discovery procedure
+- [ ] 1.3 Create `firmware/esp32c3/Cargo.toml` targeting `riscv32imc-unknown-none-elf`; declare `logic` as a path dependency; add `esp-hal`, `esp-rtos` (with the `embassy` feature enabled), `embassy-executor`, `embassy-time`, `embedded-hal`, `one-wire-bus`, `ds18b20`, `serde-json-core`, `heapless`, `esp-backtrace` (panic handler), `esp-bootloader-esp-idf` (app descriptor); add `esp-println` as an optional dependency enabled only by a `debug-log` feature (off by default — see design.md Decision 7)
+- [ ] 1.4 Create `firmware/esp32c3/.cargo/config.toml` with target triple, linker, `espflash` as the runner, and `-C force-frame-pointers` in `rustflags` (needed for usable `esp-backtrace` panic output on RISC-V)
+- [ ] 1.5 Create `firmware/README.md` documenting toolchain setup (`espup`, `espflash`), how to run `cargo test` for the logic crate, the sensor ROM address discovery procedure, and the `debug-log` feature (what it does, and that it must stay off when connected to a live `fermenter/` host — see design.md Decision 7)
 
 ## 2. `firmware-logic`: Action and Decision types (TDD)
 
@@ -21,7 +21,7 @@
 ## 4. `firmware-logic`: Failsafe boundary enforcement (TDD)
 
 - [ ] 4.1 Write failing tests for failsafe: all 6 combinations of `(REST|HEAT|COOL) × (ambientLow|ambientHigh)` when temp is below failsafe → `Heat`/`"RC1"`; same matrix when temp is above failsafe → `Cool`/`"RC5"` (porting the assertions from `Test_ControllerActionRules.cpp` tests 1, 5, 6, 10)
-- [ ] 4.2 Implement `check_failsafe_min` and `check_failsafe_max` in `ControllerActionRules` to make the tests pass
+- [ ] 4.2 Implement `check_failsafe_min` and `check_failsafe_max` in `ControllerActionRules` to make the tests pass, using `TARGET_RANGE = 0.3` (failsafe is `target ± 2 × TARGET_RANGE`, i.e. `± 0.6`) per design.md Decision 9
 
 ## 5. `firmware-logic`: Cooling overrun adjustment (TDD)
 
@@ -40,7 +40,7 @@
 ## 7. `firmware-logic`: Target temperature mutability (TDD)
 
 - [ ] 7.1 Write failing test: `set_target_temp` persists and is returned by `get_target_temp`; subsequent `make_action_decision` uses the new value (porting `UpdatedTargetTempIsSaved`)
-- [ ] 7.2 Implement `set_target_temp` / `get_target_temp` and wire the top-level `make_action_decision` method that orchestrates all the sub-checks, to make the tests pass
+- [ ] 7.2 Implement `set_target_temp` / `get_target_temp` and wire the top-level `make_action_decision` method that orchestrates all the sub-checks, to make the tests pass; construct `ControllerActionRules` with `DEFAULT_TARGET_TEMP = 20.0` and `TARGET_RANGE = 0.3` per design.md Decision 9 / `HARDWARE.md`
 
 ## 8. `firmware-logic`: Exponential moving average (TDD)
 
@@ -55,7 +55,7 @@
 
 ## 10. `firmware-device`: Hardware bring-up — serial echo
 
-- [ ] 10.1 Create `firmware/esp32c3/src/main.rs` with minimal Embassy executor setup; add a USB-Serial-JTAG echo task using `esp-hal`'s `UsbSerialJtag` peripheral
+- [ ] 10.1 Create `firmware/esp32c3/src/main.rs` with a `#[esp_rtos::main]` async entry point; call `esp_rtos::start(timg0.timer0, sw_int.software_interrupt0)` before spawning any task (see design.md Decision 2); add a USB-Serial-JTAG echo task using `esp-hal`'s `UsbSerialJtag` peripheral
 - [ ] 10.2 Flash to the test board with `cargo run` (espflash runner) and verify the echo works over `/dev/ttyACM0` — confirms toolchain, flash, and USB-Serial-JTAG are all functional
 
 ## 11. `firmware-device`: Sensor ROM address discovery
@@ -72,14 +72,14 @@
 
 ## 13. `firmware-device`: DS18B20 temperature sensor reads
 
-- [ ] 13.1 Implement `SensorReader` in `firmware/esp32c3/src/sensors.rs`: initialises the OneWire bus, locates each sensor by its ROM address, triggers conversion, and reads back both temperatures as `(f64, f64)` (fermenter, ambient)
+- [ ] 13.1 Implement `SensorReader` in `firmware/esp32c3/src/sensors.rs`: initialises the OneWire bus, locates each sensor by its ROM address, triggers conversion, and reads back both temperatures as `Result<(f64, f64), SensorError>` (fermenter, ambient) — do not silently coerce a failed read into a bogus float; see design.md Decision 10
 - [ ] 13.2 Flash a sensor-read loop to the test board; verify both temperatures are printed over USB-Serial-JTAG — confirms OneWire timing, pull-up resistor, and ROM address constants are correct
 
 ## 14. `firmware-device`: Target frame parser (TDD in `logic`, integration test on device)
 
 - [ ] 14.1 Write failing tests in `firmware/logic/src/protocol.rs` (or a host-side test module): `valid_frame_returns_some_value`, `zero_frame_returns_some_zero` (not None), `no_frame_returns_none`, `partial_frame_returns_none`, `malformed_frame_returns_none`
 - [ ] 14.2 Implement `parse_target_frame(buf: &[u8]) -> Option<f64>` in `firmware/logic/src/protocol.rs` to make the tests pass
-- [ ] 14.3 Wire `parse_target_frame` into the USB-Serial-JTAG RX path in `esp32c3/src/main.rs`; flash to the test board and send `<19.5>` from a terminal — verify the target updates in the printed log
+- [ ] 14.3 Wire `parse_target_frame` into the USB-Serial-JTAG RX path in `esp32c3/src/main.rs`, wrapped in a persistent `heapless::Vec<u8, 16>` accumulator that carries unconsumed bytes across ticks so a frame split across a tick boundary is not lost (see design.md Decision 11 — mirrors the Arduino's stateful `recvInProgress`/`ndx`); flash to the test board and send `<19.5>` from a terminal — verify the target updates in the printed log
 
 ## 15. `firmware-device`: JSON telemetry output (TDD in `logic`, integration test on device)
 
@@ -89,7 +89,7 @@
 
 ## 16. `firmware-device`: Complete main control loop
 
-- [ ] 16.1 Assemble the full Embassy task loop in `firmware/esp32c3/src/main.rs`: 1s tick → poll serial RX for `<target>` frame → read both sensors → update EMAs → `make_action_decision` → `relay_controller.set(action)` → emit JSON every 10 ticks; seed both EMAs on startup from first sensor read
+- [ ] 16.1 Assemble the full Embassy task loop in `firmware/esp32c3/src/main.rs`: 1s tick → poll serial RX for `<target>` frame → read both sensors → update EMAs → `make_action_decision` → `relay_controller.set(action)` → emit JSON every 10 ticks; seed both EMAs on startup from first sensor read; construct the fermenter `TemperatureReadings` with window `60` and the ambient one with window `10` (design.md Decision 9); if `SensorReader` returns `Err`, skip `make_action_decision` for that tick and call `relay_controller.set(Action::Error)` directly (design.md Decision 10)
 - [ ] 16.2 Flash to the test board; connect to `fermenter/` host with `MOCK_SERIAL=false`; confirm readings are ingested, dashboard updates, and `POST /target` causes the board to apply the new target within one loop cycle
 
 ## 17. End-to-end hardware validation

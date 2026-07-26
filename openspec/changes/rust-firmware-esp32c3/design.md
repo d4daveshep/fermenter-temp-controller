@@ -79,6 +79,33 @@ makes fault isolation straightforward during hardware bring-up on a brand-new
 board. Embassy's cooperative executor gives deterministic task scheduling without
 the complexity of cross-task `Signal`/`Mutex` for a first version.
 
+**Runtime crate and entry point:** The executor itself is provided by
+**`esp-rtos`** (with its `embassy` feature enabled), not by the older
+`esp-hal-embassy` crate — `esp-hal-embassy` was merged into `esp-rtos` as of
+`esp-rtos` v0.1.0 and has had no releases since 0.9.1 (2025-10-14), while
+`esp-rtos` (0.3.0 as of this writing) is the actively maintained successor and
+pairs with the `esp-hal ~1.1` pin from Decision 6. `main.rs` is written as:
+
+```rust
+#[esp_rtos::main]
+async fn main(spawner: Spawner) -> ! {
+    let peripherals = esp_hal::init(config);
+    let sw_int = SoftwareInterruptControl::new(peripherals.SW_INTERRUPT);
+    let timg0 = TimerGroup::new(peripherals.TIMG0);
+    esp_rtos::start(timg0.timer0, sw_int.software_interrupt0);
+    spawner.spawn(controller_task(...)).unwrap();
+}
+```
+
+`#[esp_rtos::main]` only wraps the function body in a thread-mode executor —
+it does **not** start the runtime for you. `esp_rtos::start(timer,
+software_interrupt)` must be called manually, first thing inside `main`,
+before spawning any task. This claims a hardware timer group (`TIMG0`) and the
+`FROM_CPU0` software interrupt as runtime resources, in addition to the GPIO
+pins discussed in Open Questions below. (`#[esp_hal::main]` is the same
+underlying macro re-exported from `esp-hal` instead of `esp-rtos`; either
+attribute path works, so long as `esp-rtos` is a real Cargo dependency.)
+
 **Future refactor (documented, not built):** Split into:
 
 - `sensor_task` — owns the OneWire bus, pushes readings via `Signal`
@@ -211,11 +238,123 @@ migration: change one peripheral in `main.rs`, update the Pi's `.env`
 ### Decision 7 — `esp-println` for diagnostic output during bring-up
 
 **Choice:** Use `esp-println` for `println!`-style diagnostic output during
-development and hardware bring-up. Switch to silent operation (or a structured
-log over USB) once stable.
+development and hardware bring-up, gated behind a `debug-log` Cargo feature
+that is **off by default** and not enabled in the release/production build
+profile.
 
 **Rationale:** Lightweight, works with USB-Serial-JTAG out of the box, no RTT
 probe required.
+
+**Important caveat — shares the wire with the telemetry protocol:**
+`esp-println`'s default output channel on the ESP32-C3 *is* the same native
+USB-Serial-JTAG CDC-ACM stream that the JSON telemetry protocol is transmitted
+over (Decision 6). Any `println!`/`esp_println::println!` call made while the
+board is connected to the live `fermenter/` host injects a non-JSON line into
+the same stream the host's line-based `Reading` parser reads, which surfaces
+as a deserialize error on the host side, not on the device. "Switch to silent
+operation once stable" is therefore not just a style preference — it must be
+enforced by construction: all diagnostic print call sites are gated behind the
+`debug-log` feature (`#[cfg(feature = "debug-log")]` or an equivalent macro
+wrapper), so a normal `cargo build --release` without that feature can never
+emit a stray line onto the protocol stream. Enable `debug-log` only for
+bring-up sessions where the board is *not* simultaneously being read by
+`fermenter/`.
+
+### Decision 8 — Required `no_std` boilerplate: panic handler and bootloader app descriptor
+
+**Choice:** Add `esp-backtrace` (with the panic-handler feature, imported as
+`use esp_backtrace as _;`) and `esp-bootloader-esp-idf` (invoking
+`esp_bootloader_esp_idf::esp_app_desc!();` once at crate root) as direct
+dependencies of `firmware/esp32c3`.
+
+**Rationale:** Both are easy to omit because neither is implied by the
+functional requirements above, and each fails differently:
+- **No panic handler** → `firmware/esp32c3` simply does not compile
+  (`#![no_std]` binaries have no default `#[panic_handler]`). This is a
+  compile-time failure, at least caught by CI (task 18.2).
+- **No app descriptor** → the crate compiles and flashes successfully, but the
+  board never boots. Since `espflash` v4, the prebuilt esp-idf bootloader
+  requires a small metadata block that `esp_app_desc!()` embeds; without it
+  the failure is silent at the CI/compile stage and only surfaces as an
+  unexplained "flashed but nothing happens" during hardware bring-up (task
+  10.2) — exactly the kind of gap a compile-only CI job cannot catch.
+
+Every current official `esp-hal` example includes both
+(`use esp_backtrace as _;` and `esp_bootloader_esp_idf::esp_app_desc!();`),
+confirming these are standard boilerplate, not project-specific choices.
+
+**Additional toolchain note:** `esp-backtrace` on RISC-V targets needs
+`-C force-frame-pointers` set in `firmware/esp32c3/.cargo/config.toml`'s
+`rustflags` to produce a walkable backtrace on panic; without it, panic output
+is present but useless for diagnosing a crash during bring-up.
+
+### Decision 9 — Ported tuning constants: target range, EMA windows, startup default
+
+**Choice:** Carry over the following constants verbatim from
+`arduino/TempController/TempController.ino` and `ControllerActionRules.cpp`,
+as named constants in `firmware/logic` (the two `ControllerActionRules`
+constructor arguments) and `firmware/esp32c3` (the two `TemperatureReadings`
+call sites):
+
+| Constant | Value | Source |
+|---|---|---|
+| `TARGET_RANGE` | `0.3` °C | `ControllerActionRules(target, 0.3)` — defines target range (`target ± 0.3`) and failsafe (`target ± 0.6`) |
+| `COOLING_OVERRUN_ADJUSTMENT` | `0.2` °C | already captured in `specs/firmware-logic/spec.md` |
+| `DEFAULT_TARGET_TEMP` | `20.0` °C | firmware's own startup default, overwritten almost immediately once the host writes its persisted/configured target |
+| `FERMENTER_EMA_WINDOW` | `60` | `TemperatureReadings fermenterTemperatureReadings(60)` |
+| `AMBIENT_EMA_WINDOW` | `10` | `TemperatureReadings ambientTemperatureReadings(10)` |
+
+**Rationale:** `TARGET_RANGE` is the single most load-bearing tuning number in
+the whole control loop — it defines both the target band and, doubled, the
+failsafe band — yet unlike `COOLING_OVERRUN_ADJUSTMENT` it was not named
+anywhere in the original artifacts. Similarly, the EMA window sizes are
+call-site values, not something the `TemperatureReadings` unit tests (task
+8.1) can catch if wrong: the tests validate the EMA *formula*, not that
+production wires up `60` for the fermenter and `10` for the ambient tracker.
+Using the wrong window size wouldn't fail a test; it would just make the
+fermenter reading measurably noisier or more sluggish than the original
+firmware, discovered only during hardware validation (task 17) if at all.
+Recording these as named constants up front (analogous to
+`FERMENTER_SENSOR_ADDR` in Decision 3) closes that gap.
+
+### Decision 10 — Sensor read failure maps to `Action::Error`
+
+**Choice:** `SensorReader::read()` (task 13.1) returns
+`Result<(f64, f64), SensorError>`, not a bare `(f64, f64)`. On `Err`, the main
+loop skips `make_action_decision` for that tick and instead commands
+`Action::Error` directly, which the relay layer already defines as fail-safe
+(both relays LOW — see `specs/firmware-device/spec.md`, "Error action disables
+both relays").
+
+**Rationale:** The Arduino's `DallasTemperature::getTempCByIndex()` returns a
+sentinel float (`-127.0`) on a disconnected or failed sensor, and the original
+C++ never checks for it — a latent bug, not a behavior worth porting
+faithfully. The Rust `ds18b20`/`one-wire-bus` crates instead return a
+`Result`, forcing an explicit choice at exactly the point the Arduino never
+had to make one. Without this decision, a read failure would either panic
+(if unwrapped) or require some other ad hoc handling invented during
+implementation. `Action::Error` already exists in the `Action` enum (task 2.2)
+and its fail-safe relay behavior is already specified — this decision is what's
+missing to actually produce it from a real failure, rather than leaving it as
+an enum variant nothing ever constructs.
+
+### Decision 11 — Persistent RX frame accumulator across ticks
+
+**Choice:** `parse_target_frame(buf: &[u8]) -> Option<f64>` (task 14) stays a
+pure, stateless function over one buffer for unit-testing purposes, but the
+device-level integration (task 14.3, 16.1) wraps it with a small persistent
+`heapless::Vec<u8, 16>` (or equivalent fixed-size) receive accumulator that
+carries partial bytes across loop ticks, mirroring the Arduino's
+`recvInProgress`/`ndx` static locals in `readSerialWithStartEndMarkers()`.
+
+**Rationale:** The Arduino's frame reader is genuinely stateful across
+`loop()` iterations, so a `<19.5>` frame whose bytes straddle a 1-second tick
+boundary is never lost. As specified, `parse_target_frame` alone has no way to
+retain unconsumed bytes between calls — without an explicit accumulator
+wrapping it, a split frame would be silently dropped, a functional regression
+against the firmware being replaced. The buffer only needs to be sized for the
+longest valid frame (Arduino uses 12 bytes for `<±XXX.X>`-shaped input; 16
+bytes gives headroom without meaningfully changing RAM budget).
 
 ## Risks / Trade-offs
 
@@ -275,3 +414,9 @@ compiles successfully (flash step is hardware-only).
   GPIO3, and GPIO10. The exact assignments will be finalized as named compile-time
   constants before first flash.
   _(To be resolved in task 12.1 of tasks.md — GPIO pin assignment and relay control.)_
+- The `esp-rtos` runtime (Decision 2) claims `TIMG0` and the `FROM_CPU0`
+  software interrupt at startup via `esp_rtos::start(...)`. Neither is a
+  numbered GPIO pin, so this doesn't compete with the sensor/relay pin
+  candidates above, but it does mean `TIMG0` and `FROM_CPU0` are unavailable
+  for any other purpose (e.g. a second timer-driven feature added later would
+  need `TIMG1` or a `SYSTIMER` alarm instead).

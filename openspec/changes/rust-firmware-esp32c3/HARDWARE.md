@@ -24,26 +24,40 @@ are marked **TBD-at-bring-up** and resolved in task 12.1 of `tasks.md`.
 | BOOT button | GPIO9 |
 | RESET button | CHIP_PU |
 
-### Exposed GPIO pins (16-pin header)
+### Exposed GPIO pins (22-pin header)
 
-| Pin | GPIO | Notes |
+**Correction:** an earlier draft of this document described a 16-pin header
+(2 rows of 8). The board actually purchased for this build
+(nznelectronics.co.nz, "ESP32-C3 SuperMini Dev Board – USB-C") has a
+**22-pin header — 11 pins per side**, confirmed against the vendor's product
+photo (two loose 11-pin header strips, one per edge, matching 11 castellated
+pads per edge on the board itself). The GPIO set itself is unchanged from
+what was previously documented — this was a header-pin-count/table error, not
+a GPIO error.
+
+**Confirmed from the product photo and vendor spec table:**
+
+| Fact | Value | Confidence |
 |---|---|---|
-| 1 | 5V | Power |
-| 2 | GND | Ground |
-| 3 | 3V3 | 3.3V out |
-| 4 | GPIO0 | Safe — ADC1 Ch0, PWM |
-| 5 | GPIO1 | Safe — ADC1 Ch1, PWM |
-| 6 | GPIO2 | ⚠ Strapping pin — avoid for relay/sensor outputs |
-| 7 | GPIO3 | Safe — ADC1 Ch3, PWM |
-| 8 | GPIO4 | ⚠ JTAG TMS / Quad-SPI hold — use with care |
-| 9 | GPIO5 | ⚠ JTAG TDI / Quad-SPI WP — use with care |
-| 10 | GPIO6 | ⚠ JTAG TCK / SPI2 SCK — use with care |
-| 11 | GPIO7 | ⚠ JTAG TDO / SPI2 SS — use with care |
-| 12 | GPIO8 | ⚠ Strapping pin, onboard LED (active LOW) — avoid |
-| 13 | GPIO9 | ⚠ Strapping pin, BOOT button — avoid |
-| 14 | GPIO10 | Safe — PWM |
-| 15 | GPIO21 | UART0 TX (header) |
-| 16 | GPIO20 | UART0 RX (header) |
+| Total header pins | 22 (11 per side) | High — counted directly from product photo |
+| Total GPIOs broken out | 13: GPIO0–10, GPIO20, GPIO21 | High — consistent across vendor spec ("11× GPIO... 2× UART") and every independent reference checked |
+| Far-end pad, one side | GPIO0 | High — legible silkscreen label in product photo |
+| Far-end pad, other side | GPIO21 | High — legible silkscreen label in product photo |
+| Strapping pins | GPIO2, GPIO8, GPIO9 | High — Espressif ESP32-C3 technical reference; unaffected by the pin-count correction |
+| Onboard LED | Blue, GPIO8, active LOW | High — matches vendor spec table |
+| BOOT button | GPIO9 | High — matches vendor spec table |
+| Power pins (5V, GND, 3V3) | Cluster at the end of the header nearest the USB-C connector | Medium — legible in the product photo but not fully confirmed pin-by-pin |
+| Exact left/right pin-by-pin order for the remaining ~9 non-anchor pins (GPIO1–10, GPIO20, and the power pins on each side) | Not yet confirmed | **Low — TBD-at-bring-up** |
+
+**Action for task 12.1:** before wiring anything, read the silkscreen on the
+physical board directly (much more reliable than a rotated product photo) and
+replace the table below with the confirmed left-side and right-side pin order.
+The GPIO candidates already chosen (`ONE_WIRE_PIN`, `HEAT_RELAY_PIN`,
+`COOL_RELAY_PIN` below) are all within the confirmed-safe 13-GPIO set and are
+not affected by this correction, but double-check their physical header
+position against the silkscreen once read, since a pin *count* error of this
+kind is exactly the sort of thing that could also mean a pin *position* was
+guessed wrong elsewhere in this document.
 
 **Safest pins for new assignments (no system duties):** GPIO0, GPIO1, GPIO3, GPIO10.
 
@@ -76,6 +90,27 @@ const COOL_RELAY_PIN: u8 = 1;
 
 // firmware/esp32c3/src/sensors.rs
 const ONE_WIRE_PIN: u8 = 3;
+```
+
+---
+
+## Control loop tuning constants
+
+Ported verbatim from `arduino/TempController/TempController.ino` and
+`ControllerActionRules.cpp` (see design.md Decision 9). These are not
+hardware-specific, but like the GPIO pins above they are load-bearing values
+that must be locked in as named constants rather than re-derived or guessed
+during implementation:
+
+```rust
+// firmware/logic/src/controller_action_rules.rs
+const TARGET_RANGE: f64 = 0.3;                    // target ± 0.3, failsafe ± 0.6
+const COOLING_OVERRUN_ADJUSTMENT: f64 = 0.2;
+const DEFAULT_TARGET_TEMP: f64 = 20.0;            // overwritten once the host writes its own target
+
+// firmware/esp32c3/src/main.rs
+const FERMENTER_EMA_WINDOW: usize = 60;
+const AMBIENT_EMA_WINDOW: usize = 10;
 ```
 
 ---

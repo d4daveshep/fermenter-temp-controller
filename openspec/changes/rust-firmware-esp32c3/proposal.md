@@ -66,8 +66,14 @@ build, further simplifying the firmware surface.
   Arduino did (typically `/dev/ttyACM0` for both native USB-CDC on Linux, but
   worth verifying on the Pi).
 - **`arduino/TempController/`** — preserved unchanged as historical reference.
-- **Dependencies** (firmware only): `esp-hal`, `embassy-executor`,
+- **Dependencies** (firmware only): `esp-hal`, `esp-rtos` (`embassy` feature —
+  provides the Embassy executor/time driver and the `#[esp_rtos::main]` entry
+  point; successor to the now-stale `esp-hal-embassy`), `embassy-executor`,
   `embassy-time`, `embedded-hal`, `one-wire-bus`, `ds18b20`, `serde-json-core`,
-  `heapless`, `esp-println`; all `no_std`-compatible.
+  `heapless`, `esp-println` (behind a `debug-log` feature — see design.md
+  Decision 7), `esp-backtrace` (panic handler — required for the crate to
+  compile at all) and `esp-bootloader-esp-idf` (`esp_app_desc!()` — required
+  by `espflash` v4's bootloader for the board to boot; see design.md
+  Decision 8); all `no_std`-compatible.
 - **Tooling**: `espflash` replaces `compile_arduino.sh`/`upload_arduino.sh` for
   build and flash.
