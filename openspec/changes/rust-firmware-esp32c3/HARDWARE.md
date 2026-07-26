@@ -60,6 +60,9 @@ kind is exactly the sort of thing that could also mean a pin *position* was
 guessed wrong elsewhere in this document.
 
 **Safest pins for new assignments (no system duties):** GPIO0, GPIO1, GPIO3, GPIO10.
+GPIO4 (JTAG TMS) is also usable — it's not one of the three strapping pins
+(GPIO2, GPIO8, GPIO9) and this project has no JTAG debugger connected, so its
+JTAG duty is never exercised. See `ONE_WIRE_PIN` below, which uses it.
 
 ---
 
@@ -69,19 +72,24 @@ Three signals needed: one OneWire data bus, two relay outputs.
 
 ### GPIO pin assignments
 
-**Status: TBD-at-bring-up** — to be confirmed and locked as named constants in
-task 12.1 before first flash. Candidates from the safe set:
+**Status:** `ONE_WIRE_PIN` is now **confirmed** — the test board's single
+DS18B20 is already wired to **GPIO4**, so the constant matches the physical
+build rather than the other way around. `HEAT_RELAY_PIN`/`COOL_RELAY_PIN`
+remain **TBD-at-bring-up** — no relays are connected to the test board yet;
+these are locked as named constants in task 12.1 once they are.
 
-| Signal | Proposed GPIO | Notes |
+| Signal | GPIO | Notes |
 |---|---|---|
-| `ONE_WIRE_PIN` | GPIO3 | OneWire data bus (DS18B20 × 2) |
-| `HEAT_RELAY_PIN` | GPIO0 | Heating relay output |
-| `COOL_RELAY_PIN` | GPIO1 | Cooling relay output |
+| `ONE_WIRE_PIN` | GPIO4 | OneWire data bus (DS18B20 × 2). JTAG TMS, but safe — see note above; confirmed by the test board's actual wiring, not just a proposal |
+| `HEAT_RELAY_PIN` | GPIO0 (proposed) | Heating relay output — not yet wired |
+| `COOL_RELAY_PIN` | GPIO1 (proposed) | Cooling relay output — not yet wired |
 
-Rationale for these candidates: GPIO0, GPIO1, and GPIO3 are the safest general-
-purpose pins with no JTAG, SPI, strapping, or LED duty. The assignments must be
-verified against the actual relay module board's layout to avoid mechanical
-interference on a shared PCB or breadboard. Record the final values as:
+Rationale: GPIO0 and GPIO1 are the safest general-purpose pins with no JTAG,
+SPI, strapping, or LED duty, and remain the proposed candidates for the two
+relay outputs pending task 12.1. The relay assignments must be verified
+against the actual relay module board's layout once wired, to avoid
+mechanical interference on a shared PCB or breadboard. Record the final
+values as:
 
 ```rust
 // firmware/esp32c3/src/relays.rs
@@ -89,7 +97,7 @@ const HEAT_RELAY_PIN: u8 = 0;
 const COOL_RELAY_PIN: u8 = 1;
 
 // firmware/esp32c3/src/sensors.rs
-const ONE_WIRE_PIN: u8 = 3;
+const ONE_WIRE_PIN: u8 = 4;
 ```
 
 ---
@@ -144,8 +152,9 @@ const AMBIENT_SENSOR_ADDR:   [u8; 8] = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 | Bus topology | Both sensors on one shared data line (single pull-up resistor) |
 
 **Why external power, not parasitic:** Parasitic (2-wire) mode is fragile
-with multiple sensors on one bus and incompatible with some `ds18b20` crate
-configurations. External power avoids conversion-timing workarounds entirely.
+with multiple sensors on one bus and complicates the conversion-timing
+sequence the `onecable` driver crate expects (design.md Decision 12).
+External power avoids those workarounds entirely.
 
 **DS18B20 conversion time:** ~750 ms at 12-bit resolution (the default). The
 control loop tick is 1 second, giving sufficient margin.

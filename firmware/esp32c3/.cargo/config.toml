@@ -1,0 +1,13 @@
+[build]
+target = "riscv32imc-unknown-none-elf"
+rustflags = [
+    # Pulls in esp-hal's generated linker script (memory layout, interrupt
+    # vectors, peripheral base-address symbols) from its build-script OUT_DIR.
+    "-C", "link-arg=-Tlinkall.x",
+    # esp-backtrace on RISC-V needs frame pointers preserved to produce a
+    # walkable backtrace on panic (design.md Decision 8).
+    "-C", "force-frame-pointers",
+]
+
+[target.riscv32imc-unknown-none-elf]
+runner = "espflash flash --monitor"

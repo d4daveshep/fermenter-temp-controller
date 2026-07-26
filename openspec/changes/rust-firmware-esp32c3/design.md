@@ -66,6 +66,16 @@ The two workspaces share the repo but build independently.
 Rejected — makes local test runs depend on the embedded target being installed,
 friction for CI and contributors.
 
+**Addendum (task 12):** `firmware/esp32c3` itself is *both* a library
+(`src/lib.rs`, exposing `relays`/`sensors`/etc.) and a binary (`src/main.rs`).
+Cargo auto-detects this without any extra `Cargo.toml` section, and `main.rs`
+accesses the shared modules as `use esp32c3::{relays, sensors};` (the
+package's own name, no different from any other dependency). This lets
+`examples/*.rs` (each a separate binary target — `discover_sensors.rs`,
+`relay_test.rs`, and more to come in later tasks) reuse the same
+`RelayController`/sensor code as the real firmware instead of duplicating it
+per example.
+
 ### Decision 2 — Single-task Embassy loop for v1
 
 **Choice:** One `#[embassy_executor::task]` replicating the Arduino `loop()`
@@ -235,6 +245,27 @@ hardware cost and complicates the physical setup for no functional gain.
 migration: change one peripheral in `main.rs`, update the Pi's `.env`
 `SERIAL_PORT`, and add a CP2102 dongle to the hardware.
 
+**Confirmed by implementation (task 10.1):** in the pinned `esp-hal 1.1.1`,
+the module is the flat `esp_hal::usb_serial_jtag::{UsbSerialJtag,
+UsbSerialJtagRx, UsbSerialJtagTx}` (not nested under a `usb::` module, which
+appears in later/unreleased `esp-hal` versions). `UsbSerialJtag::new(...)
+.into_async().split()` gives `(rx, tx)` implementing `embedded-io-async`'s
+`Read`/`Write` traits directly — confirmed working end-to-end with a
+single-task echo loop, compiled against the real dependency versions.
+
+**Confirmed by hardware verification (task 10.2):** flashed to the actual
+test board and exercised over its real `/dev/ttyACM0`; three round-tripped
+messages (plain text, an RC-code-shaped string, and a `<19.5>`-framed value)
+all echoed back byte-for-byte. One real behavior worth recording: immediately
+after a reset, the ESP-IDF second-stage bootloader itself prints its own
+boot-log text over the same USB-Serial-JTAG wire, *before* our application
+even starts — this is chip/bootloader behavior, not something our own code
+(or `debug-log`, Decision 7) controls, and it happens on every reset. It
+needs no fix: `fermenter/src/ingest.rs`'s existing malformed-line handling
+(`malformed_lines_are_skipped_loop_continues`) already logs and skips any
+line that doesn't deserialize as a `Reading`, so this boot chatter is
+tolerated exactly like any other non-JSON noise on the wire.
+
 ### Decision 7 — `esp-println` for diagnostic output during bring-up
 
 **Choice:** Use `esp-println` for `println!`-style diagnostic output during
@@ -259,6 +290,19 @@ wrapper), so a normal `cargo build --release` without that feature can never
 emit a stray line onto the protocol stream. Enable `debug-log` only for
 bring-up sessions where the board is *not* simultaneously being read by
 `fermenter/`.
+
+**Confirmed by implementation (task 10.1):** `esp-println` cannot actually be
+made an `optional`, `debug-log`-gated Cargo *dependency* — `esp-backtrace`'s
+`println` feature (Decision 8) already pulls `esp-println` in unconditionally
+for its own panic output, and Cargo's feature unification means our crate
+must supply that shared instance a transport feature
+(`esp-println` requires exactly one of `jtag-serial`/`uart`/`auto`/`no-op`)
+regardless of whether `debug-log` is active. So `esp-println` is a plain
+dependency with `default-features = false, features = ["jtag-serial"]`;
+`debug-log` only gates *our own* `esp_println::println!` call sites, not
+whether the crate is compiled in. This doesn't weaken the guarantee above —
+`esp-backtrace`'s panic output only fires on an unrecoverable crash, which
+isn't routine operation and isn't gated.
 
 ### Decision 8 — Required `no_std` boilerplate: panic handler and bootloader app descriptor
 
@@ -287,6 +331,16 @@ confirming these are standard boilerplate, not project-specific choices.
 `-C force-frame-pointers` set in `firmware/esp32c3/.cargo/config.toml`'s
 `rustflags` to produce a walkable backtrace on panic; without it, panic output
 is present but useless for diagnosing a crash during bring-up.
+
+**Confirmed by implementation (task 10.1):** the `riscv32imc-unknown-none-elf`
+target installs via a plain `rustup target add riscv32imc-unknown-none-elf` —
+no `espup` needed. `espup` is only required for Espressif's older Xtensa
+chips (original ESP32, ESP32-S2/S3), which need a patched LLVM fork; the
+RISC-V chips this project targets (ESP32-C3) use the upstream Rust compiler
+and target directly, consistent with Decision 6's stable-Rust claim.
+`firmware/esp32c3` was compiled clean (`cargo check`/`cargo clippy`, debug
+and release, with and without `debug-log`) against real `esp-hal 1.1.1` and
+`esp-rtos 0.3.0` in this environment.
 
 ### Decision 9 — Ported tuning constants: target range, EMA windows, startup default
 
@@ -329,9 +383,9 @@ both relays").
 **Rationale:** The Arduino's `DallasTemperature::getTempCByIndex()` returns a
 sentinel float (`-127.0`) on a disconnected or failed sensor, and the original
 C++ never checks for it — a latent bug, not a behavior worth porting
-faithfully. The Rust `ds18b20`/`one-wire-bus` crates instead return a
-`Result`, forcing an explicit choice at exactly the point the Arduino never
-had to make one. Without this decision, a read failure would either panic
+faithfully. The Rust OneWire/DS18B20 crate (`onecable`, Decision 12) instead
+returns a `Result`, forcing an explicit choice at exactly the point the
+Arduino never had to make one. Without this decision, a read failure would either panic
 (if unwrapped) or require some other ad hoc handling invented during
 implementation. `Action::Error` already exists in the `Action` enum (task 2.2)
 and its fail-safe relay behavior is already specified — this decision is what's
@@ -356,6 +410,39 @@ against the firmware being replaced. The buffer only needs to be sized for the
 longest valid frame (Arduino uses 12 bytes for `<±XXX.X>`-shaped input; 16
 bytes gives headroom without meaningfully changing RAM budget).
 
+### Decision 12 — OneWire/DS18B20 driver: `onecable`, not `one-wire-bus`/`ds18b20`
+
+**Choice:** Use the `onecable` crate (its `OneWire` bus primitives and
+`ds18b20::DS18B20` type) instead of the originally proposed `one-wire-bus` +
+`ds18b20` crates.
+
+**Rationale:** Both `one-wire-bus` and `ds18b20` (same author, both `0.1.1`,
+each with a single release years ago) depend on `embedded-hal 0.2.3`'s
+`digital::v2::{InputPin, OutputPin}` and `blocking::delay::DelayUs<u16>`
+traits. `esp-hal 1.1.1`'s GPIO types only implement `embedded-hal 1.0`'s
+traits — there is no `embedded-hal 0.2` compatibility layer in `esp-hal`
+itself, so those two crates cannot be used without an extra compatibility
+shim (e.g. `embedded-hal-compat`), discovered only once actually trying to
+write task 11's discovery example against them (`cargo check`/`clippy`, which
+don't need real peripheral types until code is written against them, hadn't
+exercised this path yet).
+
+`onecable` (`0.2.0`, actively maintained) depends on `embedded-hal 1.0`
+directly — `InputPin + OutputPin + DelayNs` — matching `esp-hal 1.1.1`
+natively with no shim. It is also purpose-built for DS18B20 rather than a
+generic 1-Wire bus: `OneWire::search_rom_iter` discovers every ROM code on the
+bus (task 11), `ds18b20::DS18B20::try_from(rom_code)` checks the family code
+(`0x28`, matching the Arduino's implicit assumption), and
+`DS18B20::read_temperature` does the convert-then-wait-then-read-scratchpad
+sequence in one call.
+
+**Confirmed so far (task 11):** swapping it in for `one-wire-bus`/`ds18b20`
+compiles clean (`cargo check`/`clippy`, debug and release, linking
+successfully). Actual bus discovery against the test board's real sensor is
+the rest of task 11. No other design decision changes — Decision 3 (ROM
+addressing), Decision 10 (sensor read failure → `Action::Error`), and the
+OneWire wiring in `HARDWARE.md` are all crate-agnostic and unaffected.
+
 ## Risks / Trade-offs
 
 **[ROM address discovery is a manual step]** → The `FERMENTER_SENSOR_ADDR` and
@@ -365,11 +452,12 @@ document the discovery procedure in `firmware/README.md`; provide a
 `sensor-discovery` binary or example in `firmware/esp32c3/` that prints ROM
 addresses and exits.
 
-**[OneWire timing on ESP32-C3]** → The `one-wire-bus` crate relies on
-`embedded-hal` blocking delays; timing correctness on the ESP32-C3 depends on
-`esp-hal`'s delay implementation matching the DS18B20's protocol requirements.
-Mitigation: covered by hardware integration test (board + real sensors);
-flag as the first thing to verify during bring-up.
+**[OneWire timing on ESP32-C3]** → `onecable` (Decision 12) relies on
+`embedded-hal`'s `DelayNs` for microsecond- and millisecond-scale bit timing;
+timing correctness on the ESP32-C3 depends on `esp-hal`'s delay implementation
+matching the DS18B20's protocol requirements. Mitigation: covered by hardware
+integration test (board + real sensors); flag as the first thing to verify
+during bring-up.
 
 **[Async serial I/O in Embassy]** → Embassy on ESP32-C3 has async USB-Serial-JTAG
 support, but the exact API surface (whether `UsbSerialJtag` implements
@@ -411,8 +499,13 @@ compiles successfully (flash step is hardware-only).
   (UART0) are available for general use but should be reserved in case UART0 is
   needed later. That leaves GPIO0, GPIO1, GPIO3, GPIO4–7, and GPIO10 as the
   candidates — the safest first picks with no system duties are GPIO0, GPIO1,
-  GPIO3, and GPIO10. The exact assignments will be finalized as named compile-time
-  constants before first flash.
+  GPIO3, and GPIO10.
+  `ONE_WIRE_PIN` is now **resolved as GPIO4**: the test board's single DS18B20
+  was already wired there before pin assignment was finalized, and GPIO4 (JTAG
+  TMS, not a strapping pin) is safe to use since this project has no JTAG
+  debugger attached — so the constant was set to match the physical build
+  rather than requiring a rewire. `HEAT_RELAY_PIN`/`COOL_RELAY_PIN` remain
+  open, proposed as GPIO0/GPIO1, pending relays being wired to the test board.
   _(To be resolved in task 12.1 of tasks.md — GPIO pin assignment and relay control.)_
 - The `esp-rtos` runtime (Decision 2) claims `TIMG0` and the `FROM_CPU0`
   software interrupt at startup via `esp_rtos::start(...)`. Neither is a
