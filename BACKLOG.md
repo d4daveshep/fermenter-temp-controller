@@ -19,3 +19,9 @@
   - At DEBUG level: log the raw JSON string
 
 ## Documentation
+
+## Firmware
+
+### Logic
+
+- Refactor firmware/logic/src using EO principles (within the constraints of no_std)
