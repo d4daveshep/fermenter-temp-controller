@@ -87,9 +87,10 @@ before the production binary can be compiled:
    `AMBIENT_SENSOR_ADDR` in `firmware/esp32c3/src/sensors.rs` accordingly
    before building the production binary.
 
-**Test board status (2026-07-26):** one DS18B20 wired to GPIO4, discovered as
-`family=0x28 rom=2C0000074DC9F928` (valid CRC) — recorded as
-`FERMENTER_SENSOR_ADDR` in `sensors.rs`. `AMBIENT_SENSOR_ADDR` is still a
-placeholder pending a second sensor being wired up; re-run the discovery
-example once it is, and reassign both constants based on which physical
-sensor is which.
+**Test board status (2026-07-27):** one DS18B20 wired to GPIO4 on the test
+board, discovered as `family=0x28 rom=2C0000074DC9F928` (valid CRC). This
+sensor is test-board-only and will **not** be used on the production board,
+so its address has not been recorded in `sensors.rs` — both
+`FERMENTER_SENSOR_ADDR` and `AMBIENT_SENSOR_ADDR` remain placeholders. Re-run
+the discovery example against the production board once both sensors are
+wired up, and set both constants based on which physical sensor is which.

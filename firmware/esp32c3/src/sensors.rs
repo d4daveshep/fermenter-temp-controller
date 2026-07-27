@@ -1,11 +1,13 @@
 //! DS18B20 sensor identification by ROM address — see design.md Decision 3.
 
-/// Discovered on the test board via `examples/discover_sensors.rs`
-/// (2026-07-26): the only sensor currently wired, on `ONE_WIRE_PIN` = GPIO4.
-/// Tentatively assigned the fermenter role — reassign once it's clear which
-/// physical sensor this is and a second sensor is wired for the ambient role.
-pub const FERMENTER_SENSOR_ADDR: [u8; 8] = [0x28, 0xF9, 0xC9, 0x4D, 0x07, 0x00, 0x00, 0x2C];
+/// Placeholder — the test board's discovered sensor
+/// (`family=0x28 rom=2C0000074DC9F928`) will not be used on the production
+/// board, so no address has been recorded yet. Run
+/// `examples/discover_sensors.rs` against the production board once both
+/// DS18B20s are wired up, then set this to the fermenter sensor's ROM
+/// address.
+pub const FERMENTER_SENSOR_ADDR: [u8; 8] = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-/// Placeholder — the test board only has one DS18B20 wired so far. Replace
-/// once a second sensor is connected and re-run `discover_sensors`.
+/// Placeholder — see `FERMENTER_SENSOR_ADDR`. Run `discover_sensors` against
+/// the production board and set this to the ambient sensor's ROM address.
 pub const AMBIENT_SENSOR_ADDR: [u8; 8] = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
