@@ -759,6 +759,7 @@ dependencies = [
  "esp-hal",
  "esp-println",
  "esp-rtos",
+ "fixed",
  "heapless 0.9.3",
  "logic",
  "onecable",

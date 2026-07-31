@@ -22,6 +22,11 @@ embedded-io-async = "0.7"
 # built for DS18B20 (ROM search/discovery, family-code check, one-call
 # `read_temperature`). See design.md Decision 12.
 onecable = "0.2"
+# DS18B20 scratchpad temperature is a fixed-point value (onecable::ds18b20's
+# `Scratchpad::temp: FixedI16<U4>`) — needed to convert it to the `f64` the
+# rest of the firmware (and the serial protocol) uses. Version pinned to
+# match onecable 0.2's own `fixed` dependency.
+fixed = { version = "1.29", default-features = false }
 serde-json-core = "0.6"
 heapless = "0.9"
 esp-backtrace = { version = "0.19", features = ["esp32c3", "panic-handler", "println"] }
