@@ -751,6 +751,7 @@ name = "esp32c3"
 version = "0.1.0"
 dependencies = [
  "embassy-executor",
+ "embassy-futures",
  "embassy-time",
  "embedded-hal 1.0.0",
  "embedded-io-async 0.7.0",
@@ -1136,7 +1137,10 @@ checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
 name = "logic"
 version = "0.1.0"
 dependencies = [
+ "heapless 0.8.0",
  "rstest",
+ "serde",
+ "serde-json-core",
 ]
 
 [[package]]

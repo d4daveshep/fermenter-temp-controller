@@ -9,5 +9,5 @@ pub use controller_action_rules::{
     ControllerActionRules, DEFAULT_TARGET_TEMP, NaturalDrift, TARGET_RANGE, get_natural_drift,
 };
 pub use decision::{Action, Decision};
-pub use protocol::parse_target_frame;
+pub use protocol::{TelemetryData, format_telemetry, parse_target_frame};
 pub use temperature_readings::TemperatureReadings;

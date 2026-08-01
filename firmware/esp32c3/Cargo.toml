@@ -13,6 +13,11 @@ esp-hal = { version = "1.1", features = ["esp32c3", "unstable"] }
 esp-rtos = { version = "0.3", features = ["esp32c3", "embassy"] }
 embassy-executor = "0.10"
 embassy-time = "0.5"
+# `select` between the RX read and the 10-second telemetry Ticker in one
+# task, keeping design.md Decision 2's single-task-for-v1 architecture
+# (already a transitive dependency of embassy-executor; pinned direct here
+# since main.rs uses it explicitly).
+embassy-futures = "0.1"
 embedded-hal = "1.0"
 embedded-io-async = "0.7"
 # Not `one-wire-bus`/`ds18b20` (originally proposed) — both are 0.1.1,

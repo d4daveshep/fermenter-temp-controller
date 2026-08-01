@@ -2,6 +2,8 @@
 #![no_main]
 
 use embassy_executor::Spawner;
+use embassy_futures::select::{Either, select};
+use embassy_time::{Duration, Ticker};
 use embedded_io_async::{Read, Write};
 use esp_backtrace as _;
 use esp_hal::{
@@ -10,6 +12,7 @@ use esp_hal::{
     timer::timg::TimerGroup,
     usb_serial_jtag::{UsbSerialJtag, UsbSerialJtagRx, UsbSerialJtagTx},
 };
+use logic::TelemetryData;
 
 esp_bootloader_esp_idf::esp_app_desc!();
 
@@ -31,6 +34,17 @@ use esp32c3::{relays, sensors};
 /// this never-returning task, giving `logic::parse_target_frame` the
 /// across-tick accumulator design.md Decision 11 calls for, so a `<19.5>`
 /// frame split across two `rx.read` calls isn't lost.
+///
+/// And the task 15 JSON telemetry emission: `select`s between `rx.read` and
+/// a 10-second `Ticker` so periodic emission doesn't require RX activity
+/// (a plain sequential `Timer::after` re-armed each loop pass would instead
+/// reset on every incoming byte, back to a full 10s of RX silence). Still
+/// one task per design.md Decision 2 — `select` interleaves the two
+/// concerns rather than splitting them into separate tasks. The emitted
+/// values are fixed placeholders for now — real sensor reads and a real
+/// `make_action_decision` call are task 16's job; this step only proves the
+/// periodic-emission wiring and that the emitted JSON is well-formed
+/// against the host's `Reading` deserialiser.
 #[embassy_executor::task]
 async fn echo_task(
     mut rx: UsbSerialJtagRx<'static, Async>,
@@ -42,11 +56,12 @@ async fn echo_task(
     let mut buf = [0u8; 64];
     let mut frame_buf: heapless::Vec<u8, 16> = heapless::Vec::new();
     let mut frame_in_progress = false;
+    let mut ticker = Ticker::every(Duration::from_secs(10));
 
     loop {
-        match rx.read(&mut buf).await {
-            Ok(0) => {}
-            Ok(len) => {
+        match select(rx.read(&mut buf), ticker.next()).await {
+            Either::First(Ok(0)) => {}
+            Either::First(Ok(len)) => {
                 for &byte in &buf[..len] {
                     if byte == b'<' {
                         frame_buf.clear();
@@ -82,9 +97,22 @@ async fn echo_task(
                 }
             }
             #[allow(unreachable_patterns)]
-            Err(_e) => {
+            Either::First(Err(_e)) => {
                 #[cfg(feature = "debug-log")]
                 esp_println::println!("echo_task: read error: {:?}", _e);
+            }
+            Either::Second(()) => {
+                let telemetry = logic::format_telemetry(&TelemetryData {
+                    target: 19.5,
+                    average: 18.2,
+                    min: 18.0,
+                    max: 18.4,
+                    ambient: 20.1,
+                    action: "Rest",
+                    reason_code: "RC3.1",
+                });
+                let _ = tx.write_all(telemetry.as_bytes()).await;
+                let _ = tx.flush().await;
             }
         }
     }

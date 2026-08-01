@@ -4,6 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde-json-core = "0.6"
+# Pinned to match serde-json-core 0.6's own `heapless = "0.8"` dependency, so
+# the `heapless::String<256>` this crate returns from `format_telemetry` is
+# the exact same type `serde_json_core::to_string` produces (not a distinct,
+# incompatible 0.9 instance — `esp32c3`'s own heapless 0.9 usage elsewhere is
+# unaffected, since Cargo builds separate instances per major version).
+heapless = "0.8"
 
 [dev-dependencies]
 rstest = "0.23"
