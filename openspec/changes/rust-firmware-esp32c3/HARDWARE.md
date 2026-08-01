@@ -47,17 +47,15 @@ a GPIO error.
 | Onboard LED | Blue, GPIO8, active LOW | High — matches vendor spec table |
 | BOOT button | GPIO9 | High — matches vendor spec table |
 | Power pins (5V, GND, 3V3) | Cluster at the end of the header nearest the USB-C connector | Medium — legible in the product photo but not fully confirmed pin-by-pin |
-| Exact left/right pin-by-pin order for the remaining ~9 non-anchor pins (GPIO1–10, GPIO20, and the power pins on each side) | Not yet confirmed | **Low — TBD-at-bring-up** |
+| Exact left/right pin-by-pin order for the remaining ~9 non-anchor pins (GPIO1–10, GPIO20, and the power pins on each side) | Not yet confirmed | **Low — still open** (the 3 pins this firmware actually uses are confirmed; see below) |
 
-**Action for task 12.1:** before wiring anything, read the silkscreen on the
-physical board directly (much more reliable than a rotated product photo) and
-replace the table below with the confirmed left-side and right-side pin order.
-The GPIO candidates already chosen (`ONE_WIRE_PIN`, `HEAT_RELAY_PIN`,
-`COOL_RELAY_PIN` below) are all within the confirmed-safe 13-GPIO set and are
-not affected by this correction, but double-check their physical header
-position against the silkscreen once read, since a pin *count* error of this
-kind is exactly the sort of thing that could also mean a pin *position* was
-guessed wrong elsewhere in this document.
+**Status:** task 12.1's silkscreen read confirmed `ONE_WIRE_PIN` (GPIO4),
+`HEAT_RELAY_PIN` (GPIO0), and `COOL_RELAY_PIN` (GPIO1) are correctly wired —
+verified indirectly by every real-hardware test since (sensor reads, relay
+clicks, the full control loop). The remaining ~9 unused header pins'
+left/right silkscreen order was never read/recorded, since nothing in this
+project needs them; still genuinely open if a future feature needs one of
+them.
 
 **Safest pins for new assignments (no system duties):** GPIO0, GPIO1, GPIO3, GPIO10.
 GPIO4 (JTAG TMS) is also usable — it's not one of the three strapping pins
@@ -72,24 +70,22 @@ Three signals needed: one OneWire data bus, two relay outputs.
 
 ### GPIO pin assignments
 
-**Status:** `ONE_WIRE_PIN` is now **confirmed** — the test board's single
-DS18B20 is already wired to **GPIO4**, so the constant matches the physical
-build rather than the other way around. `HEAT_RELAY_PIN`/`COOL_RELAY_PIN`
-remain **TBD-at-bring-up** — no relays are connected to the test board yet;
-these are locked as named constants in task 12.1 once they are.
+**Status:** All three pins are now **confirmed** on real hardware.
+`ONE_WIRE_PIN` (GPIO4) matches the test board's original wiring.
+`HEAT_RELAY_PIN`/`COOL_RELAY_PIN` (GPIO0/GPIO1) were locked in task 12.1 and
+verified in task 12.3 — first via multimeter with no relays attached
+(confirmed correct HIGH/LOW logic per action), then re-confirmed with real
+relays wired up (both clicked in the correct Rest/Heat/Cool/Rest order), and
+a third time after the production-board swap (task 17.2).
 
 | Signal | GPIO | Notes |
 |---|---|---|
-| `ONE_WIRE_PIN` | GPIO4 | OneWire data bus (DS18B20 × 2). JTAG TMS, but safe — see note above; confirmed by the test board's actual wiring, not just a proposal |
-| `HEAT_RELAY_PIN` | GPIO0 (proposed) | Heating relay output — not yet wired |
-| `COOL_RELAY_PIN` | GPIO1 (proposed) | Cooling relay output — not yet wired |
+| `ONE_WIRE_PIN` | GPIO4 | OneWire data bus (DS18B20 × 2). JTAG TMS, but safe — see note above; confirmed by real hardware, both on the test board and the production board |
+| `HEAT_RELAY_PIN` | GPIO0 | Heating relay output — confirmed wired and verified (multimeter + real relay clicks) |
+| `COOL_RELAY_PIN` | GPIO1 | Cooling relay output — confirmed wired and verified (multimeter + real relay clicks) |
 
 Rationale: GPIO0 and GPIO1 are the safest general-purpose pins with no JTAG,
-SPI, strapping, or LED duty, and remain the proposed candidates for the two
-relay outputs pending task 12.1. The relay assignments must be verified
-against the actual relay module board's layout once wired, to avoid
-mechanical interference on a shared PCB or breadboard. Record the final
-values as:
+SPI, strapping, or LED duty. Record the final values as:
 
 ```rust
 // firmware/esp32c3/src/relays.rs
@@ -117,8 +113,8 @@ const COOLING_OVERRUN_ADJUSTMENT: f64 = 0.2;
 const DEFAULT_TARGET_TEMP: f64 = 20.0;            // overwritten once the host writes its own target
 
 // firmware/esp32c3/src/main.rs
-const FERMENTER_EMA_WINDOW: usize = 60;
-const AMBIENT_EMA_WINDOW: usize = 10;
+const FERMENTER_EMA_WINDOW: u32 = 60;
+const AMBIENT_EMA_WINDOW: u32 = 10;
 ```
 
 ---
@@ -131,13 +127,15 @@ one measuring **ambient temperature** (room/environment).
 ### Identification
 
 Sensors are addressed by **64-bit ROM address**, not by bus-scan index
-(see design.md Decision 3). ROM addresses must be discovered before the
-production binary can be compiled — see task 11 in `tasks.md`.
+(see design.md Decision 3). ROM addresses were discovered on the production
+board via `examples/identify_sensors.rs` (task 11) and physically identified
+by warming the fermenter sensor and watching which address's live reading
+rose — see `firmware/README.md`.
 
 ```rust
-// Placeholders — replace with values from the discovery example
-const FERMENTER_SENSOR_ADDR: [u8; 8] = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-const AMBIENT_SENSOR_ADDR:   [u8; 8] = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+// firmware/esp32c3/src/sensors.rs — real, hardware-confirmed values
+const FERMENTER_SENSOR_ADDR: [u8; 8] = [0x28, 0xF2, 0x92, 0x37, 0x07, 0x00, 0x00, 0x82];
+const AMBIENT_SENSOR_ADDR:   [u8; 8] = [0x28, 0xF7, 0xF2, 0xB5, 0x09, 0x00, 0x00, 0x52];
 ```
 
 ### Wiring
@@ -214,6 +212,13 @@ future use.
 |---|---|
 | Test board | Development, bring-up, sensor discovery, validation against `fermenter/` with `MOCK_SERIAL=false` |
 | Production board | Live controller — flashed with finalised binary after test validation |
+
+**Status:** the production sensors and ROM addresses (see "Identification"
+above) were discovered and confirmed directly on the board that was then
+deployed — relays and sensors verified on real hardware (task 12.3, 13.2),
+soak-tested for 10+ minutes (task 17.1), then physically swapped in for the
+Arduino Uno and re-validated in place (task 17.2). It is now the live
+controller.
 
 Both boards are identical hardware. The same firmware binary (with the same
 ROM address constants) can be flashed to both, provided the same two DS18B20

@@ -504,9 +504,11 @@ compiles successfully (flash step is hardware-only).
   was already wired there before pin assignment was finalized, and GPIO4 (JTAG
   TMS, not a strapping pin) is safe to use since this project has no JTAG
   debugger attached — so the constant was set to match the physical build
-  rather than requiring a rewire. `HEAT_RELAY_PIN`/`COOL_RELAY_PIN` remain
-  open, proposed as GPIO0/GPIO1, pending relays being wired to the test board.
-  _(To be resolved in task 12.1 of tasks.md — GPIO pin assignment and relay control.)_
+  rather than requiring a rewire. `HEAT_RELAY_PIN`/`COOL_RELAY_PIN` are now
+  **resolved as GPIO0/GPIO1** (task 12.1), confirmed on real hardware in task
+  12.3 — first via multimeter with no relays attached, then re-confirmed with
+  real relays wired up (both clicked in the correct Rest/Heat/Cool/Rest
+  order), and a third time after the production-board swap (task 17.2).
 - The `esp-rtos` runtime (Decision 2) claims `TIMG0` and the `FROM_CPU0`
   software interrupt at startup via `esp_rtos::start(...)`. Neither is a
   numbered GPIO pin, so this doesn't compete with the sensor/relay pin
