@@ -6,8 +6,13 @@ Step-by-step setup for a fresh Raspberry Pi running the fermentation temperature
 
 - Raspberry Pi (any model with USB and a 64-bit CPU — Pi 3B+ or newer recommended)
 - MicroSD card (16 GB or larger)
-- Arduino Uno connected via USB
-- DS18B20 temperature sensors and relay board wired to the Arduino
+- ESP32-C3 SuperMini board connected via USB (replaces the original Arduino
+  Uno controller; the Arduino predecessor is preserved in
+  `arduino/TempController/` as historical reference — see repo root
+  `CLAUDE.md`)
+- DS18B20 temperature sensors and relay board wired to the ESP32-C3 (see
+  `openspec/changes/rust-firmware-esp32c3/HARDWARE.md` for pin assignments
+  and wiring details)
 
 ---
 
@@ -75,8 +80,8 @@ cp fermenter/.env.example fermenter/.env
 Edit `fermenter/.env` for your setup:
 
 ```bash
-SERIAL_PORT=/dev/ttyACM0     # confirm this after plugging in the Arduino (see step 5)
-SERIAL_BAUD=115200           # matches the fixed Arduino firmware contract, leave as-is
+SERIAL_PORT=/dev/ttyACM0     # confirm this after connecting the ESP32-C3 board (see step 5)
+SERIAL_BAUD=115200           # matches the fixed firmware serial contract, leave as-is
 MOCK_SERIAL=false            # real deployment: leave false
 REDIS_URL=redis://redis:6379 # `redis` is the Compose service name, not localhost
 TS_RETENTION_DAYS=7
@@ -90,41 +95,48 @@ RUST_LOG=info
 
 ---
 
-## 5. Set up the Arduino firmware
+## 5. Set up the ESP32-C3 firmware
 
-### 5a. Install the Arduino IDE
+The firmware is built, tested, and flashed from a **separate dev machine**,
+not the Pi — sensor ROM address discovery and full validation need doing
+per physical board anyway (see `firmware/README.md` and
+`openspec/changes/rust-firmware-esp32c3/tasks.md`), and the Pi only needs
+the already-compiled binary, not the embedded Rust toolchain. This mirrors
+how the `fermenter` app image itself is cross-built elsewhere and shipped
+in, not built on the Pi (see "Deploy a release built elsewhere" and
+"Deploy a firmware update built elsewhere" under Ongoing operations below).
 
-The bundled IDE installer is included in the repo:
+### 5a. Wire the sensors and relays
 
-```bash
-cd arduino/install
-tar -xf arduino-1.8.19-linuxaarch64.tar.tar
-sudo mv arduino-1.8.19 /opt/arduino
-sudo /opt/arduino/install.sh
-```
+Wire the two DS18B20 temperature sensors and the relay module to the
+ESP32-C3 SuperMini board per
+`openspec/changes/rust-firmware-esp32c3/HARDWARE.md` (GPIO pin assignments,
+pull-up resistor, power mode, and relay logic level).
 
-Add the `arduino` binary to your PATH:
+### 5b. Build, discover sensor addresses, and flash — on your dev machine
 
-```bash
-echo 'export PATH=$PATH:/opt/arduino' >> ~/.bashrc
-source ~/.bashrc
-```
+On a machine with the embedded Rust toolchain set up (`firmware/README.md`'s
+"Embedded toolchain setup" — `espup`/`espflash`; not needed on the Pi):
 
-### 5b. Install required libraries
+1. Run the sensor ROM address discovery procedure once per physical board
+   (`firmware/README.md`'s "Sensor ROM address discovery") and set
+   `FERMENTER_SENSOR_ADDR`/`AMBIENT_SENSOR_ADDR` in
+   `firmware/esp32c3/src/sensors.rs` accordingly.
+2. Build and flash the production binary (`debug-log` feature left off):
+   ```bash
+   cd firmware/esp32c3
+   cargo build --release
+   espflash flash --release
+   ```
+3. Bench-test it against `fermenter/` with `MOCK_SERIAL=false` before moving
+   the board to the Pi (see tasks 16-17 in
+   `openspec/changes/rust-firmware-esp32c3/tasks.md` for the validation this
+   project itself used).
 
-Unzip each bundled library into `~/Arduino/libraries`:
+### 5c. Connect the board to the Pi
 
-```bash
-mkdir -p ~/Arduino/libraries
-cd /path/to/fermenter-temp-controller/arduino/install
-for zip in AUnit-*.zip ArduinoJson-*.zip DallasTemperature-*.zip OneWire-*.zip; do
-    unzip -q "$zip" -d ~/Arduino/libraries/
-done
-```
-
-### 5c. Identify the Arduino serial port
-
-Plug the Arduino into the Pi via USB, then run:
+Plug the already-flashed, already-tested board into the Pi via USB, then
+identify its serial port:
 
 ```bash
 ls /dev/ttyACM*
@@ -132,21 +144,13 @@ ls /dev/ttyACM*
 
 It will typically be `/dev/ttyACM0`. If it differs, update `SERIAL_PORT` in `fermenter/.env` accordingly (see step 4).
 
-### 5d. Compile and upload the firmware
-
-```bash
-cd fermenter-temp-controller/arduino/TempController
-./compile_arduino.sh   # verify it compiles cleanly
-./upload_arduino.sh    # upload to the connected Arduino
-```
-
-Confirm the Arduino is running by checking its serial output:
+### 5d. Confirm it's running
 
 ```bash
 cat /dev/ttyACM0
 ```
 
-You should see JSON lines appear every 10 seconds.
+You should see JSON lines appear roughly every 10 seconds.
 
 ---
 
@@ -171,7 +175,7 @@ docker compose logs -f
 
 | Check | How |
 |---|---|
-| App reading Arduino | `docker compose logs fermenter` — look for `serial port opened` / reading-ingest log lines |
+| App reading ESP32-C3 | `docker compose logs fermenter` — look for `serial port opened` / reading-ingest log lines |
 | Data writing to Redis | `docker compose logs fermenter` — no write-error/warn lines |
 | Web dashboard | Open `http://<pi-ip>:8080` in a browser |
 | Health check | `curl http://<pi-ip>:8080/healthz` — reports `serial_connected` |
@@ -207,4 +211,20 @@ On the Pi, load the transferred archive and select its exact image tag:
 gunzip -c ~/fermenter-v2.0.0.tar.gz | docker load
 FERMENTER_IMAGE_TAG=v2.0.0 docker compose up -d
 ```
+
+### Deploy a firmware update built elsewhere
+
+Same shape as the app image above: build and validate the firmware on your
+dev machine as usual (`firmware/README.md`), then ship the compiled binary
+to the Pi:
+
+```bash
+./scripts/build_and_ship_firmware.sh pi@<pi-host>
+```
+
+The script prints the exact `espflash` command to run on the Pi to finish
+the update. Flashing resets the board and briefly interrupts fermentation
+control — confirm that's acceptable before running it. No `fermenter`
+restart needed afterward: the board resumes its normal control loop
+automatically once booted, and the serial contract is unchanged.
 </content>
