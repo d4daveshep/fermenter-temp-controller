@@ -107,3 +107,20 @@ stuck low (missing/miswired shared pull-up, a DATA/GND swap on one sensor),
 discovery hangs indefinitely rather than erroring. If a discovery/identify
 run prints nothing past its initial "Scanning..." line, check the wiring
 before assuming a code problem.
+
+## Hardware integration test
+
+`firmware/logic/tests/hardware.rs` opens a real serial port and confirms the
+attached board (flashed with the production `esp32c3` binary, `debug-log`
+off) emits a JSON line that parses as a valid `Reading`. `#[ignore]`'d —
+never runs in CI or under plain `cargo test`:
+
+```bash
+cd firmware/logic
+cargo test -- --ignored           # SERIAL_PORT/SERIAL_BAUD env vars override the /dev/ttyACM0 @ 115200 default
+```
+
+Lives in `logic/`, not `esp32c3/` — see the file's own doc comment for why
+(`esp32c3`'s `.cargo/config.toml` pins it to the embedded target, which
+can't host a real-serial-port test; `logic` already runs its tests on the
+host with no embedded toolchain).

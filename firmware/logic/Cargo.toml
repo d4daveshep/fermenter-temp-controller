@@ -15,3 +15,11 @@ heapless = "0.8"
 
 [dev-dependencies]
 rstest = "0.23"
+# Hardware integration test only (tests/hardware.rs, #[ignore]'d) - opens a
+# real serial port on the host, so these need std even though the crate
+# itself is no_std-compatible. `cfg_attr(not(test), no_std)` on lib.rs
+# already makes the crate std-enabled under `cargo test`, so no target
+# override is needed (unlike `esp32c3`, which is pinned to the embedded
+# target via .cargo/config.toml and can't host a test like this directly).
+serialport = "4"
+serde_json = "1"
