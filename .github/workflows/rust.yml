@@ -10,6 +10,12 @@ name: rust
 # Hardware e2e tests (tests/serial_hardware.rs, #[ignore]'d) are never run
 # here — no ARM64 runner or physical Arduino is available in CI, matching
 # rewrite-plan.md §12.6 ("Hardware e2e excluded").
+#
+# firmware-logic/firmware-esp32c3 (task 18, rust-firmware-esp32c3 change):
+# CI for the firmware/ workspace (see firmware/README.md). Same hardware
+# exclusion applies to firmware/logic/tests/hardware.rs (#[ignore]'d, no
+# attached ESP32-C3 in CI). firmware-esp32c3 is compile-only — no runner
+# here can flash or exercise real hardware.
 
 on:
   push:
@@ -67,3 +73,43 @@ jobs:
           platforms: linux/arm64
           push: false
           tags: fermenter:ci-check
+
+  firmware-logic:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: firmware/logic
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: firmware
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      # Unit tests only — tests/hardware.rs's single test is #[ignore]'d
+      # (needs a real attached ESP32-C3) and stays excluded from this run.
+      - run: cargo test
+
+  firmware-esp32c3:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: firmware/esp32c3
+    steps:
+      - uses: actions/checkout@v4
+      # riscv32imc-unknown-none-elf installs via plain `rustup target add` —
+      # no `espup` needed for this RISC-V target (design.md "Impact"; see
+      # firmware/README.md). .cargo/config.toml already pins this crate's
+      # default build target, so a plain `cargo build` picks it up.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: riscv32imc-unknown-none-elf
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: firmware
+      # Compile-only — no flash, no runner attached; catches regressions in
+      # the device crate without needing real hardware.
+      - run: cargo build --release
