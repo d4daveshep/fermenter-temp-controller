@@ -77,8 +77,8 @@
 
 ## 14. `firmware-device`: Target frame parser (TDD in `logic`, integration test on device)
 
-- [ ] 14.1 Write failing tests in `firmware/logic/src/protocol.rs` (or a host-side test module): `valid_frame_returns_some_value`, `zero_frame_returns_some_zero` (not None), `no_frame_returns_none`, `partial_frame_returns_none`, `malformed_frame_returns_none`
-- [ ] 14.2 Implement `parse_target_frame(buf: &[u8]) -> Option<f64>` in `firmware/logic/src/protocol.rs` to make the tests pass
+- [x] 14.1 Write failing tests in `firmware/logic/src/protocol.rs` (or a host-side test module): `valid_frame_returns_some_value`, `zero_frame_returns_some_zero` (not None), `no_frame_returns_none`, `partial_frame_returns_none`, `malformed_frame_returns_none`. Confirmed failing to compile (`parse_target_frame` not yet defined) before implementing.
+- [x] 14.2 Implement `parse_target_frame(buf: &[u8]) -> Option<f64>` in `firmware/logic/src/protocol.rs` to make the tests pass. Finds the first `<`...`>` pair via `position`, parses the inner UTF-8 slice with `core`'s built-in `str::parse::<f64>()` (no dependency needed, works in `no_std`) — `0.0` parses to `Some(0.0)` same as any other value, fixing the Arduino's zero-target bug simply by not special-casing it. All 5 tests pass; full `logic` suite (55 tests), clippy, and fmt all clean. Exported from `lib.rs`; `esp32c3` device crate still builds against the new `logic` API.
 - [ ] 14.3 Wire `parse_target_frame` into the USB-Serial-JTAG RX path in `esp32c3/src/main.rs`, wrapped in a persistent `heapless::Vec<u8, 16>` accumulator that carries unconsumed bytes across ticks so a frame split across a tick boundary is not lost (see design.md Decision 11 — mirrors the Arduino's stateful `recvInProgress`/`ndx`); flash to the test board and send `<19.5>` from a terminal — verify the target updates in the printed log
 
 ## 15. `firmware-device`: JSON telemetry output (TDD in `logic`, integration test on device)
