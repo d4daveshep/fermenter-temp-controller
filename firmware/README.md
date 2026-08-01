@@ -87,10 +87,23 @@ before the production binary can be compiled:
    `AMBIENT_SENSOR_ADDR` in `firmware/esp32c3/src/sensors.rs` accordingly
    before building the production binary.
 
-**Test board status (2026-07-27):** one DS18B20 wired to GPIO4 on the test
-board, discovered as `family=0x28 rom=2C0000074DC9F928` (valid CRC). This
-sensor is test-board-only and will **not** be used on the production board,
-so its address has not been recorded in `sensors.rs` — both
-`FERMENTER_SENSOR_ADDR` and `AMBIENT_SENSOR_ADDR` remain placeholders. Re-run
-the discovery example against the production board once both sensors are
-wired up, and set both constants based on which physical sensor is which.
+**Production board status (2026-08-01):** both DS18B20s wired to GPIO4 on the
+production board (shared bus, single 4.7kΩ pull-up), discovered via
+`examples/identify_sensors.rs` — `rom=820000073792F228` and
+`rom=52000009B5F2F728`, both valid CRC / family 0x28. Physically identified
+by warming the sensor wired near the fermenter vessel and watching which
+ROM's live reading rose: `820000073792F228` is `FERMENTER_SENSOR_ADDR`,
+`52000009B5F2F728` is `AMBIENT_SENSOR_ADDR` — both now recorded in
+`sensors.rs`.
+
+`examples/identify_sensors.rs` is a variant of the discovery example for
+when more than one sensor is wired: it scans the bus, then loops printing
+each found ROM's live temperature once per second, so a sensor can be
+identified by warming it and watching which address's reading responds.
+
+Note: `OneWire::initialize_bus` (in the `onecable` crate) waits for the bus
+to float high before sending a reset pulse, with no timeout — if the bus is
+stuck low (missing/miswired shared pull-up, a DATA/GND swap on one sensor),
+discovery hangs indefinitely rather than erroring. If a discovery/identify
+run prints nothing past its initial "Scanning..." line, check the wiring
+before assuming a code problem.

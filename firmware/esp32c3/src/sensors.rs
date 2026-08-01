@@ -12,17 +12,17 @@ use onecable::{FamilyCodeError, OneWire, OneWireError, ds18b20::DS18B20, rom_cod
 /// lookup (same pattern as `relays::HEAT_RELAY_PIN`/`COOL_RELAY_PIN`).
 pub const ONE_WIRE_PIN: u8 = 4;
 
-/// Placeholder — the test board's discovered sensor
-/// (`family=0x28 rom=2C0000074DC9F928`) will not be used on the production
-/// board, so no address has been recorded yet. Run
-/// `examples/discover_sensors.rs` against the production board once both
-/// DS18B20s are wired up, then set this to the fermenter sensor's ROM
-/// address.
-pub const FERMENTER_SENSOR_ADDR: [u8; 8] = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+/// Discovered on the production board via `examples/identify_sensors.rs`
+/// (2026-08-01): `rom=820000073792F228` (valid CRC, family 0x28). Physically
+/// identified by warming the sensor wired near the fermenter vessel and
+/// watching this address's reading rise — see `firmware/README.md`.
+pub const FERMENTER_SENSOR_ADDR: [u8; 8] = [0x28, 0xF2, 0x92, 0x37, 0x07, 0x00, 0x00, 0x82];
 
-/// Placeholder — see `FERMENTER_SENSOR_ADDR`. Run `discover_sensors` against
-/// the production board and set this to the ambient sensor's ROM address.
-pub const AMBIENT_SENSOR_ADDR: [u8; 8] = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+/// Discovered on the production board via `examples/identify_sensors.rs`
+/// (2026-08-01): `rom=52000009B5F2F728` (valid CRC, family 0x28) — the other
+/// of the two sensors found, by elimination the ambient one. See
+/// `FERMENTER_SENSOR_ADDR`.
+pub const AMBIENT_SENSOR_ADDR: [u8; 8] = [0x28, 0xF7, 0xF2, 0xB5, 0x09, 0x00, 0x00, 0x52];
 
 /// A single sensor's read failed — either its ROM address constant isn't a
 /// DS18B20 (family code != `0x28`, e.g. a still-unset placeholder address),
