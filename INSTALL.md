@@ -228,6 +228,15 @@ cargo install espflash
 — the `aarch64-unknown-linux-gnu` build — instead of installing a full
 toolchain just for this one tool.)
 
+**`/tmp` too small for the build?** Cargo builds in `TMPDIR` (falls back to
+`/tmp`), which on some Pi setups is a small RAM-backed `tmpfs`. Point it at
+the SD card instead:
+
+```bash
+mkdir -p ~/cargo-tmp
+TMPDIR=~/cargo-tmp cargo install espflash
+```
+
 Then, same shape as the app image above: build and validate the firmware on
 your dev machine as usual (`firmware/README.md`), then ship the compiled
 binary to the Pi:
