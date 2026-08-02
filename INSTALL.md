@@ -214,9 +214,23 @@ FERMENTER_IMAGE_TAG=v2.0.0 docker compose up -d
 
 ### Deploy a firmware update built elsewhere
 
-Same shape as the app image above: build and validate the firmware on your
-dev machine as usual (`firmware/README.md`), then ship the compiled binary
-to the Pi:
+One-time prerequisite on the Pi: install `espflash`, the tool that writes
+the binary to the board. It doesn't need the embedded ESP32 toolchain
+(that's only for *building* firmware, done on the dev machine) — just Rust
+and Cargo:
+
+```bash
+cargo install espflash
+```
+
+(No Rust/Cargo on the Pi? Grab a prebuilt binary from the
+[espflash releases page](https://github.com/esp-rs/espflash/releases)
+— the `aarch64-unknown-linux-gnu` build — instead of installing a full
+toolchain just for this one tool.)
+
+Then, same shape as the app image above: build and validate the firmware on
+your dev machine as usual (`firmware/README.md`), then ship the compiled
+binary to the Pi:
 
 ```bash
 ./scripts/build_and_ship_firmware.sh pi@<pi-host>
