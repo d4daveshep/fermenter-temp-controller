@@ -1,0 +1,53 @@
+[package]
+name = "esp32c3"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "esp32c3"
+path = "src/main.rs"
+
+[dependencies]
+logic = { path = "../logic" }
+esp-hal = { version = "1.1", features = ["esp32c3", "unstable"] }
+esp-rtos = { version = "0.3", features = ["esp32c3", "embassy"] }
+embassy-executor = "0.10"
+embassy-time = "0.5"
+# `select` between the RX read and the 10-second telemetry Ticker in one
+# task, keeping design.md Decision 2's single-task-for-v1 architecture
+# (already a transitive dependency of embassy-executor; pinned direct here
+# since main.rs uses it explicitly).
+embassy-futures = "0.1"
+embedded-hal = "1.0"
+embedded-io-async = "0.7"
+# Not `one-wire-bus`/`ds18b20` (originally proposed) — both are 0.1.1,
+# single-release, embedded-hal-0.2-only crates that esp-hal 1.1's
+# embedded-hal-1.0-only GPIO types cannot satisfy without a compat shim.
+# `onecable` is embedded-hal-1.0-native, actively maintained, and purpose-
+# built for DS18B20 (ROM search/discovery, family-code check, one-call
+# `read_temperature`). See design.md Decision 12.
+onecable = "0.2"
+# DS18B20 scratchpad temperature is a fixed-point value (onecable::ds18b20's
+# `Scratchpad::temp: FixedI16<U4>`) — needed to convert it to the `f64` the
+# rest of the firmware (and the serial protocol) uses. Version pinned to
+# match onecable 0.2's own `fixed` dependency.
+fixed = { version = "1.29", default-features = false }
+serde-json-core = "0.6"
+heapless = "0.9"
+esp-backtrace = { version = "0.19", features = ["esp32c3", "panic-handler", "println"] }
+esp-bootloader-esp-idf = { version = "0.5", features = ["esp32c3"] }
+# Not optional: esp-backtrace's own "println" feature (above) already pulls
+# esp-println in unconditionally for panic output, and needs a transport
+# feature (jtag-serial) picked for it regardless of `debug-log` below. Making
+# our own dependency on it optional bought nothing — it was never able to
+# keep the crate out of the build in the first place.
+esp-println = { version = "0.17", default-features = false, features = ["esp32c3", "jtag-serial"] }
+
+[features]
+# Off by default: gates our OWN diagnostic esp_println::println! call sites
+# (not esp-backtrace's panic output, which is unconditional — see above).
+# esp-println's transport is the same USB-Serial-JTAG stream as the JSON
+# telemetry protocol. See design.md Decision 7 — routine diagnostic prints
+# must stay disabled whenever the board is connected to a live `fermenter/`
+# host; a panic report at the moment of a crash is not routine operation.
+debug-log = []

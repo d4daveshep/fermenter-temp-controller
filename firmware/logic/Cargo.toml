@@ -1,0 +1,25 @@
+[package]
+name = "logic"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde-json-core = "0.6"
+# Pinned to match serde-json-core 0.6's own `heapless = "0.8"` dependency, so
+# the `heapless::String<256>` this crate returns from `format_telemetry` is
+# the exact same type `serde_json_core::to_string` produces (not a distinct,
+# incompatible 0.9 instance — `esp32c3`'s own heapless 0.9 usage elsewhere is
+# unaffected, since Cargo builds separate instances per major version).
+heapless = "0.8"
+
+[dev-dependencies]
+rstest = "0.23"
+# Hardware integration test only (tests/hardware.rs, #[ignore]'d) - opens a
+# real serial port on the host, so these need std even though the crate
+# itself is no_std-compatible. `cfg_attr(not(test), no_std)` on lib.rs
+# already makes the crate std-enabled under `cargo test`, so no target
+# override is needed (unlike `esp32c3`, which is pinned to the embedded
+# target via .cargo/config.toml and can't host a test like this directly).
+serialport = "4"
+serde_json = "1"

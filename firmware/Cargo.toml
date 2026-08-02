@@ -1,0 +1,9 @@
+[workspace]
+resolver = "2"
+members = ["logic", "esp32c3"]
+
+# `esp32c3` is a size-constrained no_std binary; these apply workspace-wide
+# but only meaningfully affect that crate today.
+[profile.release]
+opt-level = "s"
+lto = true

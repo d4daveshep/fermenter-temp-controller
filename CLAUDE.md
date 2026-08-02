@@ -12,7 +12,7 @@ Arduino + Raspberry Pi fermentation temperature controller. The Arduino reads te
 - **`src/`** — untracked artifact left over from the pre-rewrite Python stack (`__pycache__`, old `.egg-info`). Ignore it; it is not source code.
 - **`arduino/TempController/`** — the Arduino firmware (C++), unchanged by the rewrite.
 - **`docs/`** — planning history for the rewrite (`rewrite-plan.md`, `system-analysis.md`, `openspec-rewrite-management.md`); background, not live operational instructions.
-- **`openspec/`** — drives ongoing feature work: proposals, specs, and archived changes documenting the capability library.
+- **`openspec/`** — drives ongoing feature work: proposals, specs, and archived changes documenting the capability library (`openspec/specs/`). Change folders under `openspec/changes/` are named `slice-N-verb-noun` for legible ordering; a change that modifies an existing capability carries an explicit MODIFIED delta against that capability's spec, never a silent redefinition (see `openspec/config.yaml`). There is an active proposal (`openspec/changes/rust-firmware-esp32c3/`) to replace the Arduino Uno firmware with a Rust `no_std`/Embassy binary on an ESP32-C3 — not yet implemented; the serial contract would stay identical and `fermenter/` would need no code changes.
 
 ## Running the Application
 
@@ -38,7 +38,9 @@ cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 ```
 
-CI (`.github/workflows/rust.yml`) runs `fmt`, `clippy`, `test`, and a build-only cross-compiled `docker buildx build --platform linux/arm64 --features embed` job. Hardware tests are `#[ignore]`'d and never run in CI.
+CI (`.github/workflows/rust.yml`) runs `fmt`, `clippy`, `test`, and a build-only cross-compiled `docker buildx build --platform linux/arm64 --features embed` job. Hardware tests (`fermenter/tests/serial_hardware.rs`) are `#[ignore]`'d and never run in CI.
+
+`fermenter/src/web/handlers.rs` snapshot-tests rendered HTML fragments with `insta` (snapshots in `fermenter/src/web/snapshots/`). After changing a template, regenerate with `INSTA_UPDATE=always cargo test` or review/accept interactively with `cargo insta accept`.
 
 ## Architecture
 
@@ -50,6 +52,7 @@ CI (`.github/workflows/rust.yml`) runs `fmt`, `clippy`, `test`, and a build-only
 - **`src/model.rs`** — `Reading`, `ControllerState`, and related types shared across serial, store, and web layers.
 - **`src/ingest.rs`**, **`src/temperature_control.rs`**, **`src/brew_session.rs`** — ingest loop, target-temperature reconcile, and brew-id relabeling logic.
 - **`src/config.rs`** — env-var configuration (`envy`), fail-fast on invalid config.
+- **`src/error.rs`** — single `AppError` enum (`thiserror`) end-to-end across serial, store, and web layers; `anyhow` was evaluated but never adopted.
 
 ### Serial contract (fixed, shared with firmware)
 
@@ -83,4 +86,10 @@ HTTP_PORT=8080
 DEFAULT_TARGET_TEMP=19.5
 RUST_LOG=info
 ```
+
+## Deployment
+
+Runtime target temperature and brew ID changes go through the web dashboard, not `.env` — they take effect immediately, no restart needed.
+
+To ship a release build to the Pi: tag the release commit with an annotated SemVer tag, then run `scripts/build_and_ship_image.sh pi@<host>` from a dev machine. It cross-compiles `fermenter:<tag>` for `linux/arm64` via `docker buildx` + QEMU, saves it to a tarball, and `scp`s it to the Pi. On the Pi: `gunzip -c fermenter-<tag>.tar.gz | docker load && FERMENTER_IMAGE_TAG=<tag> docker compose up -d` — Compose's `image:`/`build:` combo picks up the loaded image without rebuilding. See `INSTALL.md` for full first-time setup.
 </content>
